@@ -5,11 +5,18 @@
     <title>TEV</title>
 </head>
 <style>
-figure1-plot{
+    figure1-plot {
     width: 650px;
     height: 650px;
     position: absolute;
-}
+    }
+    .axis path, .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+    }
+
+
 </style>
 
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.js"></script>
@@ -55,12 +62,14 @@ figure1-plot{
                 var el = element[0];
                 var width = el.clientWidth;
                 var height = el.clientHeight;
+                var strokeColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                                    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
 
                 var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
 
-                var yAxis = d3.svg.axis().scale(yScale).orient('left');
+                var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
-                var canvas = d3.select(el).append('svg')
+                var canvas = d3.select(el).append("svg")
                         .attr("height", height)
                         .attr("width", width);
 
@@ -75,8 +84,54 @@ figure1-plot{
                         unique[x['Sample_Barcode']] = true;
                     }});
 
+                    distinct.unshift('');
+                    distinct.push(' ');
+
                     var xScale = d3.scale.ordinal().rangePoints([40, 500]).domain(distinct);
                     var xAxis = d3.svg.axis().scale(xScale);
+
+                    var lines = d3.scale.category10();
+
+                    var lineGen = d3.svg.line()
+                            .x(function(d){
+                                return xScale(d.Sample_Barcode);
+                    })
+                            .y(function(d){
+
+                                return yScale(d.alt_count/100);
+                    });
+
+                    var nestedData = d3.nest()
+                            .key(function(d){
+                               return d.allele;
+                            })
+                            .entries(data);
+
+                    var lineSvg = canvas.append("g");
+                    var pointSvg = canvas.append("g");
+
+                    nestedData.forEach(function(d, i){
+                        lineSvg.append("path")
+                                .attr("fill", "none")
+                                .attr("stroke", strokeColors[i])
+                                .attr("stroke-width", 2)
+                                .attr("d", lineGen(d.values));
+
+                        pointSvg.selectAll("timepoints")
+                                .data(d.values)
+                                .enter()
+                                .append("rect")
+                                .attr("x", function(d){
+                                    return (xScale(d.Sample_Barcode)-5);
+                                })
+                                .attr("y", function(d){
+                                    return (yScale(d.alt_count/100) - 5);
+                                })
+                                .attr("width", 10)
+                                .attr("height", 10)
+                                .attr("fill", strokeColors[i]);
+                    });
+
 
                     canvas.append("svg:g")
                         .attr("class", "axis")
