@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TEV</title>
+</head>
+<body>
+
+<form method="post" action="data_to_database/" enctype="multipart/form-data">{% csrf_token %}
+    {{ file }}
+    <input type="submit" value="Upload"/>
+</form>
+
+</body>
+</html>

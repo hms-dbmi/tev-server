@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" ng-app = "tevApp">
+<head>
+    <meta charset="UTF-8">
+    <title>TEV</title>
+</head>
+<style>
+figure1-plot{
+    width: 650px;
+    height: 650px;
+    position: absolute;
+}
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.js"></script>
+<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+<script>
+
+    (function() {
+        //Application name: tevApp
+        //Dependencies: None
+        var tevApp = angular.module('tevApp', []);
+
+        //To distinguish between any Django references in the HTML
+        tevApp.config(function($interpolateProvider) {
+            $interpolateProvider.startSymbol('{$');
+            $interpolateProvider.endSymbol('$}');
+        });
+
+        //Controller name: TevDataController
+        //Services: scope, http
+        tevApp.controller('tevDataController', ['$scope', '$http', function($scope, $http){
+            //Initialize the scopes data to empty (will render blank plots until we've fetched data)
+            var request = this;
+            request.tevData = [];
+            //Get the data from the API
+            $http.get('http://127.0.0.1:8000/tevdata/').success(function(data){
+               request.tevData = data;
+            });
+
+        }]);
+
+        tevApp.directive('figure1Plot', function(){
+            return {
+               scope: {
+                   data: '='
+               },
+               restrict: 'E',
+               link: link
+           };
+
+            function link(scope, element){
+                var data = scope.data;
+                var el = element[0];
+                var width = el.clientWidth;
+                var height = el.clientHeight;
+
+                var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
+
+                var yAxis = d3.svg.axis().scale(yScale).orient('left');
+
+                var canvas = d3.select(el).append('svg')
+                        .attr("height", height)
+                        .attr("width", width);
+
+
+                scope.$watch('data', function(updatedData){
+                    var data = updatedData;
+                    var unique = {};
+                    var distinct = [];
+                    data.forEach(function (x) {
+                    if (!unique[x['Sample_Barcode']]) {
+                        distinct.push(x['Sample_Barcode']);
+                        unique[x['Sample_Barcode']] = true;
+                    }});
+
+                    var xScale = d3.scale.ordinal().rangePoints([40, 500]).domain(distinct);
+                    var xAxis = d3.svg.axis().scale(xScale);
+
+                    canvas.append("svg:g")
+                        .attr("class", "axis")
+                        .attr("transform", "translate(0," + 500 + ")")
+                        .call(xAxis);
+
+                    canvas.append("svg:g")
+                        .attr("class", "axis")
+                        .attr("transform", "translate(" + 4 + "0)")
+                        .call(yAxis);
+
+                }, true);
+            }
+        });
+
+    })();
+
+</script>
+<body ng-controller = "tevDataController as tevDataCtrl">
+
+<figure1-Plot data = "tevDataCtrl.tevData"></figure1-Plot>
+
+
+</body>
+</html>
