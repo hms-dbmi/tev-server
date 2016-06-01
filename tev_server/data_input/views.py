@@ -23,6 +23,7 @@ def data_to_database(request):
         results = tevSample()
         results.Hugo_Symbol = file[i][0]
         results.AA_Change = file[i][1]
+        results.allele = file[i][0] + '-' + file[i][1]
         results.Sample_Barcode = file[i][2]
         results.alt_count = int(file[i][3])
         results.ref_count = int(file[i][4])
