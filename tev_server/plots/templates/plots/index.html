@@ -6,14 +6,19 @@
 </head>
 <style>
     figure1-plot {
-    width: 650px;
-    height: 650px;
-    position: absolute;
+        float: left;
+        width: 650px;
+        height: 650px;
+    }
+    figure2-plot {
+        float: right;
+        width: 650px;
+        height: 650px;
     }
     .axis path, .axis line {
-            fill: none;
-            stroke: #000;
-            shape-rendering: crispEdges;
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
     }
 
 
@@ -23,6 +28,18 @@
 <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
 <script>
+    function uniqueAxisLabels(data, key) {
+        var unique = {};
+        var distinct = [];
+        data.forEach(function (x) {
+            if (!unique[x[key]]) {
+                distinct.push(x[key]);
+                unique[x[key]] = true;
+            }
+        });
+
+        return distinct;
+    }
 
     (function() {
         //Application name: tevApp
@@ -39,15 +56,16 @@
         //Services: scope, http
         tevApp.controller('tevDataController', ['$scope', '$http', function($scope, $http){
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
-            var request = this;
-            request.tevData = [];
+            $scope.tevData = [];
             //Get the data from the API
             $http.get('http://127.0.0.1:8000/tevdata/').success(function(data){
-               request.tevData = data;
+               $scope.tevData = data;
             });
 
         }]);
 
+        //Directive that contains d3 code to render allele frequency change over timepoints
+        //Plot type: Line plot
         tevApp.directive('figure1Plot', function(){
             return {
                scope: {
@@ -60,6 +78,7 @@
             function link(scope, element){
                 var data = scope.data;
                 var el = element[0];
+                console.log(el);
                 var width = el.clientWidth;
                 var height = el.clientHeight;
                 var strokeColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
@@ -75,31 +94,20 @@
 
 
                 scope.$watch('data', function(updatedData){
-                    var data = updatedData;
-                    var unique = {};
-                    var distinct = [];
-                    data.forEach(function (x) {
-                    if (!unique[x['Sample_Barcode']]) {
-                        distinct.push(x['Sample_Barcode']);
-                        unique[x['Sample_Barcode']] = true;
-                    }});
+                    data = updatedData;
 
-                    distinct.unshift('');
-                    distinct.push(' ');
+                    var axisLabels = uniqueAxisLabels(data, 'Sample_Barcode');
 
-                    var xScale = d3.scale.ordinal().rangePoints([40, 500]).domain(distinct);
+                    var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
-
-                    var lines = d3.scale.category10();
 
                     var lineGen = d3.svg.line()
                             .x(function(d){
                                 return xScale(d.Sample_Barcode);
-                    })
+                            })
                             .y(function(d){
-
                                 return yScale(d.alt_count/100);
-                    });
+                            });
 
                     var nestedData = d3.nest()
                             .key(function(d){
@@ -147,12 +155,209 @@
             }
         });
 
+        //Directive that contains d3 code to render distribution of allele frequency at timepoints
+        //Plot type: Box plots
+        tevApp.directive('figure2Plot', function(){
+            return{
+                restrict: 'E',
+                link: link,
+                scope: {
+                    data: '='
+                }
+            }
+
+            function link(scope, element){
+                var data = scope.data;
+                var el = element[0];
+                console.log(el);
+                var width = el.clientWidth;
+                var height = el.clientHeight;
+                var fillColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                                    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+
+                var canvas = d3.select(el).append("svg")
+                        .attr("height", height)
+                        .attr("width", width);
+
+                var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
+                var yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+                scope.$watch('data', function(updatedData){
+                    data = updatedData;
+
+                    var axisLabels = uniqueAxisLabels(data, 'allele');
+                    var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
+                    var xAxis = d3.svg.axis().scale(xScale);
+
+                    var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
+
+                    var boxData = [];
+                    nestedData.forEach(function(d, i){
+                        var quartileData = [];
+                        for(var j = 0; j < d.values.length; j++){
+                            quartileData[j] = d.values[j].alt_count/100;
+                        }
+                        quartileData.sort(function(a,b) { return a - b;});
+
+                        boxData[i] = {
+                            x: d.key,
+                            y: d3.quantile(quartileData, 0.75),
+                            Q3: d3.quantile(quartileData, 0.75),
+                            Q1: d3.quantile(quartileData, 0.25),
+                            median: d3.median(quartileData),
+                            pNinety: d3.quantile(quartileData, 0.90),
+                            pTen: d3.quantile(quartileData, 0.10),
+                            color: fillColors[i]
+
+                        };
+                    });
+
+                    //Start of d3 box plot
+
+                    canvas.selectAll('boxes')
+                            .data(boxData)
+                            .enter()
+                            .append('rect')
+                            .attr('x', function(d){
+                                return xScale(d.x) - 10;
+                            })
+                            .attr('y', function(d){
+                                return yScale(d.Q3);
+                            })
+                            .attr('width', 20)
+                            .attr('height', function(d){
+                                return (yScale(d.Q1) - yScale(d.Q3));
+                            })
+                            .attr('fill', function(d){
+                               return d.color;
+                            });
+
+                    canvas.selectAll('medianLines')
+                            .data(boxData)
+                            .enter()
+                            .append('line')
+                            .attr('x1', function(d){
+                                return xScale(d.x) - 10;
+                            })
+                            .attr('x2', function(d){
+                                return xScale(d.x) + 10;
+                            })
+                            .attr('y1', function(d){
+                                return yScale(d.median);
+                            })
+                            .attr('y2', function(d){
+                                return yScale(d.median);
+                            })
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1)
+                            .attr('fill', 'none');
+
+                    canvas.selectAll('upperVerticalBars')
+                            .data(boxData)
+                            .enter()
+                            .append('line')
+                            .attr('x1', function(d){
+                                return xScale(d.x);
+                            })
+                            .attr('x2', function(d){
+                                return xScale(d.x);
+                            })
+                            .attr('y1', function(d){
+                                return yScale(d.pNinety);
+                            })
+                            .attr('y2', function(d){
+                                return yScale(d.Q3);
+                            })
+                            .attr('fill', 'none')
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1);
+
+
+                    canvas.selectAll('lowerVerticalBars')
+                            .data(boxData)
+                            .enter()
+                            .append('line')
+                            .attr('x1', function(d){
+                                return xScale(d.x);
+                            })
+                            .attr('x2', function(d){
+                                return xScale(d.x);
+                            })
+                            .attr('y1', function(d){
+                                return yScale(d.Q1);
+                            })
+                            .attr('y2', function(d){
+                                return yScale(d.pTen);
+                            })
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1)
+                            .attr('fill', 'none');
+
+                    canvas.selectAll('pNinetyBars')
+                            .data(boxData)
+                            .enter()
+                            .append('line')
+                            .attr('x1', function(d){
+                                return xScale(d.x) - 10;
+                            })
+                            .attr('x2', function(d){
+                                return xScale(d.x) + 10;
+                            })
+                            .attr('y1', function(d){
+                                return yScale(d.pNinety);
+                            })
+                            .attr('y2', function(d){
+                                return yScale(d.pNinety);
+                            })
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1)
+                            .attr('fill', 'none');
+
+                    canvas.selectAll('pTenBars')
+                            .data(boxData)
+                            .enter()
+                            .append('line')
+                            .attr('x1', function(d){
+                                return xScale(d.x) - 10;
+                            })
+                            .attr('x2', function(d){
+                                return xScale(d.x) + 10;
+                            })
+                            .attr('y1', function(d){
+                                return yScale(d.pTen);
+                            })
+                            .attr('y2', function(d){
+                                return yScale(d.pTen);
+                            })
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1)
+                            .attr('fill', 'none');
+
+
+                    canvas.append("svg:g")
+                        .attr("class", "axis")
+                        .attr("transform", "translate(0," + 500 + ")")
+                        .call(xAxis)
+                            .selectAll("text")
+                            .style('text-anchor', 'end')
+                            .attr('transform', 'rotate(-65)');
+
+                    canvas.append("svg:g")
+                        .attr("class", "axis")
+                        .attr("transform", "translate(" + 4 + "0)")
+                        .call(yAxis);
+                }, true);
+            }
+        });
+
+
     })();
 
 </script>
-<body ng-controller = "tevDataController as tevDataCtrl">
+<body ng-controller = "tevDataController">
 
-<figure1-Plot data = "tevDataCtrl.tevData"></figure1-Plot>
+<figure1-plot data = "tevData"></figure1-plot>
+<figure2-plot data = "tevData"></figure2-plot>
 
 
 </body>
