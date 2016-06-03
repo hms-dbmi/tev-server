@@ -47,11 +47,11 @@
         tevApp.controller('tevDataController', ['$scope', '$http', function($scope, $http){
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
             $scope.tevData = [];
+            $scope.nestedAlleleData = [];
             //Get the data from the API
             $http.get('http://127.0.0.1:8000/tevdata/').success(function(data){
-               $scope.tevData = data;
+                $scope.tevData = data;
             });
-
         }]);
 
         //Directive that contains d3 code to render allele frequency change over timepoints
@@ -73,17 +73,18 @@
                 var strokeColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
                                     "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
 
-                var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
+                scope.$watch('data', function(updatedData){
+                    d3.select(el).select('svg').remove();
+                    console.log(scope);
 
-                var yAxis = d3.svg.axis().scale(yScale).orient("left");
+                    data = updatedData;
 
-                var canvas = d3.select(el).append("svg")
+                    var canvas = d3.select(el).append("svg")
                         .attr("height", height)
                         .attr("width", width);
 
-
-                scope.$watch('data', function(updatedData){
-                    data = updatedData;
+                    var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
+                    var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
                     var axisLabels = uniqueAxisLabels(data, 'Sample_Barcode');
 
@@ -107,7 +108,10 @@
                     var lineSvg = canvas.append("g");
                     var pointSvg = canvas.append("g");
 
+                    var index;
+
                     nestedData.forEach(function(d, i){
+
                         lineSvg.append("path")
                                 .attr("fill", "none")
                                 .attr("stroke", strokeColors[i])
@@ -163,15 +167,18 @@
                 var fillColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
                                     "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
 
-                var canvas = d3.select(el).append("svg")
+
+                scope.$watch('data', function(updatedData){
+                    d3.select(el).select('svg').remove();
+
+                    data = updatedData;
+
+                    var canvas = d3.select(el).append("svg")
                         .attr("height", height)
                         .attr("width", width);
 
-                var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
-                var yAxis = d3.svg.axis().scale(yScale).orient("left");
-
-                scope.$watch('data', function(updatedData){
-                    data = updatedData;
+                    var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
+                    var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
                     var axisLabels = uniqueAxisLabels(data, 'allele');
                     var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
@@ -338,14 +345,134 @@
             }
         });
 
+        tevApp.directive('figure5Plot', function(){
+
+            return {
+                restrict: 'A',
+                scope: {
+                    data: '='
+                },
+                link: link
+            }
+
+            function link(scope, element){
+                var data = scope.data;
+                var el = element[0];
+                var width = el.clientWidth;
+                var height = el.clientHeight;
+
+                var fillColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                                    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+
+                scope.$watch('data', function(updatedData){
+                    d3.select(el).select('svg').remove();
+
+                    data = updatedData;
+
+                    var canvas = d3.select(el).append('svg')
+                        .attr('width', width)
+                        .attr('height', height);
+
+                    var xAxisLabels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    xAxisLabels.unshift('origin');
+
+                    var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(xAxisLabels);
+                    var xAxis = d3.svg.axis().scale(xScale);
+
+                    var yScale = d3.scale.linear().range([40, 500], 0.5).domain([50, -50]);
+                    var yAxis = d3.svg.axis().scale(yScale).orient('left').ticks(0);
+
+                    var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
+
+                    //Dirty way of adding origin (tail fin of fish plot)
+                    /*******************************************************************************/
+                    /*Important to unshift, because order of making line matters for x values!!!!!*/
+                    /*******************************************************************************/
+                    for(var i = 0; i < nestedData.length; i++){
+                        nestedData[i].values.unshift({
+                           Sample_Barcode: 'origin',
+                            alt_count: 0
+                        });
+                    }
+
+                    var topLineGen = d3.svg.line()
+                            .interpolate('basis')
+                            .x(function(d){
+                                return xScale(d.Sample_Barcode);
+                            })
+                            .y(function(d){
+                               return yScale(d.alt_count/2);
+                            });
+
+                    var bottomLineGen = d3.svg.line()
+                            .interpolate('basis')
+                            .x(function(d){
+                                return xScale(d.Sample_Barcode);
+                            })
+                            .y(function(d){
+                               return yScale(-(d.alt_count/2));
+                            });
+
+                    //Get all of the x-values that make up the top line (will be same as bottom, symmetrical)
+                    //Then take area along y-axis between the top and bottom lines
+                    var areaBetweenLines = d3.svg.area()
+                            .interpolate('basis')
+                            .x(topLineGen.x())
+                            .y0(topLineGen.y())
+                            .y1(bottomLineGen.y());
+
+
+                    nestedData.forEach(function(d, i){
+
+                        canvas.append('path')
+                                .attr('fill', 'none')
+                                .attr('stroke', fillColors[i])
+                                .attr('stroke-width', 1)
+                                .attr('d', topLineGen(d.values));
+
+                        canvas.append('path')
+                                .attr('fill', 'none')
+                                .attr('stroke', fillColors[i])
+                                .attr('stroke-width', 1)
+                                .attr('d', bottomLineGen(d.values));
+
+                        canvas.append('path')
+                                .attr('fill', 'none')
+                                .attr('stroke', fillColors[i])
+                                .attr('stroke-width', 1)
+                                .attr('d', topLineGen(d.values));
+
+                        canvas.append('path')
+                                .datum(d.values)
+                                .attr('fill', fillColors[i])
+                                .attr('opacity', 0.75)
+                                .attr('d', areaBetweenLines);
+                    });
+
+
+                    canvas.append("svg:g")
+                        .attr("class", "axis")
+                        .attr("transform", "translate(0," + 500 + ")")
+                        .call(xAxis);
+
+                    canvas.append("svg:g")
+                        .attr("class", "axis")
+                        .attr("transform", "translate(" + 4 + "0)")
+                        .call(yAxis);
+
+                });
+            }
+
+        }, true);
 
     })();
 
 </script>
 <body ng-controller = "tevDataController">
 
-<div figure1-plot data="tevData" style="width: 650px; height: 650px"></div>
-<div figure2-plot data="tevData" style="width: 650px; height: 650px"></div>
+<div id="figure1" figure1-plot data="tevData" style="width: 550px; height: 650px; float:left;"></div>
+<div id="figure2" figure2-plot data="tevData" style="width: 550px; height: 650px; float: left;"></div>
+<div id="figure5" figure5-plot data="tevData" style="width: 550px; height: 650px; float: left;"></div>
 
 
 </body>
