@@ -44,13 +44,17 @@
 
         //Controller name: TevDataController
         //Services: scope, http
-        tevApp.controller('tevDataController', ['$scope', '$http', function($scope, $http){
+        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', function($scope, $http, $filter){
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
             $scope.tevData = [];
             $scope.nestedAlleleData = [];
+
+            var patientID = {{ patient_id }}
             //Get the data from the API
-            $http.get('http://127.0.0.1:8000/tevdata/').success(function(data){
-                $scope.tevData = data;
+            $http.get('http://127.0.0.1:8000/patientdata/').success(function(data){
+                var tevData = data;
+                tevData = $filter('filter')(tevData, {id: patientID})[0]
+                $scope.tevData = tevData.results;
             });
         }]);
 
