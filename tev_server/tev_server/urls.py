@@ -20,6 +20,7 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 router.register(r'tevdata', data_input_views.tevSampleViewSet)
+router.register(r'patientdata', data_input_views.patientViewSet)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),

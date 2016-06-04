@@ -7,6 +7,14 @@
 <body>
 
 <form method="post" action="data_to_database/" enctype="multipart/form-data">{% csrf_token %}
+    {{ patientid }}
+    <br/>
+    {{ physician }}
+    <br/>
+    {{ hospital }}
+    <br/>
+    {{ cancertype }}
+    <br/>
     {{ file }}
     <input type="submit" value="Upload"/>
 </form>

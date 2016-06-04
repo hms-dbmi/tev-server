@@ -1,7 +1,14 @@
-from .models import tevSample
+from .models import tevSample, patient
 from rest_framework import serializers
 
 class tevSampleSerializer(serializers.ModelSerializer):
     class Meta:
         model = tevSample
-        fields = '__all__'
+        fields = ('Hugo_Symbol', 'AA_Change', 'allele', 'Sample_Barcode', 'alt_count', 'ref_count')
+
+
+class patientSerializer(serializers.ModelSerializer):
+    results = tevSampleSerializer(many=True)
+    class Meta:
+        model = patient
+        fields = ('Patient_Identifier', 'Physician', 'Hospital', 'Cancer_Type', 'id', 'results')
