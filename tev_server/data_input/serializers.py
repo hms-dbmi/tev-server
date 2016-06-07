@@ -11,4 +11,4 @@ class patientSerializer(serializers.ModelSerializer):
     results = tevSampleSerializer(many=True)
     class Meta:
         model = patient
-        fields = ('Patient_Identifier', 'Physician', 'Hospital', 'Cancer_Type', 'id', 'results')
+        fields = ('PatientID', 'Physician', 'Hospital', 'Cancer_Type', 'ResearcherID', 'results')

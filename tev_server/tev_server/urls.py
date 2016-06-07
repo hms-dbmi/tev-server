@@ -26,5 +26,6 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^input/', include('data_input.urls')),
     url(r'^', include(router.urls)),
-    url(r'^plots/', include('plots.urls'))
+    url(r'^plots/', include('plots.urls')),
+    url(r'^users/', include('users.urls'))
 ]

@@ -3,13 +3,14 @@ from __future__ import unicode_literals
 from django.db import models
 
 class patient(models.Model):
-    Patient_Identifier = models.CharField(max_length=250)
+    PatientID = models.CharField(max_length=250)
     Physician = models.CharField(max_length=250)
+    ResearcherID = models.IntegerField()
     Hospital = models.CharField(max_length=250)
     Cancer_Type = models.CharField(max_length=1000)
 
     def __str__(self):
-        return self.Patient_Identifier
+        return self.PatientID
 
 class tevSample(models.Model):
     #Link each test result to a patient
