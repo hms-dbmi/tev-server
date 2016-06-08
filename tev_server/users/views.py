@@ -1,4 +1,5 @@
 from django.shortcuts import render, HttpResponse, redirect
+from django.http import Http404
 from django.contrib.auth.models import User
 from .forms import RegisterForm, LoginForm
 from django.contrib.auth import authenticate, login, logout
@@ -50,10 +51,24 @@ def loggedoutView(request):
     logout(request)
     return redirect('data_input:index')
 
-def userPatientPage(request):
+def patientsList(request):
     if str(request.user) != 'AnonymousUser':
         patients = patient.objects.filter(ResearcherID=request.user.id)
         context = {'patients': patients}
-        return render(request, 'users/patients.html', context)
+        return render(request, 'users/patientList.html', context)
     else:
         return HttpResponse("<h1> You need to log in </h1>")
+
+
+def patientProfile(request, PatientID):
+    try:
+        patientInfo = patient.objects.get(PatientID=PatientID, ResearcherID=request.user.id)
+        tevResults = patientInfo.results.all().order_by('Hugo_Symbol')
+        request.session['PatientID'] = PatientID
+        context = {'patientInfo': patientInfo,
+                   'tevResults': tevResults}
+    except patient.DoesNotExist:
+        raise Http404("You have no patient with ID " + str(PatientID))
+    return render(request, 'users/patientProfile.html', context)
+
+
