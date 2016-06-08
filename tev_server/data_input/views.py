@@ -36,27 +36,40 @@ def data_to_database(request):
         #Now we can reference it in the views of the plots app
         request.session['PatientID'] = patientInfo.PatientID
 
-        #########################################################
-        #  This depends on future files having same structure  #
-        ########################################################
         file = request.FILES.get('file')
-        file = file.read()
-        file = file.split('\n')
-        file = [row.split('\t') for row in file]
-
-        for i in range(1, len(file)):
-            results = tevSample()
-            results.patient = patientInfo
-            results.Hugo_Symbol = file[i][0]
-            results.AA_Change = file[i][1]
-            results.allele = file[i][0] + '-' + file[i][1]
-            results.Sample_Barcode = file[i][2]
-            results.alt_count = int(file[i][3])
-            results.ref_count = int(file[i][4])
-            results.save()
+        #Parse the Tev file
+        parseTevFile(file, patientInfo)
 
         return redirect('plots:index')
 
     else:
         return HttpResponse('<h1> You must be logged in to enter data </h1>')
 
+def add_data_to_patient(request):
+    newResults = request.FILES.get('file')
+    currentResults = patient.objects.get(ResearcherID=request.user.id,
+                                         PatientID=request.session['PatientID'])
+    parseTevFile(newResults, currentResults)
+    return redirect('users:patientProfile', request.session['PatientID'])
+
+
+
+#########################################################
+#  This depends on future files having same structure  #
+########################################################
+def parseTevFile(file, patientInfo):
+    file = file.read()
+    file = file.split('\n')
+    file = [row.split('\t') for row in file]
+
+    #Possible error: Have an empty line at bottom of file from hitting enter
+    for i in range(1, len(file)):
+        results = tevSample()
+        results.patient = patientInfo
+        results.Hugo_Symbol = file[i][0]
+        results.AA_Change = file[i][1]
+        results.allele = file[i][0] + '-' + file[i][1]
+        results.Sample_Barcode = file[i][2]
+        results.alt_count = int(file[i][3])
+        results.ref_count = int(file[i][4])
+        results.save()

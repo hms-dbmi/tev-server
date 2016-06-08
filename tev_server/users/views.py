@@ -5,6 +5,7 @@ from .forms import RegisterForm, LoginForm
 from django.contrib.auth import authenticate, login, logout
 from data_input.views import patient
 from tev_server import settings
+from data_input.forms import addTevDataFile
 
 def register(request):
     register = RegisterForm()
@@ -64,9 +65,11 @@ def patientProfile(request, PatientID):
     try:
         patientInfo = patient.objects.get(PatientID=PatientID, ResearcherID=request.user.id)
         tevResults = patientInfo.results.all().order_by('Hugo_Symbol')
+        addTevDataForm = addTevDataFile()
         request.session['PatientID'] = PatientID
         context = {'patientInfo': patientInfo,
-                   'tevResults': tevResults}
+                   'tevResults': tevResults,
+                   'addDataFile': addTevDataForm}
     except patient.DoesNotExist:
         raise Http404("You have no patient with ID " + str(PatientID))
     return render(request, 'users/patientProfile.html', context)

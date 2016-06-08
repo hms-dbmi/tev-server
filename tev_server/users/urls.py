@@ -1,6 +1,8 @@
 from django.conf.urls import url
 from . import views
 
+app_name = 'users'
+
 urlpatterns = [
     url(r'^register/', views.register, name='register'),
     url(r'^register_user/', views.register_user, name='register_user'),

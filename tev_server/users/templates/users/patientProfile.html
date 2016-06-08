@@ -38,7 +38,15 @@
 
 <br/>
 
-<form action="../../../plots">
+<form method="post" action={% url 'data_input:add_data_to_patient' %} enctype="multipart/form-data"> {% csrf_token %}
+    {{ addDataFile }}
+    <input type="submit" value="Upload Results">
+</form>
+
+<br/>
+<br/>
+
+<form action="{% url 'plots:index' %}">
     <input type="submit" value="Plot data">
 </form>
 
