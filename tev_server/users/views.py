@@ -55,7 +55,8 @@ def loggedoutView(request):
 def patientsList(request):
     if str(request.user) != 'AnonymousUser':
         patients = patient.objects.filter(ResearcherID=request.user.id)
-        context = {'patients': patients}
+        context = {'patients': patients,
+                   'researcher': request.user.username}
         return render(request, 'users/patientList.html', context)
     else:
         return HttpResponse("<h1> You need to log in </h1>")
