@@ -50,7 +50,7 @@ def loggedinView(request):
 
 def loggedoutView(request):
     logout(request)
-    return redirect('data_input:index')
+    return redirect('users:loginView')
 
 def patientsList(request):
     if str(request.user) != 'AnonymousUser':

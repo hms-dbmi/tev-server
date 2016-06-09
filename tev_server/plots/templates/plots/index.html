@@ -51,6 +51,8 @@
 
             var patientID = '{{ PatientID }}';
             var researcherID = {{ ResearcherID }};
+            var DendoData = {{ d3DendroData|safe }};
+            console.log(DendoData)
 
             //Get the data from the API
             $http.get('http://127.0.0.1:8000/patientdata/').success(function(data){
