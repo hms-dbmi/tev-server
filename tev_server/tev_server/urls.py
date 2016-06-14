@@ -19,13 +19,15 @@ from data_input import views as data_input_views
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-router.register(r'tevdata', data_input_views.tevSampleViewSet)
-router.register(r'patientdata', data_input_views.patientViewSet)
+router.register(r'api/v1/sources', data_input_views.SourceRESTAPI)
+router.register(r'api/v1/samples', data_input_views.SampleRESTAPI)
+router.register(r'api/v1/genes', data_input_views.GeneRESTAPI)
+router.register(r'api/v1/allele_variants', data_input_views.VariantAlleleRESTAPI)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^input/', include('data_input.urls')),
     url(r'^', include(router.urls)),
     url(r'^plots/', include('plots.urls')),
-    url(r'^users/', include('users.urls'))
+    url(r'^data/', include('data_manager.urls'))
 ]

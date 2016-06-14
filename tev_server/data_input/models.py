@@ -1,26 +1,40 @@
 from __future__ import unicode_literals
 
 from django.db import models
+import uuid
 
-class patient(models.Model):
-    PatientID = models.CharField(max_length=250)
-    Physician = models.CharField(max_length=250)
-    ResearcherID = models.IntegerField()
-    Hospital = models.CharField(max_length=250)
-    Cancer_Type = models.CharField(max_length=1000)
+class Source(models.Model):
+    name = models.CharField(max_length=250)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     def __str__(self):
-        return self.PatientID
+        return self.name
 
-class tevSample(models.Model):
-    #Link each test result to a patient
-    patient = models.ForeignKey(patient, on_delete=models.CASCADE, related_name='results', null=True)
-    Hugo_Symbol = models.CharField(max_length=150, null=True)
-    AA_Change = models.CharField(max_length=150, null=True)
-    allele = models.CharField(max_length=250, null=True)
-    Sample_Barcode = models.CharField(max_length=250, null=True)
-    alt_count = models.IntegerField(null=True)
-    ref_count = models.IntegerField(null=True)
+class Sample(models.Model):
+    source  = models.ForeignKey(Source, on_delete=models.CASCADE, related_name='Samples')
+    timepoint = models.CharField(max_length=250)
+    timestamp = models.DateField()
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     def __str__(self):
-        return self.Hugo_Symbol + '-' + self.AA_Change
+        return self.timepoint
+
+class Gene(models.Model):
+    hugo_symbol = models.CharField(max_length=250)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    def __str__(self):
+        return self.hugo_symbol
+
+class VariantAllele(models.Model):
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name='VariantAlleles')
+    gene = models.ForeignKey(Gene, on_delete=models.CASCADE, related_name='VariantAlleles')
+    AA_position = models.IntegerField()
+    AA_original = models.CharField(max_length=10)
+    AA_variant = models.CharField(max_length=10)
+    alternative_freq = models.IntegerField()
+    reference_freq = models.IntegerField()
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    def __str__(self):
+        return self.gene.hugo_symbol + '-' + self.AA_original + str(self.AA_position) + self.AA_variant

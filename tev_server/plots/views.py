@@ -1,53 +1,69 @@
 from django.shortcuts import render, HttpResponse
-from data_input.models import patient
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import linkage, to_tree
-import json, pprint
-#View to output plots of TEV test results right when patient first registered
+import json
+from data_input.models import Source
+
 def index(request):
-    PatientID = request.session['PatientID']
-    d3DendroData = cluster(request, PatientID)
-    d3DendroData = json.dumps(d3DendroData)
+    if 'source' in request.GET:
+        source = request.GET['source']
+    else:
+        source = request.session['source']
+
+    cluster_results = cluster(request, source)
+    d3_dendro_data = cluster_results[0]
+    dendro_y_data = cluster_results[1]
+    d3_dendro_data = json.dumps(d3_dendro_data)
 
     #Different researchers might give their patients the same ID
     #Data will be filtered from REST API by researcher/patient ID combination
-    context = {'PatientID': PatientID,
-               'ResearcherID': request.user.id,
-               'd3DendroData': d3DendroData}
+    context = {'source': source,
+               'd3_dendro_data': d3_dendro_data,
+               'dendro_y_data': dendro_y_data}
+
     return render(request, 'plots/index.html', context)
 
 
-def add_node(node, parent, alleles):
+def add_node(node, parent, alleles, y_array):
     # First create the new node and append it to its parent's children
     newNode = dict(children=[], name=node.id)
     if newNode['name'] >= len(alleles):
         newNode['name'] = " "
     else:
         newNode['name'] = alleles[newNode['name']]
+
     parent["children"].append(newNode)
+    #Append distance to y_array
+    y_array.append(node.dist)
 
     # Recursively add the current node's children
-    if node.left: add_node(node.left, newNode, alleles)
-    if node.right: add_node(node.right, newNode, alleles)
+    if node.left: add_node(node.left, newNode, alleles, y_array)
+    if node.right: add_node(node.right, newNode, alleles, y_array)
 
-def cluster(request, PatientID):
-    data = patient.objects.get(ResearcherID=request.user.id,
-                               PatientID=PatientID).results.get_queryset().order_by('allele')
+def cluster(request, source):
+    samples = Source.objects.get(uuid=source).Samples.get_queryset()
+    data = []
+    for sample in samples:
+        for allele in sample.VariantAlleles.get_queryset():
+            data.append({'allele': str(allele),
+                         'alternative_freq': allele.alternative_freq})
+
+    data = sorted(data, key=lambda k: k['allele'])
 
     matrix = []
     row = []
     alleles = []
 
-    current_allele = data[0].allele
+    current_allele = data[0]['allele']
     for i in range(0, len(data)):
-        if(data[i].allele == current_allele):
-            row.append(data[i].alt_count)
+        if(data[i]['allele'] == current_allele):
+            row.append(data[i]['alternative_freq'])
         else:
             matrix.append(row)
             row = []
             alleles.append(current_allele)
-            current_allele = data[i].allele
-            row.append(data[i].alt_count)
+            current_allele = data[i]['allele']
+            row.append(data[i]['alternative_freq'])
     #Append last row to matrix
     matrix.append(row)
     alleles.append(current_allele)
@@ -56,10 +72,12 @@ def cluster(request, PatientID):
     data_link = linkage(data_dist, method='complete')
     cluster_tree = to_tree(data_link, rd=False)
     d3Dendro = dict(children=[], name="Root1")
-    add_node(cluster_tree, d3Dendro, alleles)
+    #Will hold all of the y-value positions for the nodes on the dendrogram
+    y_array = []
+    add_node(cluster_tree, d3Dendro, alleles, y_array)
     #clip root tip
     d3Dendro = d3Dendro['children'][0]
-    return d3Dendro
+    return [d3Dendro, y_array]
 
 
 

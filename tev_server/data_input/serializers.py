@@ -1,14 +1,26 @@
-from .models import tevSample, patient
+from .models import Source, Sample, Gene, VariantAllele
 from rest_framework import serializers
 
-class tevSampleSerializer(serializers.ModelSerializer):
+class VariantAlleleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = tevSample
-        fields = ('Hugo_Symbol', 'AA_Change', 'allele', 'Sample_Barcode', 'alt_count', 'ref_count')
+        model = VariantAllele
+        fields = '__all__'
+
+class SampleSerializer(serializers.ModelSerializer):
+    VariantAlleles = VariantAlleleSerializer(many=True)
+    class Meta:
+        model = Sample
+        fields = ('source', 'timepoint', 'timestamp', 'VariantAlleles', 'uuid')
 
 
-class patientSerializer(serializers.ModelSerializer):
-    results = tevSampleSerializer(many=True)
+class SourceSerializer(serializers.ModelSerializer):
+    Samples = SampleSerializer(many=True)
     class Meta:
-        model = patient
-        fields = ('PatientID', 'Physician', 'Hospital', 'Cancer_Type', 'ResearcherID', 'results')
+        model = Source
+        fields = ('name', 'Samples', 'uuid')
+
+class GeneSerializer(serializers.ModelSerializer):
+    VariantAlleles = VariantAlleleSerializer(many=True)
+    class Meta:
+        model = Gene
+        fields = ('hugo_symbol', 'VariantAlleles', 'uuid')

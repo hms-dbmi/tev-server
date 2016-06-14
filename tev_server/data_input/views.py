@@ -1,75 +1,89 @@
 from django.shortcuts import render, HttpResponse, redirect
-from .forms import inputForm
-from .models import tevSample, patient
-from .serializers import tevSampleSerializer, patientSerializer
+from .forms import SourceForm, TevFileForm
+from .models import Source, Sample, Gene, VariantAllele
+from .serializers import SourceSerializer, SampleSerializer, GeneSerializer, VariantAlleleSerializer
 from rest_framework import viewsets
+from time import strftime
+import re
 
 def index(request):
-    input = inputForm()
-    context = {'input': input}
+    source = SourceForm()
+    tev_file = TevFileForm()
+    context = {'source': source,
+               'tev_file': tev_file}
     return render(request, 'data_input/index.html', context)
 
-#View for REST API containing only TEV test results
-class tevSampleViewSet(viewsets.ModelViewSet):
-    queryset = tevSample.objects.all()
-    serializer_class = tevSampleSerializer
+#View for REST API containing everything nested within a source
+class SourceRESTAPI(viewsets.ModelViewSet):
+     queryset = Source.objects.all()
+     serializer_class = SourceSerializer
 
-#View for REST API containing patient data with their TEV test results
-class patientViewSet(viewsets.ModelViewSet):
-    queryset = patient.objects.all()
-    serializer_class = patientSerializer
+class SampleRESTAPI(viewsets.ModelViewSet):
+    queryset = Sample.objects.all()
+    serializer_class = SampleSerializer
+
+class GeneRESTAPI(viewsets.ModelViewSet):
+    queryset = Gene.objects.all()
+    serializer_class = GeneSerializer
+
+class VariantAlleleRESTAPI(viewsets.ModelViewSet):
+    queryset = VariantAllele.objects.all()
+    serializer_class = VariantAlleleSerializer
+
+
 
 #View that parses the TEV test results
 #Saves patient information and TEV test information to database
 def data_to_database(request):
-    if str(request.user) != 'AnonymousUser':
         data = request.POST
-        patientInfo = patient()
-        patientInfo.PatientID = data['patientID']
-        patientInfo.Physician = data['physician']
-        patientInfo.ResearcherID = request.user.id
-        patientInfo.Hospital = data['hospital']
-        patientInfo.Cancer_Type = data['cancer_type']
-        patientInfo.save()
+        source = Source()
+        source.name = data['name']
+        source.save()
 
-        #Save the ID of the patient that was just entered in the session
+        #Save the uuid of the source that was just entered in the session
         #Now we can reference it in the views of the plots app
-        request.session['PatientID'] = patientInfo.PatientID
+        request.session['source'] = str(source.uuid)
 
         file = request.FILES.get('file')
         #Parse the Tev file
-        parseTevFile(file, patientInfo)
+        parse_tev_file(file, source)
 
         return redirect('plots:index')
-
-    else:
-        return HttpResponse('<h1> You must be logged in to enter data </h1>')
-
-def add_data_to_patient(request):
-    newResults = request.FILES.get('file')
-    currentResults = patient.objects.get(ResearcherID=request.user.id,
-                                         PatientID=request.session['PatientID'])
-    parseTevFile(newResults, currentResults)
-    return redirect('users:patientProfile', request.session['PatientID'])
 
 
 
 #########################################################
 #  This depends on future files having same structure  #
 ########################################################
-def parseTevFile(file, patientInfo):
+def parse_tev_file(file, source):
     file = file.read()
     file = file.split('\n')
     file = [row.split('\t') for row in file]
 
     #Possible error: Have an empty line at bottom of file from hitting enter
     for i in range(1, len(file)):
-        results = tevSample()
-        results.patient = patientInfo
-        results.Hugo_Symbol = file[i][0]
-        results.AA_Change = file[i][1]
-        results.allele = file[i][0] + '-' + file[i][1]
-        results.Sample_Barcode = file[i][2]
-        results.alt_count = int(file[i][3])
-        results.ref_count = int(file[i][4])
-        results.save()
+        if Sample.objects.filter(source=source, timepoint=file[i][2]).exists():
+            sample = Sample.objects.get(source=source, timepoint=file[i][2])
+        else:
+            sample = Sample()
+            sample.timepoint = file[i][2]
+            sample.timestamp = strftime("%Y-%m-%d")
+            sample.source = source
+            sample.save()
+        if Gene.objects.filter(hugo_symbol=file[i][0]).exists():
+            gene = Gene.objects.get(hugo_symbol=file[i][0])
+        else:
+            gene = Gene()
+            gene.hugo_symbol = file[i][0]
+            gene.save()
+        variant_allele = VariantAllele()
+        AA_change = file[i][1]
+        AA_change = re.split('(\d+)', AA_change)
+        variant_allele.AA_original = AA_change[0]
+        variant_allele.AA_position = int(AA_change[1])
+        variant_allele.AA_variant = AA_change[2]
+        variant_allele.sample = sample
+        variant_allele.gene = gene
+        variant_allele.alternative_freq = int(file[i][3])
+        variant_allele.reference_freq = int(file[i][4])
+        variant_allele.save()

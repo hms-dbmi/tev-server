@@ -42,26 +42,73 @@
             $interpolateProvider.endSymbol('$}');
         });
 
+        tevApp.factory('alleleify', function(){
+            return {
+                alleleify: function(data, gene_data){
+                    var allele_data = [];
+
+                    //Loop through to get all uuid
+                    //So we only have to access, instead of loop through for every amino acid change
+                    var gene_uuids = [];
+                    for(var i = 0; i < gene_data.length; i++){
+                        gene_uuids.push(gene_data[i].uuid);
+                    }
+
+                    for(var i = 0; i < data.length; i++){
+                        var timepoint = data[i].timepoint;
+                        var alleles = data[i].VariantAlleles;
+                        for(var j = 0; j < alleles.length; j++){
+                            var allele = gene_data[gene_uuids.indexOf(alleles[j].gene)].hugo_symbol
+                                    + '-'
+                                    + alleles[j].AA_original
+                                    + alleles[j].AA_position.toString()
+                                    + alleles[j].AA_variant;
+                            var alt_count = alleles[j].alternative_freq;
+                            allele_data.push({
+                                allele: allele,
+                                Sample_Barcode: timepoint,
+                                alt_count: alt_count
+                            });
+                        }
+                    }
+                    return allele_data;
+                }
+            };
+        });
+
         //Controller name: TevDataController
         //Services: scope, http
-        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', function($scope, $http, $filter){
+        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q',
+            function($scope, $http, $filter, allelify, $q){
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
-            $scope.tevData = [];
-            $scope.nestedAlleleData = [];
+                $scope.tevData = [];
+                $scope.alleleified_data = [];
+                $scope.nestedAlleleData = [];
+                $scope.dendro_data = [];
+                $scope.dendro_y_data = [];
 
-            var patientID = '{{ PatientID }}';
-            var researcherID = {{ ResearcherID }};
-            var DendoData = {{ d3DendroData|safe }};
-            console.log(DendoData)
+                var source_uuid = '{{ source }}';
+                var dendro_data = {{ d3_dendro_data|safe }};
+                var dendro_y_data = {{ dendro_y_data }};
 
             //Get the data from the API
-            $http.get('http://127.0.0.1:8000/patientdata/').success(function(data){
-                var tevData = data;
-                console.log(data);
-                tevData = $filter('filter')(tevData, {PatientID: patientID,
-                    ResearcherID: researcherID})[0]
-                $scope.tevData = tevData.results;
-            });
+                var source_data = $http.get('http://127.0.0.1:8000/api/v1/sources/');
+                var gene_data = $http.get('http://127.0.0.1:8000/api/v1/genes/');
+
+                $q.all([source_data, gene_data]).then(function(results_array){
+                    var gene_data = results_array[1].data;
+                    console.log(gene_data);
+                    var tevData = results_array[0].data;
+                    tevData = $filter('filter')(tevData, {'uuid': source_uuid})[0];
+                    $scope.tevData = tevData.Samples;
+
+                    $scope.alleleified_data = allelify.alleleify($scope.tevData, gene_data);
+
+                    //Send through this data, when the data from the API has been recieved
+                    $scope.dendro_data = dendro_data;
+                    $scope.dendro_y_data = dendro_y_data;
+                });
+
         }]);
 
         //Directive that contains d3 code to render allele frequency change over timepoints
@@ -85,8 +132,6 @@
 
                 scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
-                    console.log(scope);
-
                     data = updatedData;
 
                     var canvas = d3.select(el).append("svg")
@@ -167,7 +212,7 @@
                 scope: {
                     data: '='
                 }
-            }
+            };
 
             function link(scope, element){
                 var data = scope.data;
@@ -355,6 +400,129 @@
             }
         });
 
+        tevApp.directive('figure3Plot', function(){
+
+            return {
+               restrict: 'A',
+               scope: {
+                   data: '='
+               },
+               link: link
+            };
+
+            function link(scope, element){
+                var data = scope.data[0];
+                var dendro_y_positions = scope.data[1];
+                var el = element[0];
+                var width = el.clientWidth;
+                var height = el.clientHeight;
+
+                var cluster = d3.layout.cluster()
+                        .size([420, 420]);
+
+                scope.$watch('data', function(updatedData){
+                    d3.select(el).select('svg').remove();
+                    var canvas = d3.select(el).append('svg')
+                            .attr('height', height)
+                            .attr('width', width);
+
+                    data = updatedData[0];
+                    var dendro_y_positions = updatedData[1];
+                    var fish_bone_data = updatedData[2];
+
+                    var y_max = Math.max.apply(null, dendro_y_positions);
+                    var yScale = d3.scale.linear().domain([y_max, 0]).range([30, 450]);
+                    var yAxis = d3.svg.axis().scale(yScale).orient('top');
+
+                    var nodes = cluster.nodes(data);
+                    var links = cluster.links(nodes);
+
+                    nodes.forEach(function(d, i){
+                        d.y = dendro_y_positions[i];
+                    });
+
+                    var link = canvas.selectAll('.link')
+                            .data(links)
+                            .enter()
+                            .append('path')
+                            .attr('class', 'link')
+                            .attr('d', function elbow(d, i) {
+                                return "M" + yScale(d.source.y) + "," + d.source.x
+                                        + "V" + d.target.x + "H" + yScale(d.target.y);
+                            })
+                            .attr('fill', 'none')
+                            .attr('stroke', "#ccc")
+                            .attr('stroke-width', 1.5)
+                            .attr('transform', 'translate(0,40)');
+
+                    var node = canvas.selectAll('.node')
+                            .data(nodes)
+                            .enter()
+                            .append('g')
+                            .attr('class', 'node')
+                            .attr('transform', function(d){return "translate("+ yScale(d.y) + "," + (d.x + 40) + ")";});
+
+                    node.append('circle')
+                            .attr('r', 4.5);
+
+                    node.append("text")
+                            .attr("dx", function(d) { return d.children ? -8 : 8; })
+                            .attr("dy", 3)
+                            .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+                            .text(function(d) { return d.name; })
+                            .attr('font-size', 'small');
+
+                    canvas.append("svg:g")
+                            .attr("class", "axis")
+                            .attr('transform', 'translate(0, 25)')
+                            .call(yAxis);
+
+                });
+            }
+
+        }, true);
+
+        tevApp.directive('figure4Plot', function(){
+            return {
+                restrict: 'A',
+                scope: {
+                    data: '='
+                },
+                link: link
+            };
+
+            function link(scope, element){
+                var data = scope.data;
+                var el =  element[0];
+                var width = el.clientWidth;
+                var height = el.clientHeight;
+
+                var cluster = d3.layout.cluster()
+                        .size([420, 420]);
+
+                scope.$watch('data', function(updatedData){
+
+                    data = updatedData;
+
+                    var nodes = cluster.nodes(data);
+                    var links = cluster.links(nodes);
+
+                    var terminal_node_indices = [];
+
+                    nodes.forEach(function(d, i){
+                        if(d.children == undefined){
+                            terminal_node_indices.push(i);
+                        }
+                    });
+
+
+                    console.log(terminal_node_indices);
+
+                });
+            }
+
+        });
+
         tevApp.directive('figure5Plot', function(){
 
             return {
@@ -363,7 +531,7 @@
                     data: '='
                 },
                 link: link
-            }
+            };
 
             function link(scope, element){
                 var data = scope.data;
@@ -480,10 +648,24 @@
 </script>
 <body ng-controller = "tevDataController">
 
-<div id="figure1" figure1-plot data="tevData" style="width: 550px; height: 650px; float:left;"></div>
-<div id="figure2" figure2-plot data="tevData" style="width: 550px; height: 650px; float: left;"></div>
-<div id="figure5" figure5-plot data="tevData" style="width: 550px; height: 650px; float: left;"></div>
+<div id="figure1" figure1-plot data="alleleified_data" style="width: 550px; height: 650px; float:left;">
+</div>
 
+
+<div id="figure2" figure2-plot data="alleleified_data" style="width: 550px; height: 650px; float: left;">
+</div>
+
+<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, fish_bone_data]"
+     style="width: 550px; height: 650px; float: left;">
+</div>
+
+<!--
+<div id="figure4" figure4-plot data="dendro_data" style="width: 550px; height: 650px; float: left;">
+</div>
+-->
+
+<div id="figure5" figure5-plot data="alleleified_data" style="width: 550px; height: 650px; float: left;">
+</div>
 
 </body>
 </html>

@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'data_input',
     'plots',
-    'users',
+    'data_manager',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
