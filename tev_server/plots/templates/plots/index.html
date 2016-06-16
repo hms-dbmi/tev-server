@@ -31,6 +31,16 @@
         return distinct;
     }
 
+    function order_by_rank(data, rank_data){
+        var reordered_data = [];
+        for(var i = 0; i < data.length; i++){
+            var current_allele = data.findIndex(x => x.key == rank_data[i].allele);
+            current_allele = data[current_allele];
+            reordered_data[i] = current_allele;
+        }
+        return reordered_data;
+    }
+
     (function() {
         //Application name: tevApp
         //Dependencies: None
@@ -97,7 +107,6 @@
 
                 $q.all([source_data, gene_data]).then(function(results_array){
                     var gene_data = results_array[1].data;
-                    console.log(gene_data);
                     var tevData = results_array[0].data;
                     tevData = $filter('filter')(tevData, {'uuid': source_uuid})[0];
                     $scope.tevData = tevData.Samples;
@@ -552,12 +561,14 @@
                         .attr('height', height);
 
                     var xAxisLabels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    var num_of_timepoints = xAxisLabels.length;
+
                     xAxisLabels.unshift('origin');
 
                     var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(xAxisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
 
-                    var yScale = d3.scale.linear().range([40, 500], 0.5).domain([50, -50]);
+                    var yScale = d3.scale.linear().range([40, 500], 0.5).domain([100, -25]);
                     var yAxis = d3.svg.axis().scale(yScale).orient('left').ticks(0);
 
                     var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
@@ -573,13 +584,140 @@
                         });
                     }
 
+                    //Set up data for comparisons
+                    var fishplot_data = [];
+
+                    nestedData.forEach(function(d, i){
+                        var allele_data = {};
+                        allele_data['allele'] = d.key;
+                        allele_data['freqs'] = [];
+                        var freqs = d.values;
+                        for(var j = 0; j < freqs.length; j++){
+                            allele_data['freqs'].push(freqs[j].alt_count);
+                        }
+                        fishplot_data.push(allele_data);
+                    });
+
+                    var sort_array = [];
+                    for(var i = 0; i < fishplot_data.length; i++){
+                        //Have to rank when ordering, because a subclone that develops later
+                        //cannot be parent of clone that derived earlier, even if it has a higher variant allele freq
+                        var ranking_adjustment = Math.pow(10, num_of_timepoints);
+                        var allele_freqs = fishplot_data[i].freqs;
+                        for(var j = 1; j < allele_freqs.length; j++){
+                            if(allele_freqs[j] != 0){
+                                var rank = ranking_adjustment * allele_freqs[j];
+                                sort_array.push({
+                                    allele: fishplot_data[i].allele,
+                                    rank: rank
+                                });
+                                break;
+                            }
+                            ranking_adjustment = ranking_adjustment/10;
+                        }
+                    }
+
+                    sort_array.sort(function(a, b){
+                       return b.rank - a.rank;
+                    });
+
+                    //Order data based on rank
+                    nestedData = order_by_rank(nestedData, sort_array);
+
+                    var plot_background = {};
+                    plot_background.key = "plot";
+                    plot_background.values = [];
+                    plot_background.values.length = nestedData[0].values.length;
+                    plot_background.values.fill({alt_count: 100});
+                    plot_background.children = [0];
+
+                    //Initialize first parent group
+                    nestedData[0].group = 0;
+                    nestedData[0].start_point = 50;
+                    nestedData[0].parent_index_of_this = "plot";
+                    nestedData[0].children = [];
+
+
+                    for(var i = 1; i < nestedData.length; i++) {
+                        var current_allele_data = nestedData[i];
+                        var former_allele_data = nestedData[i-1];
+                        current_allele_data.group = former_allele_data.group;
+                        current_allele_data.start_point = former_allele_data.start_point;
+                        current_allele_data.parent_index_of_this = i-1;
+                        current_allele_data.children = [];
+
+                        //check if it can fit inside it's parent
+                        var append_as_child = 'yes';
+                        var parent_of_child_index = i;
+                        for(var j = 1; j < current_allele_data.values.length; j++){
+                            if(current_allele_data.values[j].alt_count > former_allele_data.values[j].alt_count) {
+                                append_as_child = 'no';
+                                break;
+                            }
+                        }
+                        if(append_as_child == 'yes'){
+                            former_allele_data.children.push(parent_of_child_index);
+                        }
+                        else {
+                            var done = 0;
+                            while (done != 1){
+                                var next_up = former_allele_data.parent_index_of_this;
+                                if(next_up == "plot"){
+                                    var parent_allele = plot_background;
+                                }
+                                else{
+                                    var parent_allele = nestedData[next_up];
+                                }
+                                //Check if it can fit inside parent_allele alongside parent_allele's children
+                                //Array that holds total freq of children alleles at timepoint
+                                var total_children_freq = [];
+                                total_children_freq.length = parent_allele.values.length;
+                                total_children_freq.fill(0);
+                                for(var j = 0; j < parent_allele.children.length; j++){
+                                    var child_allele = parent_allele.children[j];
+                                    child_allele = nestedData[child_allele];
+                                    for(var k = 0; k < total_children_freq.length; k++){
+                                        total_children_freq[k] = child_allele.values[k].alt_count + total_children_freq[k];
+                                    }
+                                }
+                                //Now add the current_allele values to the children total and see if they fit inside of parent
+                                var check_if_fits = 1;
+                                for(var j = 0; j < total_children_freq.length; j++){
+                                    if((total_children_freq[j] + current_allele_data.values[j].alt_count) > parent_allele.values[j].alt_count){
+                                        former_allele_data = parent_allele;
+                                        check_if_fits = 0;
+                                    }
+                                }
+                                if(check_if_fits == 1){
+                                    parent_allele.children.push(i);
+                                    if(parent_allele.key == "plot"){
+                                        current_allele_data.group = (parent_allele.children.length - 1);
+                                        var start_point_space = 100/parent_allele.children.length;
+                                        var base_start_point = start_point_space/2;
+                                        for(var g = 0; g < i+1; g++){
+                                            var start = base_start_point + (nestedData[g].group * start_point_space);
+                                            nestedData[g].start_point = start;
+                                            //load start data into
+                                            for(var v = 0; v < nestedData[g].values.length; v++){
+                                                nestedData[g].values[v].start_point = start;
+                                            }
+                                        }
+                                    }
+                                    done = 1;
+                                }
+                            }
+                        }
+                    }
+
+                    console.log(nestedData);
+
                     var topLineGen = d3.svg.line()
                             .interpolate('basis')
                             .x(function(d){
                                 return xScale(d.Sample_Barcode);
                             })
                             .y(function(d){
-                               return yScale(d.alt_count/2);
+                               return yScale(d.start_point + d.alt_count/2);
                             });
 
                     var bottomLineGen = d3.svg.line()
@@ -588,7 +726,7 @@
                                 return xScale(d.Sample_Barcode);
                             })
                             .y(function(d){
-                               return yScale(-(d.alt_count/2));
+                               return yScale(d.start_point - d.alt_count/2);
                             });
 
                     //Get all of the x-values that make up the top line (will be same as bottom, symmetrical)
