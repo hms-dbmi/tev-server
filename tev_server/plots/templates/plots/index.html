@@ -59,9 +59,12 @@
         //If it is not the actuall origin
         if(zeros.length > 1){
             allele_data.splice(0, zeros.length);
-            var pinched_timepoint = allele_data[0];
-            pinched_timepoint.pinch = true;
+            var pinched_timepoint = {}
+            pinched_timepoint.allele = allele_data[0].allele;
+            pinched_timepoint.Sample_Barcode = allele_data[0].Sample_Barcode;
             pinched_timepoint.alt_count = 0;
+            pinched_timepoint.pinch = true;
+            pinched_timepoint.start_point = allele_data[0].start_point;
             allele_data.unshift(pinched_timepoint);
         }
         return allele_data;
@@ -663,6 +666,7 @@
                     nestedData[0].start_point = 50;
                     nestedData[0].parent_index_of_this = "plot";
                     nestedData[0].children = [];
+                    nestedData[0].id = 0;
 
 
                     for(var i = 1; i < nestedData.length; i++) {
@@ -672,10 +676,8 @@
                         current_allele_data.start_point = former_allele_data.start_point;
                         current_allele_data.parent_index_of_this = i-1;
                         current_allele_data.children = [];
+                        current_allele_data.id = i;
 
-                        console.log("-------------------");
-                        console.log(current_allele_data);
-                        console.log(former_allele_data);
 
                         //check if it can fit inside its parent
                         var append_as_child = 'yes';
@@ -691,23 +693,29 @@
                         }
                         else {
                             var done = 0;
-                            var groups_used = [];
+                            var children_used = [];
                             while (done != 1){
                                 var next_up = former_allele_data.parent_index_of_this;
                                 current_allele_data.parent_index_of_this = next_up;
                                 if(next_up == "plot"){
-                                    groups_used.push(former_allele_data.group);
-                                    var groups = plot_background.children.diff(groups_used);
-                                    if(groups.length == 0) {
+                                    children_used.push(former_allele_data.id);
+                                    var children = plot_background.children.diff(children_used);
+                                    if(children.length == 0) {
                                         var parent_allele = plot_background;
                                     }
                                     else {
-                                        var next_group = groups[0];
+                                        var next_group = nestedData[children[0]].group;
                                         //find the last allele that was a child of the new group
-                                        for(var l = i; l > 0; l--){
+                                        for(var l = i; l >= 0; l--){
                                             if(nestedData[l].group == next_group){
-                                                former_allele_data = nestedData[l];
-                                                parent_allele = former_allele_data.parent_index_of_this;
+                                                parent_allele = nestedData[l];
+                                                var new_group_dummy_data = {};
+                                                new_group_dummy_data.group = next_group;
+                                                new_group_dummy_data.parent_index_of_this = parent_allele.id;
+                                                new_group_dummy_data.values = [];
+                                                new_group_dummy_data.values.length = parent_allele.values.length;
+                                                new_group_dummy_data.values.fill({alt_count: 0})
+                                                former_allele_data = new_group_dummy_data;
                                                 break;
                                             }
                                         }
@@ -747,6 +755,10 @@
                                             nestedData[g].start_point = start;
                                         }
                                     }
+                                    else{
+                                        current_allele_data.group = parent_allele.group;
+                                        current_allele_data.start_point = parent_allele.start_point;
+                                        }
                                     done = 1;
                                 }
                             }
@@ -771,7 +783,7 @@
                             .interpolate('basis')
                             .x(function(d){
                                 if(d.pinch == true){
-                                    return (xScale(d.Sample_Barcode) - 5);
+                                    return (xScale(d.Sample_Barcode) - 30);
                                 }
                                 return xScale(d.Sample_Barcode);
                             })
@@ -783,7 +795,7 @@
                             .interpolate('basis')
                             .x(function(d){
                                 if(d.pinch == true){
-                                    return (xScale(d.Sample_Barcode) - 5);
+                                    return (xScale(d.Sample_Barcode) - 30);
                                 }
                                 return xScale(d.Sample_Barcode);
                             })
