@@ -65,6 +65,8 @@
             pinched_timepoint.alt_count = 0;
             pinched_timepoint.pinch = true;
             pinched_timepoint.start_point = allele_data[0].start_point;
+            pinched_timepoint.top = allele_data[0].start_point;
+            pinched_timepoint.bottom = allele_data[0].start_point;
             allele_data.unshift(pinched_timepoint);
         }
         return allele_data;
@@ -606,7 +608,7 @@
                     var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(xAxisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
 
-                    var yScale = d3.scale.linear().range([40, 500], 0.5).domain([100, -25]);
+                    var yScale = d3.scale.linear().range([40, 500], 0.5).domain([101, -1]);
                     var yAxis = d3.svg.axis().scale(yScale).orient('left').ticks(0);
 
                     var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
@@ -722,8 +724,9 @@
                                                 new_group_dummy_data.parent_index_of_this = parent_allele.id;
                                                 new_group_dummy_data.values = [];
                                                 new_group_dummy_data.values.length = parent_allele.values.length;
-                                                new_group_dummy_data.values.fill({alt_count: 0})
+                                                new_group_dummy_data.values.fill({alt_count: 0});
                                                 former_allele_data = new_group_dummy_data;
+                                                current_allele_data.parent_index_of_this = parent_allele.id;
                                                 break;
                                             }
                                         }
@@ -773,6 +776,112 @@
                         }
                     }
 
+                    //Is one < 0 or > 100?
+                    function parent_border_collision_detection(parent, start_point, min, max) {
+                            for (var j = 0; j < parent.values.length; j++) {
+                                if ((start_point - parent.values[j].alt_count / 2) < min) {
+                                    parent.values[j].bottom = min;
+                                    parent.values[j].top = parent.values[j].alt_count;
+                                }
+                                else if ((start_point + parent.values[j].alt_count / 2) > max) {
+                                    parent.values[j].top = max;
+                                    parent.values[j].bottom = max - parent.values[j].alt_count;
+                                }
+                                else {
+                                    parent.values[j].top = (start_point + parent.values[j].alt_count / 2);
+                                    parent.values[j].bottom = (start_point - parent.values[j].alt_count / 2);
+                                }
+                            }
+                        return parent;
+                        }
+
+                    //Find where the lines of the border should be, adjusting so that no line goes below 0
+                    //and no line goes above 100
+                    for(var i = 0; i < plot_background.children.length; i++) {
+                        var parent = nestedData[plot_background.children[i]];
+                        var start_point = parent.start_point;
+                        nestedData[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                    }
+
+                    //pass in nestedData, and the index representing the timepoint
+                    function collision_detection(data, children, timepoint_index, min, max){
+                        var range = max - min;
+                        var total_alt_counts = 0;
+                        for(var i = 0; i < children.length; i++){
+                            //loop through children, and see where we can move the tops and bottoms
+                            total_alt_counts = data[children[i]].values[timepoint_index].alt_count + total_alt_counts;
+                        }
+                        var space = (range - total_alt_counts)/(children.length-1);
+                        for(var i = 1; i < children.length; i++){
+                            var new_bottom = data[children[i-1]].values[timepoint_index].top + space;
+                            data[children[i]].values[timepoint_index].bottom = new_bottom;
+                            data[children[i]].values[timepoint_index].top = new_bottom + data[children[i]].values[timepoint_index].alt_count;
+                        }
+                        return data;
+                    }
+
+                    //Find if there are any conflicts with the adjusted borders
+                    for(var i = 0; i < num_of_timepoints+1; i++){
+                        for(var j = 1; j < plot_background.children.length; j++){
+                            var last_top = nestedData[plot_background.children[j-1]].values[i].top;
+                            var current_bottom = nestedData[plot_background.children[j]].values[i].bottom;
+                            if(current_bottom < last_top){
+                                nestedData = collision_detection(nestedData, plot_background.children, i, 0, 100);
+                                break;
+                            }
+                        }
+                    }
+
+                    //Adjust children top and bottom based on parents
+                    for(var i = 0; i < plot_background.children.length; i++){
+                        var parent = nestedData[plot_background.children[i]];
+                        var children = parent.children;
+                        var start_point = parent.start_point;
+                        var done = 0;
+                        if(children.length != 0) {
+                            while (done != 1) {
+                                var start_point_space = parent.values[0].alt_count/children.length;
+                                var start_point_base = start_point_space/2;
+                                for(var j = 0; j < children.length; j++){
+                                    var child = nestedData[children[j]];
+                                    child.start_point = start_point_base + (start_point_space * j) + parent.values[j].bottom;
+                                    for(k = 0; k < child.values.length; k++){
+                                        child.values[k].start_point = child.start_point;
+                                        if ((child.start_point - child.values[k].alt_count / 2) < parent.values[k].bottom) {
+                                            child.values[k].bottom = parent.values[k].bottom;
+                                            child.values[k].top = child.values[k].bottom + child.values[k].alt_count;
+                                        }
+                                        else if (( child.start_point + child.values[k].alt_count / 2) > parent.values[k].top) {
+                                            child.values[k].top = parent.values[k].top;
+                                            child.values[k].bottom = child.values[k].top - child.values[k].alt_count;
+                                        }
+                                        else {
+                                            child.values[k].top = (child.start_point + child.values[k].alt_count / 2);
+                                            child.values[k].bottom = (child.start_point - child.values[k].alt_count / 2);
+                                        }
+                                    }
+                                }
+                                for(var j = 0; j < num_of_timepoints+1; j++){
+                                    nestedData = collision_detection(nestedData, children, j, parent.values[j].bottom, parent.values);
+                                }
+                                //center each child in parent, and then see if it still fits
+                                for (var j = 0; j < child.values.length; j++) {
+                                    var space = parent.values[j].alt_count - child.values[j].alt_count;
+                                    child.values[j].bottom = parent.values[j].bottom + space/2;
+                                    child.values[j].top = parent.values[j].top - space/2;
+                                }
+                                /////
+                                ///// Prob here if more than 1 child?
+                                /////
+                                parent = child;
+                                children = parent.children;
+                                if(children.length == 0){
+                                    done = 1;
+                                }
+                            }
+                        }
+                    }
+
                     //load start data into values
                     for(var i = 0; i < nestedData.length; i++){
                         var current_allele = nestedData[i];
@@ -796,7 +905,7 @@
                                 return xScale(d.Sample_Barcode);
                             })
                             .y(function(d){
-                               return yScale(d.start_point + d.alt_count/2);
+                               return yScale(d.top);
                             });
 
                     var bottomLineGen = d3.svg.line()
@@ -808,7 +917,7 @@
                                 return xScale(d.Sample_Barcode);
                             })
                             .y(function(d){
-                               return yScale(d.start_point - d.alt_count/2);
+                               return yScale(d.bottom);
                             });
 
                     //Get all of the x-values that make up the top line (will be same as bottom, symmetrical)
