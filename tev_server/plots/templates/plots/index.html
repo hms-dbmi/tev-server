@@ -45,7 +45,8 @@
     return this.filter(function(i) {return a.indexOf(i) < 0;});
     };
 
-    function find_origin(allele_data){
+    function find_origin(current_allele, plot_background, nestedData){
+        var allele_data = current_allele.values;
         var zeros = [];
         //Find out if origin is the only timepoint that has an alternative allele frequency of zero
         for(var i = 0; i < allele_data.length; i++){
@@ -59,14 +60,21 @@
         //If it is not the actuall origin
         if(zeros.length > 1){
             allele_data.splice(0, zeros.length);
-            var pinched_timepoint = {}
+            var pinched_timepoint = {};
+            var start_point = allele_data[0].start_point;
+            var parent = current_allele.parent_index_of_this;
+            if(parent != "plot") {
+                var group = plot_background.groups[current_allele.group.toString()];
+                group = nestedData[group];
+                start_point = (group.values[zeros.length].top + group.values[zeros.length].bottom)/2;
+            }
             pinched_timepoint.allele = allele_data[0].allele;
             pinched_timepoint.Sample_Barcode = allele_data[0].Sample_Barcode;
             pinched_timepoint.alt_count = 0;
             pinched_timepoint.pinch = true;
-            pinched_timepoint.start_point = allele_data[0].start_point;
-            pinched_timepoint.top = allele_data[0].start_point;
-            pinched_timepoint.bottom = allele_data[0].start_point;
+            pinched_timepoint.start_point = start_point;
+            pinched_timepoint.top = start_point;
+            pinched_timepoint.bottom = start_point;
             allele_data.unshift(pinched_timepoint);
         }
         return allele_data;
@@ -670,6 +678,7 @@
                     plot_background.values.length = nestedData[0].values.length;
                     plot_background.values.fill({alt_count: 100});
                     plot_background.children = [0];
+                    plot_background.groups = {0: 0}
 
                     //Initialize first parent group
                     nestedData[0].group = 0;
@@ -759,6 +768,7 @@
                                     parent_allele.children.push(i);
                                     if(parent_allele.key == "plot"){
                                         current_allele_data.group = (parent_allele.children.length - 1);
+                                        plot_background.groups[current_allele_data.group.toString()] = i;
                                         var start_point_space = 100/parent_allele.children.length;
                                         var base_start_point = start_point_space/2;
                                         for(var g = 0; g < i+1; g++){
@@ -870,9 +880,9 @@
                                     child.values[j].bottom = parent.values[j].bottom + space/2;
                                     child.values[j].top = parent.values[j].top - space/2;
                                 }
-                                /////
-                                ///// Prob here if more than 1 child?
-                                /////
+                                //////////////////////////////////////////////////////////////
+                                /////           Prob here if more than 1 child?      ////////
+                                /////////////////////////////////////////////////////////////
                                 parent = child;
                                 children = parent.children;
                                 if(children.length == 0){
@@ -891,7 +901,7 @@
                             //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                             current_allele.values[j].pinch = false;
                         }
-                        current_allele.values = find_origin(current_allele.values);
+                        current_allele.values = find_origin(current_allele, plot_background, nestedData);
                     }
 
                     console.log(nestedData);
