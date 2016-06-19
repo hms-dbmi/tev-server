@@ -59,6 +59,10 @@
         }
         //If it is not the actuall origin
         if(zeros.length > 1){
+            var previous_timepoint = allele_data[zeros.length-1].Sample_Barcode;
+            var previous_top = allele_data[zeros.length-1].top;
+            var previous_bottom = allele_data[zeros.length-1].bottom;
+
             allele_data.splice(0, zeros.length);
             var pinched_timepoint = {};
             var start_point = allele_data[0].start_point;
@@ -70,11 +74,14 @@
             }
             pinched_timepoint.allele = allele_data[0].allele;
             pinched_timepoint.Sample_Barcode = allele_data[0].Sample_Barcode;
+            pinched_timepoint.previous_timepoint = previous_timepoint;
             pinched_timepoint.alt_count = 0;
             pinched_timepoint.pinch = true;
             pinched_timepoint.start_point = start_point;
-            pinched_timepoint.top = start_point;
-            pinched_timepoint.bottom = start_point;
+            pinched_timepoint.previous_top = previous_top;
+            pinched_timepoint.top = allele_data[0].top;
+            pinched_timepoint.bottom = allele_data[0].bottom;
+            pinched_timepoint.previous_bottom = previous_bottom;
             allele_data.unshift(pinched_timepoint);
         }
         return allele_data;
@@ -910,11 +917,26 @@
                             .interpolate('basis')
                             .x(function(d){
                                 if(d.pinch == true){
-                                    return (xScale(d.Sample_Barcode) - 30);
+                                    var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
+                                    x_pos = (x_pos/4)*3;
+                                    x_pos = x_pos + xScale(d.previous_timepoint);
+                                    return x_pos;
                                 }
                                 return xScale(d.Sample_Barcode);
                             })
                             .y(function(d){
+                                if(d.pinch == true){
+                                    var y_pos_top = yScale(d.top) + yScale(d.previous_top);
+                                    y_pos_top = y_pos_top/2;
+
+                                    var y_pos_bottom = yScale(d.bottom) + yScale(d.previous_bottom);
+                                    y_pos_bottom = y_pos_bottom/2;
+
+                                    var y_pos = y_pos_top + y_pos_bottom;
+                                    y_pos = y_pos/2;
+
+                                    return y_pos
+                                }
                                return yScale(d.top);
                             });
 
@@ -922,11 +944,26 @@
                             .interpolate('basis')
                             .x(function(d){
                                 if(d.pinch == true){
-                                    return (xScale(d.Sample_Barcode) - 30);
+                                    var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
+                                    x_pos = (x_pos/3)*2;
+                                    x_pos = x_pos + xScale(d.Sample_Barcode);
+                                    return x_pos;
                                 }
                                 return xScale(d.Sample_Barcode);
                             })
                             .y(function(d){
+                                if(d.pinch == true){
+                                    var y_pos_top = yScale(d.top) + yScale(d.previous_top);
+                                    y_pos_top = y_pos_top/2;
+
+                                    var y_pos_bottom = yScale(d.bottom) + yScale(d.previous_bottom);
+                                    y_pos_bottom = y_pos_bottom/2;
+
+                                    var y_pos = y_pos_top + y_pos_bottom;
+                                    y_pos = y_pos/2;
+
+                                    return y_pos
+                                }
                                return yScale(d.bottom);
                             });
 
