@@ -70,6 +70,7 @@
             if(parent != "plot") {
                 var group = plot_background.groups[current_allele.group.toString()];
                 group = nestedData[group];
+                console.log(group)
                 start_point = (group.values[zeros.length].top + group.values[zeros.length].bottom)/2;
             }
             pinched_timepoint.allele = allele_data[0].allele;
@@ -828,7 +829,8 @@
                             //loop through children, and see where we can move the tops and bottoms
                             total_alt_counts = data[children[i]].values[timepoint_index].alt_count + total_alt_counts;
                         }
-                        var space = (range - total_alt_counts)/(children.length-1);
+                        var space = (range - total_alt_counts);
+                            space = space / (children.length+1);
                         for(var i = 1; i < children.length; i++){
                             var new_bottom = data[children[i-1]].values[timepoint_index].top + space;
                             data[children[i]].values[timepoint_index].bottom = new_bottom;
@@ -850,19 +852,21 @@
                     }
 
                     //Adjust children top and bottom based on parents
-                    for(var i = 0; i < plot_background.children.length; i++){
-                        var parent = nestedData[plot_background.children[i]];
-                        var children = parent.children;
-                        var start_point = parent.start_point;
-                        var done = 0;
-                        if(children.length != 0) {
-                            while (done != 1) {
-                                var start_point_space = parent.values[0].alt_count/children.length;
-                                var start_point_base = start_point_space/2;
-                                for(var j = 0; j < children.length; j++){
+                    for(var i = 0; i < nestedData.length; i++){
+                        var parent_index = nestedData[i].parent_index_of_this;
+                        if(parent_index != "plot") {
+                                var parent = nestedData[parent_index]
+                                var children = parent.children;
+                                var start_point = parent.start_point;
+                            //Potentially include and && the children has not already been checked
+                            //If parent has 2+ children, then the loop below will have taken care of those children already
+                            if(children.length != 0) {
+                                for (var j = 0; j < children.length; j++) {
                                     var child = nestedData[children[j]];
-                                    child.start_point = start_point_base + (start_point_space * j) + parent.values[j].bottom;
-                                    for(k = 0; k < child.values.length; k++){
+                                    for (k = 0; k < child.values.length; k++) {
+                                        var start_point_space = parent.values[k].alt_count / children.length;
+                                        var start_point_base = start_point_space / 2;
+                                        child.start_point = start_point_base + (start_point_space * j) + parent.values[k].bottom;
                                         child.values[k].start_point = child.start_point;
                                         if ((child.start_point - child.values[k].alt_count / 2) < parent.values[k].bottom) {
                                             child.values[k].bottom = parent.values[k].bottom;
@@ -878,32 +882,21 @@
                                         }
                                     }
                                 }
-                                for(var j = 0; j < num_of_timepoints+1; j++){
-                                    nestedData = collision_detection(nestedData, children, j, parent.values[j].bottom, parent.values);
+                                for (var j = 0; j < num_of_timepoints + 1; j++) {
+                                    nestedData = collision_detection(nestedData, children, j, parent.values[j].bottom, parent.values[j].top);
                                 }
-                                //center each child in parent, and then see if it still fits
-                                for (var j = 0; j < child.values.length; j++) {
-                                    var space = parent.values[j].alt_count - child.values[j].alt_count;
-                                    child.values[j].bottom = parent.values[j].bottom + space/2;
-                                    child.values[j].top = parent.values[j].top - space/2;
-                                }
-                                //////////////////////////////////////////////////////////////
-                                /////           Prob here if more than 1 child?      ////////
-                                /////////////////////////////////////////////////////////////
-                                parent = child;
-                                children = parent.children;
-                                if(children.length == 0){
-                                    done = 1;
-                                }
+                                ////////////////////////////////////////////////////////////////////////
+                                /////           Prob here if more than 1 child?                 ///////
+                                //// Need to traverse through... what if children very nested?  //////
+                                /////////////////////////////////////////////////////////////////////
                             }
                         }
                     }
 
-                    //load start data into values
+                    //load pinches
                     for(var i = 0; i < nestedData.length; i++){
                         var current_allele = nestedData[i];
                         for(var j = 0; j < current_allele.values.length; j++){
-                            current_allele.values[j].start_point = current_allele.start_point;
                             //Initialize all pinches to false
                             //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                             current_allele.values[j].pinch = false;
@@ -945,8 +938,8 @@
                             .x(function(d){
                                 if(d.pinch == true){
                                     var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
-                                    x_pos = (x_pos/3)*2;
-                                    x_pos = x_pos + xScale(d.Sample_Barcode);
+                                    x_pos = (x_pos/4)*3;
+                                    x_pos = x_pos + xScale(d.previous_timepoint);
                                     return x_pos;
                                 }
                                 return xScale(d.Sample_Barcode);
