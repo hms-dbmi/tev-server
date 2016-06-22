@@ -37,8 +37,10 @@ def add_node(node, parent, alleles, y_array):
     y_array.append(node.dist)
 
     # Recursively add the current node's children
-    if node.left: add_node(node.left, newNode, alleles, y_array)
-    if node.right: add_node(node.right, newNode, alleles, y_array)
+    if node.left:
+        add_node(node.left, newNode, alleles, y_array)
+    if node.right:
+        add_node(node.right, newNode, alleles, y_array)
 
 def cluster(request, source):
     samples = Source.objects.get(uuid=source).Samples.get_queryset()
