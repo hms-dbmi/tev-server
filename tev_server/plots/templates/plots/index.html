@@ -10,22 +10,34 @@
         stroke: #000;
         shape-rendering: crispEdges;
     }
+
     .node circle {
-  fill: #fff;
-  stroke: steelblue;
-  stroke-width: 1.5px;
-}
+        fill: #fff;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+    }
 
-.node {
-  font: 10px sans-serif;
-}
+    .node {
+        font: 10px sans-serif;
+    }
 
-.link {
-  fill: none;
-  stroke: #ccc;
-  stroke-width: 1.5px;
-}
+    .link {
+        fill: none;
+        stroke: #ccc;
+        stroke-width: 1.5px;
+    }
 
+    div.tooltip {
+        position: absolute;
+        text-align: center;
+        width: 100px;
+        height: 40px;
+        padding: 2px;
+        font: 12px sans-serif;
+        background: lightsteelblue;
+        border: 0px;
+        border-radius: 8px;
+    }
 
 </style>
 
@@ -75,32 +87,32 @@
         }
         //If it is not the actuall origin
         if(zeros.length > 1){
-            var previous_timepoint = allele_data[zeros.length-1].Sample_Barcode;
-            var previous_top = allele_data[zeros.length-1].top;
-            var previous_bottom = allele_data[zeros.length-1].bottom;
+{#            var previous_timepoint = allele_data[zeros.length-1].Sample_Barcode;#}
+{#            var previous_top = allele_data[zeros.length-1].top;#}
+{#            var previous_bottom = allele_data[zeros.length-1].bottom;#}
 
-            allele_data.splice(0, zeros.length);
-            var start_point = allele_data[0].start_point;
-            var pinched_timepoint = {};
-           console.log(allele_data);
-            if(parent != "plot") {
-                if(allele_data[0] != undefined) {
-                    start_point = allele_data[0].top + allele_data[0].bottom;
-                    start_point = start_point/2;
-                    console.log(start_point);
-                }
-            }
-            pinched_timepoint.allele = allele_data[0].allele;
-            pinched_timepoint.Sample_Barcode = allele_data[0].Sample_Barcode;
-            pinched_timepoint.previous_timepoint = previous_timepoint;
-            pinched_timepoint.alt_count = 0;
-            pinched_timepoint.pinch = true;
-            pinched_timepoint.start_point = start_point;
-            pinched_timepoint.previous_top = previous_top;
-            pinched_timepoint.top = start_point;
-            pinched_timepoint.bottom = start_point;
-            pinched_timepoint.previous_bottom = previous_bottom;
-            allele_data.unshift(pinched_timepoint);
+            allele_data.splice(0, zeros.length-1);
+{#            var start_point = allele_data[0].start_point;#}
+{#            var pinched_timepoint = {};#}
+{#           console.log(allele_data);#}
+{#            if(parent != "plot") {#}
+{#                if(allele_data[0] != undefined) {#}
+{#                    start_point = allele_data[0].top + allele_data[0].bottom;#}
+{#                    start_point = start_point/2;#}
+{#                    console.log(start_point);#}
+{#                }#}
+{#            }#}
+{#            pinched_timepoint.allele = allele_data[0].allele;#}
+{#            pinched_timepoint.Sample_Barcode = allele_data[0].Sample_Barcode;#}
+{#            pinched_timepoint.previous_timepoint = previous_timepoint;#}
+{#            pinched_timepoint.alt_count = 0;#}
+{#            pinched_timepoint.pinch = true;#}
+{#            pinched_timepoint.start_point = start_point;#}
+{#            pinched_timepoint.previous_top = previous_top;#}
+{#            pinched_timepoint.top = start_point;#}
+{#            pinched_timepoint.bottom = start_point;#}
+{#            pinched_timepoint.previous_bottom = previous_bottom;#}
+{#            allele_data.unshift(pinched_timepoint);#}
         }
         return allele_data;
     }
@@ -187,7 +199,7 @@
 
         //Directive that contains d3 code to render allele frequency change over timepoints
         //Plot type: Line plot
-        tevApp.directive('figure1Plot', function(){
+        tevApp.directive('figure1Plot', ['$compile',function($compile){
             return {
                scope: {
                    data: '='
@@ -206,11 +218,16 @@
 
                 scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
+                    d3.select(el).select('div').remove();
                     data = updatedData;
 
                     var canvas = d3.select(el).append("svg")
                         .attr("height", height)
                         .attr("width", width);
+
+                    var div_tooltip = d3.select(el).append("div")
+                            .attr("class", "tooltip")
+                            .style("opacity", 0);
 
                     var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
                     var yAxis = d3.svg.axis().scale(yScale).orient("left");
@@ -257,9 +274,30 @@
                                 .attr("y", function(d){
                                     return (yScale(d.alt_count/100) - 5);
                                 })
-                                .attr("width", 10)
-                                .attr("height", 10)
-                                .attr("fill", strokeColors[i]);
+                                .attr("width", 12)
+                                .attr("height", 12)
+                                .attr("fill", strokeColors[i])
+                                .on("mouseover", function(d){
+                                    div_tooltip.style("opacity", 0.9)
+                                    .html('<b>' +d.Sample_Barcode + '</b>'+ '<br/>' + '<br/>'
+                                            + d.allele + ': ' + '<b>' + d.alt_count + '</b>')
+                                            .style("top", (d3.event.pageY-40) + "px")
+                                            .style("left", (d3.event.pageX + 40) + "px");
+                                })
+                                .on("mouseout", function(){
+                                    div_tooltip.transition()
+                                            .duration(300)
+                                            .style('opacity', 0);
+                                });
+
+                        //remove directive so we dont erase what is not in $watch
+                        element.removeAttr("figure1-plot");
+
+                        // Compile d3 code so that tooltip shows
+                        $compile(element)(scope);
+
+                        // Re-add directive
+                        element.attr("figure1-plot");
                     });
 
 
@@ -275,7 +313,7 @@
 
                 }, true);
             }
-        });
+        }]);
 
         //Directive that contains d3 code to render distribution of allele frequency at timepoints
         //Plot type: Box plots
@@ -702,7 +740,8 @@
                     for(var i = 0; i < nestedData.length; i++){
                         nestedData[i].values.unshift({
                            Sample_Barcode: 'origin',
-                            alt_count: 0
+                            alt_count: 0,
+                            allele: nestedData[i].key
                         });
                     }
 
@@ -905,6 +944,8 @@
                         for(var i = 0; i < children.length; i++){
                             data[children[i]].values[timepoint_index].bottom = new_bottom;
                             data[children[i]].values[timepoint_index].top = new_bottom + data[children[i]].values[timepoint_index].alt_count;
+                            data[children[i]].values[timepoint_index].pinch_point = (data[children[i]].values[timepoint_index].top
+                            + data[children[i]].values[timepoint_index].bottom)/2;
                             new_bottom = data[children[i]].values[timepoint_index].top + space;
                         }
                         return data;
@@ -973,7 +1014,7 @@
 
                     console.log(nestedData);
                     var topLineGen = d3.svg.line()
-                            .interpolate('basis')
+                            .interpolate('linear')
                             .x(function(d){
                                 if(d.pinch == true){
                                     var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
@@ -988,7 +1029,7 @@
                             });
 
                     var bottomLineGen = d3.svg.line()
-                            .interpolate('basis')
+                            .interpolate('linear')
                             .x(function(d, i){
                                 if(d.pinch == true){
                                     var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
@@ -1005,7 +1046,7 @@
                     //Get all of the x-values that make up the top line (will be same as bottom, symmetrical)
                     //Then take area along y-axis between the top and bottom lines
                     var areaBetweenLines = d3.svg.area()
-                            .interpolate('basis')
+                            .interpolate('linear')
                             .x(topLineGen.x())
                             .y0(topLineGen.y())
                             .y1(bottomLineGen.y());
@@ -1015,21 +1056,17 @@
 
                         canvas.append('path')
                                 .attr('fill', 'none')
-                                .attr('stroke', fillColors[i])
-                                .attr('stroke-width', 1)
+                                .attr('stroke-width', 5)
+                                .attr("stroke", "transparent")
+                                .style("stroke-linejoin", "round")
                                 .attr('d', topLineGen(d.values));
 
                         canvas.append('path')
                                 .attr('fill', 'none')
-                                .attr('stroke', fillColors[i])
-                                .attr('stroke-width', 1)
+                                .attr("stroke", "transparent")
+                                .style("stroke-linejoin", "round")
+                                .attr('stroke-width', 8)
                                 .attr('d', bottomLineGen(d.values));
-
-                        canvas.append('path')
-                                .attr('fill', 'none')
-                                .attr('stroke', fillColors[i])
-                                .attr('stroke-width', 1)
-                                .attr('d', topLineGen(d.values));
 
                         canvas.append('path')
                                 .datum(d.values)
@@ -1037,6 +1074,7 @@
                                 .attr('opacity', 0.75)
                                 .attr('d', areaBetweenLines);
                     });
+
 
 
                     canvas.append("svg:g")
