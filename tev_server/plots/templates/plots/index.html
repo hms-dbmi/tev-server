@@ -566,6 +566,43 @@
                             .attr('height', height)
                             .attr('width', width);
 
+                    var sliderSvg = canvas.append('g');
+
+                    canvas = canvas.append('g')
+                            .attr('transform', 'translate(0, 75)');
+
+                    var drag = d3.behavior.drag()
+                                .on('drag', function (d) {
+                                    var slider = d3.select(this);
+                                    if (d3.event.x < 30){
+                                        slider.attr('cx', 30);
+                                    }
+                                    else if (d3.event.x > 450){
+                                        slider.attr('cx', 450);
+                                    }
+                                    else{
+                                        slider.attr('cx', d3.event.x);
+                                    }
+                                });
+
+                    sliderSvg.append('line')
+                            .attr('x1', 30)
+                            .attr('x2', 450)
+                            .attr('y1', 50)
+                            .attr('y2', 50)
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1.5)
+                            .attr('fill', 'none');
+
+                    sliderSvg.append('circle')
+                            .attr('r', 7)
+                            .attr('cy', 50)
+                            .attr('cx', 240)
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 0.5)
+                            .attr('fill', '#EEEEEE')
+                            .call(drag);
+
                     data = updatedData[0];
                     var dendro_y_positions = updatedData[1];
 
@@ -1129,14 +1166,14 @@
 </div>
 
 <div id="figure3" figure3-plot data="[dendro_data, dendro_y_data]"
-     style="width: 550px; height: 500px; float: left;">
+     style="width: 550px; height: 600px; float: left;">
 </div>
 
 
 <div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 550px; float: left;">
 </div>
 
-<div id="figure5" figure5-plot data="alleleified_data" style="width: 550px; height: 600px; float: left;">
+<div id="figure5" figure5-plot data="alleleified_data" style="width: 600px; height: 600px; float: left;">
 </div>
 
 </body>
