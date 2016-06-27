@@ -168,9 +168,11 @@
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
                 $scope.tevData = [];
                 $scope.alleleified_data = [];
+                $scope.linked_alleleified_data = [];
                 $scope.dendro_data = [];
                 $scope.dendro_y_data = [];
                 $scope.fishbone_data = [];
+
 
                 var source_uuid = '{{ source }}';
                 var dendro_data = {{ d3_dendro_data|safe }};
@@ -186,13 +188,14 @@
                     tevData = $filter('filter')(tevData, {'uuid': source_uuid})[0];
                     $scope.tevData = tevData.Samples;
 
-                    $scope.alleleified_data = allelify.alleleify($scope.tevData, gene_data);
+                    var alleleified_data = allelify.alleleify($scope.tevData, gene_data);
+                    $scope.alleleified_data = alleleified_data;
+                    $scope.linked_alleleified_data = alleleified_data;
 
                     //Send through this data, when the data from the API has been recieved
                     $scope.dendro_data = dendro_data;
                     $scope.dendro_y_data = dendro_y_data;
                 });
-
         }]);
 
         //Directive that contains d3 code to render allele frequency change over timepoints
@@ -536,7 +539,7 @@
             }
         }]);
 
-        tevApp.directive('figure3Plot', function(){
+        tevApp.directive('figure3Plot', ['$timeout', function($timeout){
 
             return {
                restrict: 'A',
@@ -549,6 +552,7 @@
             function link(scope, element){
                 var data = scope.data[0];
                 var dendro_y_positions = scope.data[1];
+                var alleleified_data = scope.data[2];
                 var el = element[0];
                 var width = el.clientWidth;
                 var height = el.clientHeight;
@@ -560,6 +564,7 @@
                         .size([420, 420]);
 
                 scope.$watch('data', function(updatedData){
+                    console.log(scope);
                     d3.select(el).select('svg').remove();
 
                     var canvas = d3.select(el).append('svg')
@@ -571,18 +576,102 @@
                     canvas = canvas.append('g')
                             .attr('transform', 'translate(0, 75)');
 
+                    data = updatedData[0];
+                    dendro_y_positions = updatedData[1];
+                    alleleified_data = updatedData[2];
+
+                    var nodes = cluster.nodes(data);
+                    var links = cluster.links(nodes);
+
+                    function cut_data(max_path_y, alleleified_data){
+                        var new_data = [];
+                        for(var i = 0; i < nodes.length; i++){
+                            if(nodes[i].y <= max_path_y){
+                                new_data.push(nodes[i]);
+                            }
+                        }
+                        var upper_level_data = [];
+                        var used_nodes = [];
+                        for(var i = 0; i < new_data.length; i++){
+                            var allele_level_data = [];
+                            var current_data = new_data[i];
+                            if(current_data.name != " " && used_nodes.indexOf(current_data.id) == -1){
+                                used_nodes.push(current_data.id);
+                                allele_level_data.push(current_data.name);
+                                upper_level_data.push(allele_level_data);
+                            }
+                            else if(current_data.name == " " && used_nodes.indexOf(current_data.id) == -1){
+                                get_all_children(current_data, used_nodes, allele_level_data);
+                                upper_level_data.push(allele_level_data);
+                            }
+                        }
+                        var linked_alleleified_data = convert_to_allelified(alleleified_data, upper_level_data);
+                        return linked_alleleified_data;
+                    }
+
+                    function convert_to_allelified(alleleified_data, upper_level_data){
+                        var new_alleleified_data = [];
+                        var allele;
+                        for(var i = 0; i < upper_level_data.length; i++){
+                            var allele_list = upper_level_data[i];
+                            var parent_allele = upper_level_data[i][0];
+                            if(allele_list.length > 1){
+                            var new_allele_name = allele_list.join(" \n ");
+                                }
+                            else{
+                                new_allele_name = allele_list[0];
+                            }
+                            for(var j = 0; j < alleleified_data.length; j++){
+                                if(alleleified_data[j].allele == parent_allele){
+                                    allele = JSON.parse(JSON.stringify(alleleified_data[j]));
+                                    allele.allele = new_allele_name;
+                                    new_alleleified_data.push(allele);
+                                }
+                            }
+                        }
+                        return new_alleleified_data;
+                    }
+
+                    function get_all_children(current_data, used_nodes, allele_level_data){
+                        if(current_data.children != undefined) {
+                            for (var i = 0; i < current_data.children.length; i++) {
+                                if(current_data.children[i].name == " "){
+                                    used_nodes.push(current_data.children[i].id);
+                                    get_all_children(current_data.children[i], used_nodes, allele_level_data);
+                                }
+                                else {
+                                    if(used_nodes.indexOf(current_data.children[i].id) == -1) {
+                                        used_nodes.push(current_data.children[i].id);
+                                        allele_level_data.push(current_data.children[i].name);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     var drag = d3.behavior.drag()
-                                .on('drag', function (d) {
+                                .on('drag', function () {
                                     var slider = d3.select(this);
-                                    if (d3.event.x < 30){
+                                    var max_path_y = yScale.invert(30);
+                                    if (d3.event.x < 30) {
                                         slider.attr('cx', 30);
+                                        d3.select('#cutoff_line').attr('x1', 30).attr('x2', 30);
+                                        max_path_y = yScale.invert(30);
                                     }
-                                    else if (d3.event.x > 450){
+                                    else if (d3.event.x > 450) {
                                         slider.attr('cx', 450);
+                                        d3.select('#cutoff_line').attr('x1', 450).attr('x2', 450);
+                                        max_path_y = yScale.invert(450);
                                     }
-                                    else{
+                                    else {
                                         slider.attr('cx', d3.event.x);
+                                        var cutoff = d3.select('#cutoff_line').attr('x1', d3.event.x).attr('x2', d3.event.x);
+                                        max_path_y = yScale.invert(d3.event.x);
                                     }
+                                    var linked_alleleified_data = cut_data(max_path_y, alleleified_data);
+                                    scope.$apply(function(){
+                                       scope.$parent.linked_alleleified_data = linked_alleleified_data;
+                                    });
                                 });
 
                     sliderSvg.append('line')
@@ -597,24 +686,22 @@
                     sliderSvg.append('circle')
                             .attr('r', 7)
                             .attr('cy', 50)
-                            .attr('cx', 240)
+                            .attr('cx', 450)
+                            .attr('id', 'slider_circle')
                             .attr('stroke', 'black')
                             .attr('stroke-width', 0.5)
                             .attr('fill', '#EEEEEE')
+                            .style('cursor', 'pointer')
                             .call(drag);
-
-                    data = updatedData[0];
-                    var dendro_y_positions = updatedData[1];
 
                     var y_max = Math.max.apply(null, dendro_y_positions);
                     var yScale = d3.scale.linear().domain([y_max, 0]).range([30, 450]);
                     var yAxis = d3.svg.axis().scale(yScale).orient('top');
 
-                    var nodes = cluster.nodes(data);
-                    var links = cluster.links(nodes);
 
                     nodes.forEach(function(d, i){
                         d.y = dendro_y_positions[i];
+                        d.id = i;
                     });
 
                     var link = canvas.selectAll('.link')
@@ -646,6 +733,22 @@
                                 return 4.5;
                             });
 
+                    canvas.append('line')
+                            .attr('x1', function(){
+                                var x = d3.select('#slider_circle').attr('cx');
+                                return x;
+                            })
+                            .attr('x2', function(){
+                                var x = d3.select('#slider_circle').attr('cx');
+                                return x;
+                            })
+                            .attr('y1', 30)
+                            .attr('y2', 450)
+                            .attr('id', 'cutoff_line')
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1)
+                            .attr('fill', 'none');
+
                     node.append("text")
                             .attr("dx", function(d) { return d.children ? -8 : 8; })
                             .attr("dy", 3)
@@ -657,10 +760,10 @@
                             .attr('transform', 'translate(0, 25)')
                             .call(yAxis);
 
-                });
+                }, true);
             }
 
-        }, true);
+        }, ]);
 
         tevApp.directive('figure4Plot', function(){
             return {
@@ -681,6 +784,8 @@
                         .size([420, 420]);
 
                 scope.$watch('data', function(updatedData){
+
+                    d3.select(el).select('svg').remove();
 
                     data = updatedData;
 
@@ -774,7 +879,6 @@
 
                 scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
-
                     data = updatedData;
 
                     var canvas = d3.select(el).append('svg')
@@ -852,7 +956,7 @@
                     plot_background.values.length = nestedData[0].values.length;
                     plot_background.values.fill({alt_count: 100});
                     plot_background.children = [0];
-                    plot_background.groups = {0: 0}
+                    plot_background.groups = {0: 0};
 
                     //Initialize first parent group
                     nestedData[0].group = 0;
@@ -1073,7 +1177,6 @@
                         current_allele.values = find_origin(current_allele, plot_background, nestedData, yScale);
                     }
 
-                    console.log(nestedData);
                     var topLineGen = d3.svg.line()
                             .interpolate('linear')
                             .x(function(d){
@@ -1148,7 +1251,7 @@
                         .attr("transform", "translate(" + 4 + "0)")
                         .call(yAxis);
 
-                });
+                }, true);
             }
 
         }, true);
@@ -1165,7 +1268,7 @@
 <div id="figure2" figure2-plot data="alleleified_data" style="width: 700px; height: 650px; float: left;">
 </div>
 
-<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data]"
+<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data, linked_alleleified_data]"
      style="width: 550px; height: 600px; float: left;">
 </div>
 
@@ -1173,7 +1276,7 @@
 <div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 550px; float: left;">
 </div>
 
-<div id="figure5" figure5-plot data="alleleified_data" style="width: 600px; height: 600px; float: left;">
+<div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 600px; height: 600px; float: left;">
 </div>
 
 </body>
