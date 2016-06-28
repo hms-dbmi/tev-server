@@ -161,10 +161,26 @@
             };
         });
 
+        tevApp.factory('get_alleles', function(){
+           return {
+               get_alleles: function(alleleified_data){
+                   var alleles = [];
+                   for(var i = 0; i < alleleified_data.length; i++){
+                       if(alleles.indexOf(alleleified_data[i].allele) == -1){
+                           alleles.push(alleleified_data[i].allele);
+                       }
+                   }
+                   return alleles;
+               }
+           };
+        });
+
+
+
         //Controller name: TevDataController
         //Services: scope, http
-        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q',
-            function($scope, $http, $filter, allelify, $q){
+        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q', 'get_alleles',
+            function($scope, $http, $filter, allelify, $q, get_alleles){
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
                 $scope.tevData = [];
                 $scope.alleleified_data = [];
@@ -172,6 +188,10 @@
                 $scope.dendro_data = [];
                 $scope.dendro_y_data = [];
                 $scope.fishbone_data = [];
+                //Created this variable because if alleleified_data is changed by dendrogram grouping,
+                // it would keep calling itself
+                $scope.clustered_alleleified_data = [];
+                $scope.alleles = [];
 
 
                 var source_uuid = '{{ source }}';
@@ -190,6 +210,7 @@
 
                     var alleleified_data = allelify.alleleify($scope.tevData, gene_data);
                     $scope.alleleified_data = alleleified_data;
+                    $scope.alleles = get_alleles.get_alleles(alleleified_data);
 
                     //Send through this data, when the data from the API has been recieved
                     $scope.dendro_data = dendro_data;
@@ -318,7 +339,8 @@
             };
 
             function link(scope, element){
-                var data = scope.data;
+                var data = scope.data[0];
+                var alleles = scope.data[1];
                 var el = element[0];
                 var width = el.clientWidth;
                 var height = el.clientHeight;
@@ -330,7 +352,8 @@
                     d3.select(el).select('svg').remove();
                     d3.select(el).select('div').remove();
 
-                    data = updatedData;
+                    data = updatedData[0];
+                    alleles = updatedData[1];
 
                     var canvas = d3.select(el).append("svg")
                         .attr("height", height)
@@ -351,14 +374,24 @@
                             .style('text-anchor', 'left')
                             .text(function(d){return d;});
 
+                    var axisLabels = uniqueAxisLabels(data, 'cluster');
+
                     var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
                     var yAxis = d3.svg.axis().scale(yScale).orient("left");
-
-                    var axisLabels = uniqueAxisLabels(data, 'allele');
+                    
                     var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
 
-                    var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
+                    if(alleles.length == axisLabels.length){
+                        axisLabels = uniqueAxisLabels(data, 'allele');
+                        var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
+                        xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
+                        xAxis = d3.svg.axis().scale(xScale);
+                    }
+                    else{
+                        nestedData = d3.nest().key(function(d){return d.cluster}).entries(data);
+                        xAxis.tickFormat(function(d){return "cluster " + d;})
+                    }
 
                     var boxData = [];
                     nestedData.forEach(function(d, i){
@@ -382,7 +415,6 @@
                     });
 
                     //Start of d3 box plot
-
                     canvas.selectAll('boxes')
                             .data(boxData)
                             .enter()
@@ -589,7 +621,8 @@
 
                     //Initialize the fishplot data
                     var linked_alleleified_data = cut_data(0, alleleified_data, nodes);
-                    scope.$parent.linked_alleleified_data = linked_alleleified_data;
+                    scope.$parent.linked_alleleified_data = linked_alleleified_data[0];
+                    scope.$parent.clustered_alleleified_data = linked_alleleified_data[1];
 
                     function cut_data(max_path_y, alleleified_data, nodes){
                         var new_data = [];
@@ -613,12 +646,26 @@
                                 upper_level_data.push(allele_level_data);
                             }
                         }
-                        var linked_alleleified_data = convert_to_allelified(alleleified_data, upper_level_data);
-                        return linked_alleleified_data;
+                        var updated_linked_alleleified_data = convert_to_allelified(alleleified_data, upper_level_data);
+                        var new_alleleified_data = update_alleleified_data(alleleified_data, upper_level_data);
+                        return [updated_linked_alleleified_data, new_alleleified_data];
                     }
+                     function update_alleleified_data(alleleified_data, upper_level_data){
+                         for(var i = 0; i < upper_level_data.length; i++){
+                             var allele_list = upper_level_data[i];
+                             for(var j = 0; j < alleleified_data.length; j++){
+                                 for(var k = 0; k < allele_list.length; k++){
+                                     if(alleleified_data[j].allele == allele_list[k]){
+                                         alleleified_data[j].cluster = i+1;
+                                     }
+                                 }
+                             }
+                         }
+                         return alleleified_data;
+                     }
 
                     function convert_to_allelified(alleleified_data, upper_level_data){
-                        var new_alleleified_data = [];
+                        var new_linked_alleleified_data = [];
                         var allele;
                         for(var i = 0; i < upper_level_data.length; i++){
                             var allele_list = upper_level_data[i];
@@ -630,14 +677,15 @@
                                 new_allele_name = allele_list[0];
                             }
                             for(var j = 0; j < alleleified_data.length; j++){
+                                //Now generate data grouping the alleles for the fishbone and fishplot
                                 if(alleleified_data[j].allele == parent_allele){
                                     allele = JSON.parse(JSON.stringify(alleleified_data[j]));
                                     allele.allele = new_allele_name;
-                                    new_alleleified_data.push(allele);
+                                    new_linked_alleleified_data.push(allele);
                                 }
                             }
                         }
-                        return new_alleleified_data;
+                        return new_linked_alleleified_data;
                     }
 
                     function get_all_children(current_data, used_nodes, allele_level_data){
@@ -678,7 +726,8 @@
                                     }
                                     var linked_alleleified_data = cut_data(max_path_y, alleleified_data, nodes);
                                     scope.$apply(function(){
-                                       scope.$parent.linked_alleleified_data = linked_alleleified_data;
+                                        scope.$parent.linked_alleleified_data = linked_alleleified_data[0];
+                                        scope.$parent.clustered_alleleified_data = linked_alleleified_data[1];
                                     });
                                 });
 
@@ -1262,15 +1311,17 @@
 
 </script>
 <body ng-controller = "tevDataController">
-
-<div id="figure1" figure1-plot data="alleleified_data" style="width: 650px; height: 650px; float:left;">
+<!--
+Dont need to provide alleles to figure 1 because all that's changing is the colors
+-->
+<div id="figure1" figure1-plot data="clustered_alleleified_data" style="width: 650px; height: 650px; float:left;">
 </div>
 
 
-<div id="figure2" figure2-plot data="alleleified_data" style="width: 700px; height: 650px; float: left;">
+<div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" style="width: 700px; height: 650px; float: left;">
 </div>
 
-<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data, linked_alleleified_data]"
+<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]"
      style="width: 550px; height: 600px; float: left;">
 </div>
 
