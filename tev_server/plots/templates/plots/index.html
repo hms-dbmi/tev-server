@@ -190,7 +190,6 @@
 
                     var alleleified_data = allelify.alleleify($scope.tevData, gene_data);
                     $scope.alleleified_data = alleleified_data;
-                    $scope.linked_alleleified_data = alleleified_data;
 
                     //Send through this data, when the data from the API has been recieved
                     $scope.dendro_data = dendro_data;
@@ -539,7 +538,7 @@
             }
         }]);
 
-        tevApp.directive('figure3Plot', ['$timeout', function($timeout){
+        tevApp.directive('figure3Plot', function(){
 
             return {
                restrict: 'A',
@@ -564,7 +563,6 @@
                         .size([420, 420]);
 
                 scope.$watch('data', function(updatedData){
-                    console.log(scope);
                     d3.select(el).select('svg').remove();
 
                     var canvas = d3.select(el).append('svg')
@@ -583,7 +581,17 @@
                     var nodes = cluster.nodes(data);
                     var links = cluster.links(nodes);
 
-                    function cut_data(max_path_y, alleleified_data){
+                    //Update dendrogram position based on python clustering position
+                    nodes.forEach(function(d, i){
+                        d.y = dendro_y_positions[i];
+                        d.id = i;
+                    });
+
+                    //Initialize the fishplot data
+                    var linked_alleleified_data = cut_data(0, alleleified_data, nodes);
+                    scope.$parent.linked_alleleified_data = linked_alleleified_data;
+
+                    function cut_data(max_path_y, alleleified_data, nodes){
                         var new_data = [];
                         for(var i = 0; i < nodes.length; i++){
                             if(nodes[i].y <= max_path_y){
@@ -668,7 +676,7 @@
                                         var cutoff = d3.select('#cutoff_line').attr('x1', d3.event.x).attr('x2', d3.event.x);
                                         max_path_y = yScale.invert(d3.event.x);
                                     }
-                                    var linked_alleleified_data = cut_data(max_path_y, alleleified_data);
+                                    var linked_alleleified_data = cut_data(max_path_y, alleleified_data, nodes);
                                     scope.$apply(function(){
                                        scope.$parent.linked_alleleified_data = linked_alleleified_data;
                                     });
@@ -697,12 +705,6 @@
                     var y_max = Math.max.apply(null, dendro_y_positions);
                     var yScale = d3.scale.linear().domain([y_max, 0]).range([30, 450]);
                     var yAxis = d3.svg.axis().scale(yScale).orient('top');
-
-
-                    nodes.forEach(function(d, i){
-                        d.y = dendro_y_positions[i];
-                        d.id = i;
-                    });
 
                     var link = canvas.selectAll('.link')
                             .data(links)
@@ -763,7 +765,7 @@
                 }, true);
             }
 
-        }, ]);
+        });
 
         tevApp.directive('figure4Plot', function(){
             return {
