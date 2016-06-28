@@ -27,6 +27,10 @@
         stroke-width: 1.5px;
     }
 
+    .info_rects,.median_line:hover {
+        cursor: pointer;
+    }
+
     div.tooltip {
         position: absolute;
         text-align: center;
@@ -220,7 +224,7 @@
 
         //Directive that contains d3 code to render allele frequency change over timepoints
         //Plot type: Line plot
-        tevApp.directive('figure1Plot', ['$compile',function($compile){
+        tevApp.directive('figure1Plot', function(){
             return {
                scope: {
                    data: '='
@@ -240,7 +244,12 @@
                 scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
                     d3.select(el).select('div').remove();
+
                     data = updatedData;
+
+                    if(data.length == 0){
+                        return;
+                    }
 
                     var canvas = d3.select(el).append("svg")
                         .attr("height", height)
@@ -275,13 +284,14 @@
                     var lineSvg = canvas.append("g");
                     var pointSvg = canvas.append("g");
 
-                    var index;
-
                     nestedData.forEach(function(d, i){
 
                         lineSvg.append("path")
                                 .attr("fill", "none")
-                                .attr("stroke", strokeColors[i])
+                                .attr("stroke", function(){
+                                    var index = d.values[0].cluster-1;
+                                    return strokeColors[index];
+                                })
                                 .attr("stroke-width", 2)
                                 .attr("d", lineGen(d.values));
 
@@ -297,7 +307,11 @@
                                 })
                                 .attr("width", 12)
                                 .attr("height", 12)
-                                .attr("fill", strokeColors[i])
+                                .attr('class', 'info_rects')
+                                .attr("fill", function(){
+                                    var index = d.values[0].cluster-1;
+                                    return strokeColors[index];
+                                })
                                 .on("mouseover", function(d){
                                     div_tooltip.style("opacity", 0.9)
                                     .html('<b>' +d.Sample_Barcode + '</b>'+ '<br/>' + '<br/>'
@@ -306,9 +320,7 @@
                                             .style("left", (d3.event.pageX + 40) + "px");
                                 })
                                 .on("mouseout", function(){
-                                    div_tooltip.transition()
-                                            .duration(300)
-                                            .style('opacity', 0);
+                                    div_tooltip.style('opacity', 0);
                                 });
 
                     });
@@ -325,11 +337,11 @@
 
                 }, true);
             }
-        }]);
+        });
 
         //Directive that contains d3 code to render distribution of allele frequency at timepoints
         //Plot type: Box plots
-        tevApp.directive('figure2Plot', ['$compile', function($compile){
+        tevApp.directive('figure2Plot', function(){
             return{
                 restrict: 'A',
                 link: link,
@@ -355,6 +367,10 @@
                     data = updatedData[0];
                     alleles = updatedData[1];
 
+                    if(data.length == 0){
+                        return;
+                    }
+
                     var canvas = d3.select(el).append("svg")
                         .attr("height", height)
                         .attr("width", width);
@@ -374,11 +390,18 @@
                             .style('text-anchor', 'left')
                             .text(function(d){return d;});
 
+                    var div_tooltip = d3.select(el).append("div")
+                            .attr("class", "tooltip")
+                            .style("opacity", 0);
+
                     var axisLabels = uniqueAxisLabels(data, 'cluster');
+                    axisLabels.sort(function(a, b){
+                       return a - b;
+                    });
 
                     var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
                     var yAxis = d3.svg.axis().scale(yScale).orient("left");
-                    
+
                     var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
 
@@ -393,12 +416,20 @@
                         xAxis.tickFormat(function(d){return "cluster " + d;})
                     }
 
+                    console.log(nestedData);
+
                     var boxData = [];
                     nestedData.forEach(function(d, i){
                         var quartileData = [];
+                        var alleles = [];
                         for(var j = 0; j < d.values.length; j++){
                             quartileData[j] = d.values[j].alt_count/100;
+                            if(alleles.indexOf(d.values[j].allele) == -1){
+                                alleles.push(d.values[j].allele);
+                            }
                         }
+                        alleles = alleles.join('<br/>')
+                        alleles = '<b> alleles </b><br/>' + alleles;
                         quartileData.sort(function(a,b) { return a - b;});
 
                         boxData[i] = {
@@ -409,7 +440,8 @@
                             median: d3.median(quartileData).toFixed(2),
                             pNinety: d3.quantile(quartileData, 0.90).toFixed(2),
                             pTen: d3.quantile(quartileData, 0.10).toFixed(2),
-                            color: fillColors[i]
+                            color: fillColors[d.values[0].cluster-1],
+                            alleles: alleles
 
                         };
                     });
@@ -429,6 +461,7 @@
                             .attr('height', function(d){
                                 return (yScale(d.Q1) - yScale(d.Q3));
                             })
+                            .attr('class', 'info_rects')
                             .attr('fill', function(d){
                                return d.color;
                             })
@@ -442,36 +475,23 @@
                                         .attr('y', function(d, i){
                                             return 60 + (25*i);
                                         })
-                                        .attr('class', 'box_data')
+                                        .attr('class', 'box_info')
                                         .style('font', '12px sans-serif')
                                         .style('text-anchor', 'left')
                                         .text(function(d){
                                            return d;
                                         });
+
+                                div_tooltip.style("opacity", 0.9)
+                                    .html(d.alleles)
+                                        .style("top", (d3.event.pageY-40) + "px")
+                                        .style("left", (d3.event.pageX + 40) + "px");
                             })
                             .on('mouseout', function(d){
-                                d3.selectAll('.box_data').remove();
-                            });
+                                d3.selectAll('.box_info').remove();
 
-                    canvas.selectAll('medianLines')
-                            .data(boxData)
-                            .enter()
-                            .append('line')
-                            .attr('x1', function(d){
-                                return xScale(d.x) - 10;
-                            })
-                            .attr('x2', function(d){
-                                return xScale(d.x) + 10;
-                            })
-                            .attr('y1', function(d){
-                                return yScale(d.median);
-                            })
-                            .attr('y2', function(d){
-                                return yScale(d.median);
-                            })
-                            .attr('stroke', 'black')
-                            .attr('stroke-width', 1)
-                            .attr('fill', 'none');
+                                div_tooltip.style('opacity', 0);
+                            });
 
                     canvas.selectAll('upperVerticalBars')
                             .data(boxData)
@@ -554,6 +574,58 @@
                             .attr('stroke-width', 1)
                             .attr('fill', 'none');
 
+                    canvas.selectAll('medianLines')
+                            .data(boxData)
+                            .enter()
+                            .append('line')
+                            .attr('x1', function(d){
+                                return xScale(d.x) - 10;
+                            })
+                            .attr('x2', function(d){
+                                return xScale(d.x) + 10;
+                            })
+                            .attr('y1', function(d){
+                                return yScale(d.median);
+                            })
+                            .attr('y2', function(d){
+                                return yScale(d.median);
+                            })
+                            .attr('class', 'median_line')
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1)
+                            .attr('fill', 'none')
+                            .on('mouseover', function(d){
+                                if(d.Q1 == d.Q3) {
+                                    var box_information = [d.pNinety, d.Q3, d.median, d.Q1, d.pTen];
+                                    informationSvg.selectAll('information_text')
+                                            .data(box_information)
+                                            .enter()
+                                            .append('text')
+                                            .attr('x', 520 + 50)
+                                            .attr('y', function (d, i) {
+                                                return 60 + (25 * i);
+                                            })
+                                            .attr('class', 'box_data')
+                                            .style('font', '12px sans-serif')
+                                            .style('text-anchor', 'left')
+                                            .text(function (d) {
+                                                return d;
+                                            });
+
+                                    div_tooltip.style("opacity", 0.9)
+                                            .html(d.alleles)
+                                            .style("top", (d3.event.pageY - 40) + "px")
+                                            .style("left", (d3.event.pageX + 40) + "px");
+                                }
+                            })
+                            .on('mouseout', function(d){
+                                if(d.Q1 == d.Q3) {
+                                    d3.selectAll('.box_data').remove();
+
+                                    div_tooltip.style('opacity', 0);
+                                }
+                            });
+
                     canvas.append("svg:g")
                         .attr("class", "axis")
                         .attr("transform", "translate(0," + 500 + ")")
@@ -568,7 +640,7 @@
                         .call(yAxis);
                 }, true);
             }
-        }]);
+        });
 
         tevApp.directive('figure3Plot', function(){
 
@@ -597,6 +669,14 @@
                 scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
 
+                    data = updatedData[0];
+                    dendro_y_positions = updatedData[1];
+                    alleleified_data = updatedData[2];
+
+                    if(alleleified_data.length == 0){
+                        return;
+                    }
+
                     var canvas = d3.select(el).append('svg')
                             .attr('height', height)
                             .attr('width', width);
@@ -605,10 +685,6 @@
 
                     canvas = canvas.append('g')
                             .attr('transform', 'translate(0, 75)');
-
-                    data = updatedData[0];
-                    dendro_y_positions = updatedData[1];
-                    alleleified_data = updatedData[2];
 
                     var nodes = cluster.nodes(data);
                     var links = cluster.links(nodes);
@@ -835,10 +911,13 @@
                         .size([420, 420]);
 
                 scope.$watch('data', function(updatedData){
-
                     d3.select(el).select('svg').remove();
 
                     data = updatedData;
+
+                    if(data.length == 0){
+                        return;
+                    }
 
                     function add_children(child, parent, data) {
                         var childData = {name: child.key, children: []};
@@ -930,7 +1009,12 @@
 
                 scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
+
                     data = updatedData;
+
+                    if(data.length == 0){
+                        return;
+                    }
 
                     var canvas = d3.select(el).append('svg')
                         .attr('width', width)
