@@ -396,8 +396,6 @@
                         xAxis.tickFormat(function(d){return "cluster " + d;})
                     }
 
-                    console.log(nestedData);
-
                     var boxData = [];
                     nestedData.forEach(function(d, i){
                         var quartileData = [];
@@ -638,6 +636,7 @@
                 var data = scope.data[0];
                 var dendro_y_positions = scope.data[1];
                 var alleleified_data = scope.data[2];
+                var alleles = scope.data[3];
                 var el = element[0];
                 var width = el.clientWidth;
                 var height = el.clientHeight;
@@ -654,6 +653,7 @@
                     data = updatedData[0];
                     dendro_y_positions = updatedData[1];
                     alleleified_data = updatedData[2];
+                    alleles = updatedData[3];
 
                     if(alleleified_data.length == 0){
                         return;
@@ -698,16 +698,19 @@
                                 used_nodes.push(current_data.id);
                                 allele_level_data.push(current_data.name);
                                 upper_level_data.push(allele_level_data);
+                                nodes[nodes.indexOf(current_data)].cluster = upper_level_data.length;
                             }
                             else if(current_data.name == " " && used_nodes.indexOf(current_data.id) == -1){
-                                get_all_children(current_data, used_nodes, allele_level_data);
+                                var cluster = upper_level_data.length + 1;
+                                get_all_children(current_data, used_nodes, allele_level_data, nodes, cluster);
                                 upper_level_data.push(allele_level_data);
                             }
                         }
                         var updated_linked_alleleified_data = convert_to_allelified(alleleified_data, upper_level_data);
                         var new_alleleified_data = update_alleleified_data(alleleified_data, upper_level_data);
-                        return [updated_linked_alleleified_data, new_alleleified_data];
+                        return [updated_linked_alleleified_data, new_alleleified_data, upper_level_data];
                     }
+
                      function update_alleleified_data(alleleified_data, upper_level_data){
                          for(var i = 0; i < upper_level_data.length; i++){
                              var allele_list = upper_level_data[i];
@@ -746,15 +749,17 @@
                         return new_linked_alleleified_data;
                     }
 
-                    function get_all_children(current_data, used_nodes, allele_level_data){
+
+                    function get_all_children(current_data, used_nodes, allele_level_data, nodes, cluster){
                         if(current_data.children != undefined) {
                             for (var i = 0; i < current_data.children.length; i++) {
                                 if(current_data.children[i].name == " "){
                                     used_nodes.push(current_data.children[i].id);
-                                    get_all_children(current_data.children[i], used_nodes, allele_level_data);
+                                    get_all_children(current_data.children[i], used_nodes, allele_level_data, nodes, cluster);
                                 }
                                 else {
                                     if(used_nodes.indexOf(current_data.children[i].id) == -1) {
+                                        nodes[nodes.indexOf(current_data.children[i])].cluster = cluster;
                                         used_nodes.push(current_data.children[i].id);
                                         allele_level_data.push(current_data.children[i].name);
                                     }
@@ -783,6 +788,15 @@
                                         max_path_y = yScale.invert(d3.event.x);
                                     }
                                     var linked_alleleified_data = cut_data(max_path_y, alleleified_data, nodes);
+                                    var clusters = linked_alleleified_data[2];
+                                    for(var i = 0; i < clusters.length; i++){
+                                        var alleles_in_cluster = clusters[i];
+                                        for(var j = 0; j < alleles_in_cluster.length; j++){
+                                            var id = '#allele' + alleles.indexOf(alleles_in_cluster[j]);
+                                            var node = d3.select(id);
+                                            node.attr('fill', fillColors[i]);
+                                        }
+                                    }
                                     scope.$apply(function(){
                                         scope.$parent.linked_alleleified_data = linked_alleleified_data[0];
                                         scope.$parent.clustered_alleleified_data = linked_alleleified_data[1];
@@ -831,7 +845,6 @@
                             .data(nodes)
                             .enter()
                             .append('g')
-                            .attr('class', 'node')
                             .attr('transform', function(d){return "translate("+ yScale(d.y) + "," + (d.x + 40) + ")";});
 
                     node.append('circle')
@@ -840,6 +853,18 @@
                                     return 0;
                                 }
                                 return 4.5;
+                            })
+                            .attr('id', function(d){
+                                if(d.name != " ") {
+                                   return 'allele'+ (d.cluster-1);
+                                }
+                                else{
+                                    return "empty";
+                                }
+                            })
+                            .attr('stroke-width', 1.5)
+                            .attr('fill', function(d){
+                                return fillColors[d.cluster-1];
                             });
 
                     canvas.append('line')
@@ -1401,7 +1426,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 <div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" style="width: 700px; height: 650px; float: left;">
 </div>
 
-<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]"
+<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data, alleles]"
      style="width: 550px; height: 600px; float: left;">
 </div>
 
