@@ -76,11 +76,11 @@
     return this.filter(function(i) {return a.indexOf(i) < 0;});
     };
 
-    function find_origin(current_allele, plot_background, nestedData, yScale){
+    function find_origin(current_allele, nestedData){
         var parent = nestedData[current_allele.parent_index_of_this];
         var allele_data = current_allele.values;
         var zeros = [];
-        //Find out if origin is the only timepoint that has an alternative allele frequency of zero
+        //Find out if "origin" is the only timepoint that has an alternative allele frequency of zero
         for(var i = 0; i < allele_data.length; i++){
             if(allele_data[i].alt_count == 0){
                 zeros.push(i);
@@ -89,32 +89,10 @@
                 break;
             }
         }
-        //If it is not the actuall origin
+        //If "origin" is not the actuall origin of the tumor
+        //Trim the data until one timepoint before the actual origin
         if(zeros.length > 1){
-{#            var previous_timepoint = allele_data[zeros.length-1].Sample_Barcode;#}
-{#            var previous_top = allele_data[zeros.length-1].top;#}
-{#            var previous_bottom = allele_data[zeros.length-1].bottom;#}
-
             allele_data.splice(0, zeros.length-1);
-{#            var start_point = allele_data[0].start_point;#}
-{#            var pinched_timepoint = {};#}
-{#            if(parent != "plot") {#}
-{#                if(allele_data[0] != undefined) {#}
-{#                    start_point = allele_data[0].top + allele_data[0].bottom;#}
-{#                    start_point = start_point/2;#}
-{#                }#}
-{#            }#}
-{#            pinched_timepoint.allele = allele_data[0].allele;#}
-{#            pinched_timepoint.Sample_Barcode = allele_data[0].Sample_Barcode;#}
-{#            pinched_timepoint.previous_timepoint = previous_timepoint;#}
-{#            pinched_timepoint.alt_count = 0;#}
-{#            pinched_timepoint.pinch = true;#}
-{#            pinched_timepoint.start_point = start_point;#}
-{#            pinched_timepoint.previous_top = previous_top;#}
-{#            pinched_timepoint.top = start_point;#}
-{#            pinched_timepoint.bottom = start_point;#}
-{#            pinched_timepoint.previous_bottom = previous_bottom;#}
-{#            allele_data.unshift(pinched_timepoint);#}
         }
         return allele_data;
     }
@@ -1309,7 +1287,7 @@
                             //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                             current_allele.values[j].pinch = false;
                         }
-                        current_allele.values = find_origin(current_allele, plot_background, nestedData, yScale);
+                        current_allele.values = find_origin(current_allele, nestedData);
                     }
 
                     var topLineGen = d3.svg.line()
