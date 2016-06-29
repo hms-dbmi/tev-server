@@ -49,6 +49,7 @@
 <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
 <script>
+    //Find unique values for oridinal scale
     function uniqueAxisLabels(data, key) {
         var unique = {};
         var distinct = [];
@@ -62,6 +63,7 @@
         return distinct;
     }
 
+    //Order fish plot data by first timepoint, and then by alternative allele freq
     function order_by_rank(data, rank_data){
         var reordered_data = [];
         for(var i = 0; i < data.length; i++){
@@ -103,7 +105,7 @@
         //Dependencies: None
         var tevApp = angular.module('tevApp', []);
 
-        //To distinguish between any Django references in the HTML
+        //To distinguish between Django variables used in HTML
         tevApp.config(function($interpolateProvider) {
             $interpolateProvider.startSymbol('{$');
             $interpolateProvider.endSymbol('$}');
@@ -115,7 +117,7 @@
                     var allele_data = [];
 
                     //Loop through to get all uuid
-                    //So we only have to access, instead of loop through for every amino acid change
+                    //So we only have to access them, instead of loop through for every amino acid change
                     var gene_uuids = [];
                     for(var i = 0; i < gene_data.length; i++){
                         gene_uuids.push(gene_data[i].uuid);
@@ -143,6 +145,8 @@
             };
         });
 
+        //Factory: get_alleles
+        //Returns: function get_alleles() to find all of the alleles in the source
         tevApp.factory('get_alleles', function(){
            return {
                get_alleles: function(alleleified_data){
@@ -156,8 +160,6 @@
                }
            };
         });
-
-
 
         //Controller name: TevDataController
         //Services: scope, http
@@ -180,7 +182,7 @@
                 var dendro_data = {{ d3_dendro_data|safe }};
                 var dendro_y_data = {{ dendro_y_data }};
 
-            //Get the data from the API
+                //Get the data from the API
                 var source_data = $http.get('http://127.0.0.1:8000/api/v1/sources/');
                 var gene_data = $http.get('http://127.0.0.1:8000/api/v1/genes/');
 
@@ -620,6 +622,8 @@
             }
         });
 
+        //Directive that contains d3 code to render dendrogram clustered by alternative allele freq
+        //Plot type: Elbow dendrogram
         tevApp.directive('figure3Plot', function(){
 
             return {
@@ -870,6 +874,8 @@
 
         });
 
+        //Directive that contains d3 code to render proposed clonal evolution
+        //Plot type: Fishbone
         tevApp.directive('figure4Plot', function(){
             return {
                 restrict: 'A',
@@ -966,6 +972,8 @@
 
         });
 
+        //Directive that contains d3 code to render proposed clonal evolution and alternative allele freq
+        //Plot type: Fishplot
         tevApp.directive('figure5Plot', function(){
 
             return {
