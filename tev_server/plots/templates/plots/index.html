@@ -17,7 +17,7 @@
         stroke-width: 1.5px;
     }
 
-    .node {
+    .node_text {
         font: 10px sans-serif;
     }
 
@@ -729,7 +729,7 @@
                             var allele_list = upper_level_data[i];
                             var parent_allele = upper_level_data[i][0];
                             if(allele_list.length > 1){
-                            var new_allele_name = allele_list.join(" \n ");
+                            var new_allele_name = allele_list.join("\n");
                                 }
                             else{
                                 new_allele_name = allele_list[0];
@@ -861,6 +861,7 @@
                     node.append("text")
                             .attr("dx", function(d) { return d.children ? -8 : 8; })
                             .attr("dy", 3)
+                            .attr('class', 'node_text')
                             .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
                             .text(function(d) { return d.name; });
 
@@ -955,17 +956,26 @@
                     node.append("circle")
                             .attr("r", 4.5);
 
-                    node.append("text")
-                            .attr("dx", function (d) {
-                                return d.children ? -8 : 8;
-                            })
-                            .attr("dy", 10)
-                            .style("text-anchor", function (d) {
-                                return d.children ? "end" : "start";
-                            })
-                            .text(function (d) {
-                                return d.name;
-                            });
+                    nodes.forEach(function(d){
+                        var names = d.name.split('\n');
+                        for(var i = 0; i < names.length; i++) {
+                            var name = names[i];
+                            svg.append('text')
+                                    .attr('class', 'node_text')
+                                    .attr("transform","translate(" + d.y + "," + d.x + ")")
+                                    .attr('dx', function(){
+                                        return d.children ? -8 : 8;
+                                    })
+                                    .attr('dy', function(){
+                                        return ((i+1)*10);
+                                    })
+                                    .style("text-anchor", function(){
+                                        return d.children ? "end" : "start";
+                                    })
+                                    .text(name);
+                        }
+                    });
+
                 });
 
             }
