@@ -1018,7 +1018,7 @@
                 var fillColors = ['#a6cee3','#1f78b4','#b2df8a','#33a02c', '#fb9a99', '#e31a1c',
                                     '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99','#b15928'];
 
-                scope.$watch('data', function(updatedData, old_data){
+                scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
 
                     data = updatedData;
@@ -1082,6 +1082,8 @@
                         var allele_freqs = fishplot_data[i].freqs;
                         for(var j = 1; j < allele_freqs.length; j++){
                             if(allele_freqs[j] != 0){
+                                //console.log(fishplot_data[i]);
+                                //console.log(fishplot_data[i].freqs);
                                 var rank = ranking_adjustment * allele_freqs[j];
                                 sort_array.push({
                                     allele: fishplot_data[i].allele,
@@ -1114,6 +1116,9 @@
                     nestedData[0].parent_index_of_this = "plot";
                     nestedData[0].children = [];
                     nestedData[0].id = 0;
+
+                    //Array to hold alleles that didn't fit on plot
+                    var unused = [];
 
 
                     for(var i = 1; i < nestedData.length; i++) {
@@ -1188,6 +1193,8 @@
                                 var check_if_fits = 1;
                                 for(var j = 0; j < total_children_freq.length; j++){
                                     if((total_children_freq[j] + current_allele_data.values[j].alt_count) > parent_allele.values[j].alt_count){
+                                        //If this is true at least one, check_if_fits will be 0 and we assign the parent
+                                        //as the former allele
                                         former_allele_data = parent_allele;
                                         check_if_fits = 0;
                                     }
@@ -1208,6 +1215,11 @@
                                         current_allele_data.group = parent_allele.group;
                                         current_allele_data.start_point = parent_allele.start_point;
                                         }
+                                    done = 1;
+                                }
+                                if(check_if_fits == 0 && parent_allele.key == "plot"){
+                                    //Doesn't fit... done=1 to move on
+                                    unused.push(current_allele_data.key);
                                     done = 1;
                                 }
                             }
@@ -1285,7 +1297,7 @@
                                 var parent = nestedData[parent_index]
                                 var children = parent.children;
                                 var start_point = parent.start_point;
-                            //Potentially include and && the children has not already been checked
+                            //Potentially include an && the children has not already been checked
                             //If parent has 2+ children, then the loop below will have taken care of those children already
                             if(children.length != 0) {
                                 for (var j = 0; j < children.length; j++) {
@@ -1365,7 +1377,6 @@
                             .y0(topLineGen.y())
                             .y1(bottomLineGen.y());
 
-
                     nestedData.forEach(function(d, i){
 
                         canvas.append('path')
@@ -1390,7 +1401,21 @@
                                 .attr('opacity', 0.75)
                                 .attr('d', areaBetweenLines)
                                 .on('mouseover', function(d){
-                                   console.log(d[0]);
+                                    var text = d[0].allele;
+
+                                   canvas.append('text')
+                                           .attr('x', d3.mouse(this)[0]+10)
+                                           .attr('y', d3.mouse(this)[1]-10)
+                                           .attr('id', 'fishplot_text')
+                                           .text(text);
+                                })
+                                .on('mousemove', function(){
+                                    d3.select('#fishplot_text')
+                                            .attr('x', d3.mouse(this)[0]+10)
+                                            .attr('y', d3.mouse(this)[1]-10);
+                                })
+                                .on('mouseout', function(){
+                                   d3.select('#fishplot_text').remove();
                                 });
                     });
 
@@ -1409,7 +1434,7 @@
                 }, true);
             }
 
-        }, true);
+        });
 
     })();
 
