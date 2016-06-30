@@ -61,7 +61,13 @@
         return distinct;
     }
 
+    //Find difference between two arrays
+    Array.prototype.diff = function(a) {
+    return this.filter(function(i) {return a.indexOf(i) < 0;});
+    };
+
     //Order fish plot data by first timepoint, and then by alternative allele freq
+    //Directives used in: figure5Plot
     function order_by_rank(data, rank_data){
         var reordered_data = [];
         for(var i = 0; i < data.length; i++){
@@ -72,10 +78,8 @@
         return reordered_data;
     }
 
-    Array.prototype.diff = function(a) {
-    return this.filter(function(i) {return a.indexOf(i) < 0;});
-    };
-
+    //Function to find the actual origin of the fishplots
+    //Directives used in: figure5Plot
     function find_origin(current_allele, nestedData){
         var parent = nestedData[current_allele.parent_index_of_this];
         var allele_data = current_allele.values;
@@ -95,6 +99,100 @@
             allele_data.splice(0, zeros.length-1);
         }
         return allele_data;
+    }
+
+    //Reformat the data based on the cutoff point of the slider in the elbow dendrogram (Figure 3)
+    //Directives used in: figure3Plot
+    function cut_data(max_path_y, alleleified_data, nodes) {
+        var new_data = [];
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].y <= max_path_y) {
+                new_data.push(nodes[i]);
+            }
+        }
+        var upper_level_data = [];
+        var used_nodes = [];
+        for (var i = 0; i < new_data.length; i++) {
+            var allele_level_data = [];
+            var current_data = new_data[i];
+            if (current_data.name != " " && used_nodes.indexOf(current_data.id) == -1) {
+                used_nodes.push(current_data.id);
+                allele_level_data.push(current_data.name);
+                upper_level_data.push(allele_level_data);
+                nodes[nodes.indexOf(current_data)].cluster = upper_level_data.length;
+            }
+            else if (current_data.name == " " && used_nodes.indexOf(current_data.id) == -1) {
+                var cluster = upper_level_data.length + 1;
+                get_all_children(current_data, used_nodes, allele_level_data, nodes, cluster);
+                upper_level_data.push(allele_level_data);
+            }
+        }
+        var updated_linked_alleleified_data = convert_to_allelified(alleleified_data, upper_level_data);
+        var new_alleleified_data = update_alleleified_data(alleleified_data, upper_level_data);
+        return [updated_linked_alleleified_data, new_alleleified_data, upper_level_data];
+    }
+
+    //Convert newly cut data into linked alleleified data, so it is readable by fishplot & fishbone
+    //Directives used in: figure3Plot
+    function convert_to_allelified(alleleified_data, upper_level_data) {
+        var new_linked_alleleified_data = [];
+        var allele;
+        for (var i = 0; i < upper_level_data.length; i++) {
+            var allele_list = upper_level_data[i];
+            var parent_allele = upper_level_data[i][0];
+            if (allele_list.length > 1) {
+                var new_allele_name = allele_list.join("\n");
+            }
+            else {
+                new_allele_name = allele_list[0];
+            }
+            for (var j = 0; j < alleleified_data.length; j++) {
+                //Now generate data grouping the alleles for the fishbone and fishplot
+                if (alleleified_data[j].allele == parent_allele) {
+                    allele = JSON.parse(JSON.stringify(alleleified_data[j]));
+                    allele.allele = new_allele_name;
+                    new_linked_alleleified_data.push(allele);
+                }
+            }
+        }
+        return new_linked_alleleified_data;
+    }
+
+    //Update the clusters of the alleleified data for the line plot and box plot
+    //Directives used in: figure3Plot
+    function update_alleleified_data(alleleified_data, upper_level_data) {
+        for (var i = 0; i < upper_level_data.length; i++) {
+            var allele_list = upper_level_data[i];
+            for (var j = 0; j < alleleified_data.length; j++) {
+                for (var k = 0; k < allele_list.length; k++) {
+                    if (alleleified_data[j].allele == allele_list[k]) {
+                        alleleified_data[j].cluster = i + 1;
+                    }
+                }
+            }
+        }
+        return alleleified_data;
+    }
+
+    //If the cutoff point of the slider is above a node that isn't directly associated with an allele
+    //Find all of the alleles (children) under that node
+    //Directives used in: figure3Plot
+    function get_all_children(current_data, used_nodes, allele_level_data, nodes, cluster) {
+        if (current_data.children != undefined) {
+            for (var i = 0; i < current_data.children.length; i++) {
+                if (current_data.children[i].name == " ") {
+                    used_nodes.push(current_data.children[i].id);
+                    get_all_children(current_data.children[i], used_nodes, allele_level_data, nodes, cluster);
+                }
+                else {
+                    if (used_nodes.indexOf(current_data.children[i].id) == -1) {
+                        nodes[nodes.indexOf(current_data.children[i])].cluster = cluster;
+                        used_nodes.push(current_data.children[i].id);
+                        allele_level_data.push(current_data.children[i].name);
+                    }
+                }
+            }
+        }
     }
 
 
@@ -656,92 +754,6 @@
                         d.y = dendro_y_positions[i];
                         d.id = i;
                     });
-
-                    function cut_data(max_path_y, alleleified_data, nodes){
-                        var new_data = [];
-                        for(var i = 0; i < nodes.length; i++){
-                            if(nodes[i].y <= max_path_y){
-                                new_data.push(nodes[i]);
-                            }
-                        }
-                        var upper_level_data = [];
-                        var used_nodes = [];
-                        for(var i = 0; i < new_data.length; i++){
-                            var allele_level_data = [];
-                            var current_data = new_data[i];
-                            if(current_data.name != " " && used_nodes.indexOf(current_data.id) == -1){
-                                used_nodes.push(current_data.id);
-                                allele_level_data.push(current_data.name);
-                                upper_level_data.push(allele_level_data);
-                                nodes[nodes.indexOf(current_data)].cluster = upper_level_data.length;
-                            }
-                            else if(current_data.name == " " && used_nodes.indexOf(current_data.id) == -1){
-                                var cluster = upper_level_data.length + 1;
-                                get_all_children(current_data, used_nodes, allele_level_data, nodes, cluster);
-                                upper_level_data.push(allele_level_data);
-                            }
-                        }
-                        var updated_linked_alleleified_data = convert_to_allelified(alleleified_data, upper_level_data);
-                        var new_alleleified_data = update_alleleified_data(alleleified_data, upper_level_data);
-                        return [updated_linked_alleleified_data, new_alleleified_data, upper_level_data];
-                    }
-
-                     function update_alleleified_data(alleleified_data, upper_level_data){
-                         for(var i = 0; i < upper_level_data.length; i++){
-                             var allele_list = upper_level_data[i];
-                             for(var j = 0; j < alleleified_data.length; j++){
-                                 for(var k = 0; k < allele_list.length; k++){
-                                     if(alleleified_data[j].allele == allele_list[k]){
-                                         alleleified_data[j].cluster = i+1;
-                                     }
-                                 }
-                             }
-                         }
-                         return alleleified_data;
-                     }
-
-                    function convert_to_allelified(alleleified_data, upper_level_data){
-                        var new_linked_alleleified_data = [];
-                        var allele;
-                        for(var i = 0; i < upper_level_data.length; i++){
-                            var allele_list = upper_level_data[i];
-                            var parent_allele = upper_level_data[i][0];
-                            if(allele_list.length > 1){
-                            var new_allele_name = allele_list.join("\n");
-                                }
-                            else{
-                                new_allele_name = allele_list[0];
-                            }
-                            for(var j = 0; j < alleleified_data.length; j++){
-                                //Now generate data grouping the alleles for the fishbone and fishplot
-                                if(alleleified_data[j].allele == parent_allele){
-                                    allele = JSON.parse(JSON.stringify(alleleified_data[j]));
-                                    allele.allele = new_allele_name;
-                                    new_linked_alleleified_data.push(allele);
-                                }
-                            }
-                        }
-                        return new_linked_alleleified_data;
-                    }
-
-
-                    function get_all_children(current_data, used_nodes, allele_level_data, nodes, cluster){
-                        if(current_data.children != undefined) {
-                            for (var i = 0; i < current_data.children.length; i++) {
-                                if(current_data.children[i].name == " "){
-                                    used_nodes.push(current_data.children[i].id);
-                                    get_all_children(current_data.children[i], used_nodes, allele_level_data, nodes, cluster);
-                                }
-                                else {
-                                    if(used_nodes.indexOf(current_data.children[i].id) == -1) {
-                                        nodes[nodes.indexOf(current_data.children[i])].cluster = cluster;
-                                        used_nodes.push(current_data.children[i].id);
-                                        allele_level_data.push(current_data.children[i].name);
-                                    }
-                                }
-                            }
-                        }
-                    }
 
                     var drag = d3.behavior.drag()
                                 .on('drag', function () {
