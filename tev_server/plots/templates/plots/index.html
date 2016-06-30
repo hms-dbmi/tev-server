@@ -195,6 +195,18 @@
         }
     }
 
+    //Function to correctly format data passed from fishplot (figure5Plot) to fishbone (figure4Plot) for d3 dendrogram
+    //Directives used in: figure4Plot
+    function add_children(child, parent, data) {
+        var childData = {name: child.key, children: [], cluster: child.values[0].cluster};
+        parent.children.push(childData);
+
+        for (var i = 0; i < child.children.length; i++) {
+            var newChild = data[child.children[i]];
+            add_children(newChild, childData, data);
+        }
+    }
+
 
     (function() {
         //Application name: tevApp
@@ -925,16 +937,6 @@
 
                     if(data.length == 0){
                         return;
-                    }
-
-                    function add_children(child, parent, data) {
-                        var childData = {name: child.key, children: [], cluster: child.values[0].cluster};
-                        parent.children.push(childData);
-
-                        for(var i = 0; i < child.children.length; i++){
-                            var newChild = data[child.children[i]];
-                            add_children(newChild, childData, data);
-                        }
                     }
 
                     var fishbone_data = {};
