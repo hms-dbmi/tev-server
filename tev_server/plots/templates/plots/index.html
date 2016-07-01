@@ -1450,6 +1450,127 @@
 
         });
 
+        tevApp.directive('intuitionPlot', function(){
+           return {
+               restrict: 'A',
+               scope: {
+                   data: '='
+               },
+               link: link
+           };
+
+            function link(scope, element){
+                var data = scope.data;
+                var el = element[0];
+                var width  = el.clientWidth;
+                var height = el.clientHeight;
+
+                scope.$watch('data', function(updated_data){
+                    d3.select(el).selectAll('svg').remove();
+                    d3.select(el).selectAll('div').remove();
+
+                    data = updated_data;
+
+                    var container = d3.select(el).append('div')
+                            .attr('id', 'container')
+                            .style('width', 350 + 'px')
+                            .style('height', 30 + 'px')
+                            .style('left', 125 + 'px')
+                            .style('top', 0 + 'px')
+                            .style('position', 'relative')
+                            .style('border', '2px solid black')
+                            .style('border-radius', 5 + 'px')
+                            .style('border-width', 1 + 'px')
+                            .style('padding', 10 + 'px')
+                            .style('font', '12px sans-serif');
+
+                    var nested_data = d3.nest()
+                            .key(function (d) {
+                                return d.allele;
+                            })
+                            .entries(data);
+
+                    var x_pos = 0;
+                    var y_pos, additive_height;
+                    var container_height = 30;
+
+                    var container_svg = container.append('svg')
+                            .attr('width', 350)
+                            .attr('height', 30);
+
+                    var labels = container_svg.selectAll('labels')
+                            .data(nested_data)
+                            .enter()
+                            .append('text')
+                            .text(function(d){
+                                return d.key;
+                            })
+                            .attr('x', function(d, i){
+                                var x = x_pos;
+                                d.width = d3.select(this).node().getBBox().width;
+                                d.height = d3.select(this).node().getBBox().height;
+                                x_pos = x_pos + d.width;
+
+                                if(i == 0){
+                                    y_pos = 0;
+                                    y_pos = d.height;
+                                    additive_height = d.height;
+                                }
+                                if(x_pos > 350){
+                                    x_pos = 0;
+                                    x_pos = x_pos + d.width;
+                                    x = 0;
+                                    y_pos = y_pos + additive_height;
+                                    if(y_pos > container_height){
+                                        d3.select('#container').style('height', (additive_height + 1) + 'px');
+                                    }
+                                }
+                                d.y = y_pos;
+                                d.rect_y = d.y - additive_height;
+                                d.x = x;
+                                return x;
+                            })
+                            .attr('y', function(d){
+                                return d.y
+                            })
+                            .style('font', '10px sans-serif')
+                            .style('text-anchor', 'top');
+
+                    var label_boxes = container_svg.selectAll('label_boxes')
+                            .data(nested_data)
+                            .enter()
+                            .append('rect')
+                            .attr('x', function(d){
+                                return d.x;
+                            })
+                            .attr('y', function(d){
+                              return d.rect_y;
+                            })
+                            .attr('width', function(d){
+                                return d.width;
+                            })
+                            .attr('height', function(d){
+                                return d.height;
+                            })
+                            .attr('fill', 'none')
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 0.5);
+
+
+                    var canvas = d3.select(el).append('div')
+                            .style('width', width + 'px')
+                            .style('height', height + 'px')
+                            .style('position', 'relative')
+                            .style('border', '2px solid black')
+                            .style('border-radius', 5 + 'px')
+                            .style('border-width', 1 + 'px')
+                            .style('padding', 10 + 'px')
+                            .style('font', '12px sans-serif');
+
+                });
+            }
+        });
+
     })();
 
 </script>
@@ -1461,7 +1582,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 </div>
 
 
-<div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" style="width: 700px; height: 650px; float: left;">
+<div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" style="width: 700px; height: 650px; float: right;">
 </div>
 
 <div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]"
@@ -1469,10 +1590,13 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 </div>
 
 
-<div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 550px; float: left;">
+<div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 550px; float: right;">
 </div>
 
 <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 600px; height: 600px; float: left;">
+</div>
+
+<div id="figure6" intuition-plot data="alleleified_data" style="width: 600px; height: 600px; float: right">
 </div>
 
 </body>
