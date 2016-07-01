@@ -1471,18 +1471,21 @@
 
                     data = updated_data;
 
+                    var container_width = 500;
+                    var container_margin = (width - container_width)/2;
+                    var container_height = 40;
+
                     var container = d3.select(el).append('div')
                             .attr('id', 'container')
-                            .style('width', 350 + 'px')
-                            .style('height', 30 + 'px')
-                            .style('left', 125 + 'px')
+                            .style('width', container_width + 'px')
+                            .style('height', container_height + 'px')
+                            .style('left', container_margin + 'px')
                             .style('top', 0 + 'px')
                             .style('position', 'relative')
                             .style('border', '2px solid black')
                             .style('border-radius', 5 + 'px')
                             .style('border-width', 1 + 'px')
-                            .style('padding', 10 + 'px')
-                            .style('font', '12px sans-serif');
+                            .style('padding', 10 + 'px');
 
                     var nested_data = d3.nest()
                             .key(function (d) {
@@ -1492,11 +1495,20 @@
 
                     var x_pos = 0;
                     var y_pos, additive_height;
-                    var container_height = 30;
 
                     var container_svg = container.append('svg')
-                            .attr('width', 350)
-                            .attr('height', 30);
+                            .attr('id', 'container_svg')
+                            .attr('width', container_width)
+                            .attr('height', container_height);
+
+                    //Padding between the rects containing the labels
+                    var horizontal_label_container_padding = 10;
+                    var veritical_label_container_padding = 10;
+
+                    //Padding between the text and the borders of their containers
+                    var horizontal_label_padding = 4;
+                    var vertical_label_padding = 4;
+
 
                     var labels = container_svg.selectAll('labels')
                             .data(nested_data)
@@ -1507,33 +1519,40 @@
                             })
                             .attr('x', function(d, i){
                                 var x = x_pos;
-                                d.width = d3.select(this).node().getBBox().width;
-                                d.height = d3.select(this).node().getBBox().height;
-                                x_pos = x_pos + d.width;
+                                d.width = d3.select(this).node().getBBox().width + (vertical_label_padding*2);
+                                d.height = d3.select(this).node().getBBox().height + (vertical_label_padding*2);
+
+                                console.log(d3.select(this).node().clientWidth);
+                                x_pos = x_pos + d.width + horizontal_label_container_padding;
 
                                 if(i == 0){
+                                    //Will cause the top of the container (rect) to start at 0
+                                    //But the top of the label (text) will start at the value of vertical_labsel_padding
                                     y_pos = 0;
                                     y_pos = d.height;
                                     additive_height = d.height;
                                 }
-                                if(x_pos > 350){
+                                if(x_pos > container_width){
                                     x_pos = 0;
-                                    x_pos = x_pos + d.width;
+                                    x_pos = x_pos + d.width + horizontal_label_container_padding;
                                     x = 0;
-                                    y_pos = y_pos + additive_height;
+                                    y_pos = y_pos + additive_height + veritical_label_container_padding;
                                     if(y_pos > container_height){
-                                        d3.select('#container').style('height', (additive_height + 1) + 'px');
+                                        container_height = container_height + additive_height;
+                                        d3.select('#container').style('height', container_height + 'px');
+                                        d3.select('#container_svg').attr('height', container_height);
                                     }
                                 }
-                                d.y = y_pos;
-                                d.rect_y = d.y - additive_height;
-                                d.x = x;
-                                return x;
+                                d.y = y_pos - vertical_label_padding;
+                                d.rect_y = d.y - additive_height + vertical_label_padding;
+                                d.rect_x = x;
+                                d.x = (x + horizontal_label_padding);
+                                return d.x;
                             })
                             .attr('y', function(d){
                                 return d.y
                             })
-                            .style('font', '10px sans-serif')
+                            .style('font', '14px sans-serif')
                             .style('text-anchor', 'top');
 
                     var label_boxes = container_svg.selectAll('label_boxes')
@@ -1541,7 +1560,8 @@
                             .enter()
                             .append('rect')
                             .attr('x', function(d){
-                                return d.x;
+                                console.log(d);
+                                return d.rect_x;
                             })
                             .attr('y', function(d){
                               return d.rect_y;
@@ -1552,6 +1572,8 @@
                             .attr('height', function(d){
                                 return d.height;
                             })
+                            .attr('rx', 5)
+                            .attr('ry', 5)
                             .attr('fill', 'none')
                             .attr('stroke', 'black')
                             .attr('stroke-width', 0.5);
@@ -1590,7 +1612,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 </div>
 
 
-<div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 550px; float: right;">
+<div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 500px; float: right;">
 </div>
 
 <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 600px; height: 600px; float: left;">
