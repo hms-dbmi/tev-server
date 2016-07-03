@@ -1450,7 +1450,7 @@
 
         });
 
-        tevApp.directive('intuitionPlot', function () {
+        tevApp.directive('intuitionPlotClick', function () {
             return {
                 restrict: 'A',
                 scope: {
@@ -1458,7 +1458,6 @@
                 },
                 link: link
             };
-
             function link(scope, element) {
                 var data = scope.data;
                 var el = element[0];
@@ -1513,9 +1512,9 @@
                             .data(nested_data)
                             .enter()
                             .append('g')
-                            .attr('id', function (d) {
-                                return d.key;
-                            })
+                            //.attr('id', function (d) {
+                             //   return d.key;
+                           // })
                             .attr('class', 'fishplot_labels');
 
                     var labels = groups.append('text')
@@ -1526,10 +1525,7 @@
                                 var x = x_pos;
                                 d.width = d3.select(this).node().getBBox().width + (vertical_label_padding * 2);
                                 d.height = d3.select(this).node().getBBox().height + (vertical_label_padding * 2);
-
-                                console.log(d3.select(this).node().clientWidth);
                                 x_pos = x_pos + d.width + horizontal_label_container_padding;
-
                                 if (i == 0) {
                                     //Will cause the top of the container (rect) to start at 0
                                     //But the top of the label (text) will start at the value of vertical_labsel_padding
@@ -1562,7 +1558,6 @@
 
                     var label_boxes = groups.append('rect')
                             .attr('x', function (d) {
-                                console.log(d);
                                 return d.rect_x;
                             })
                             .attr('y', function (d) {
@@ -1576,31 +1571,199 @@
                             })
                             .attr('rx', 5)
                             .attr('ry', 5)
+                            .attr('class', function(d){
+                                return d.key + "_rect";
+                            })
                             .attr('fill', 'none')
                             .attr('stroke', 'black')
                             .attr('stroke-width', 0.5);
 
-                    groups.on('mouseover', function () {
-                                d3.select(this).style('cursor', 'pointer');
-                            })
-                            .on('mousemove', function () {
-                                console.log('here');
-                                d3.select(this).style('cursor', 'pointer');
-                            })
-                            .on('mouseout', function () {
-                                d3.select(this).style('cursor', 'auto');
-                            });
+                    var container_separation = 10;
 
+                    //relative canvas top
+                    var separation = 10;
 
                     var canvas = d3.select(el).append('div')
                             .style('width', width + 'px')
                             .style('height', height + 'px')
+                            .style('top', separation + 'px')
                             .style('position', 'relative')
                             .style('border', '2px solid black')
                             .style('border-radius', 5 + 'px')
                             .style('border-width', 1 + 'px')
                             .style('padding', 10 + 'px')
-                            .style('font', '12px sans-serif');
+                            .style('font', '12px sans-serif')
+                            .attr('transform', 'translate(0,' + container_separation + ')');
+
+                    // Append an svg to the div so that we can use the viewBox feature
+                    var canvas_svg = canvas.append('svg')
+                            .attr('height', height)
+                            .attr('width', width);
+                });
+            }
+        });
+
+        tevApp.directive('dragTrial', function(){
+           return {
+               restrict: 'A',
+               scope: {
+                   data: '='
+               },
+               link: link
+           };
+
+            function link(scope, element){
+                 var data = scope.data;
+                var el = element[0];
+                var width = el.clientWidth;
+                var height = el.clientHeight;
+
+                scope.$watch('data', function (updated_data) {
+                    d3.select(el).selectAll('svg').remove();
+                    data = updated_data;
+
+                    var container_width = 500;
+                    var container_margin = (width - container_width) / 2;
+                    var container_height = 40;
+
+                    var label_container_padding = 10;
+
+                    var translation_x = (width - (container_width + (label_container_padding*2)))/2;
+
+                    var svg = d3.select(el).append('svg')
+                            .attr('height', height)
+                            .attr('width', width);
+
+                    var container_svg = svg.append('svg')
+                            .attr('width', width)
+                            .attr('height', container_height + (label_container_padding*2))
+                            .attr('id', 'container_rect_svg')
+                            .attr('transform', 'translate(' + translation_x + ',0)');
+
+                    container_svg.append('rect')
+                            .attr('x', 0)
+                            .attr('y', 0)
+                            .attr('id', 'container_rect')
+                            .attr('width', container_width + (label_container_padding*2))
+                            .attr('height', container_height + (label_container_padding*2))
+                            .attr('ry', 10)
+                            .attr('rx', 10)
+                            .attr('fill', 'none')
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1);
+
+                    var nested_data = d3.nest()
+                            .key(function (d) {
+                                return d.allele;
+                            })
+                            .entries(data);
+
+                    var x_pos = label_container_padding;
+                    var y_pos, additive_height;
+
+                    //Padding between the rects containing the labels
+                    var horizontal_label_container_padding = 10;
+                    var veritical_label_container_padding = 10;
+
+                    //Padding between the text and the borders of their containers
+                    var horizontal_label_padding = 4;
+                    var vertical_label_padding = 4;
+
+                    var drag = d3.behavior.drag()
+                            .on('drag', function(d){
+                                d.rect_x += d3.event.dx;
+                                d.rect_y += d3.event.dy;
+                               d3.select(this).attr('transform', 'translate(' + d.rect_x + ',' + d.rect_y + ')');
+                            });
+
+                    var label_svg = svg.selectAll('labels')
+                            .data(nested_data)
+                            .enter()
+                            .append('g')
+                            .attr('id', function(d){
+                                return d.key;
+                            })
+                            .call(drag);
+
+                    label_svg.append('text')
+                            .text(function (d) {
+                                return d.key;
+                            })
+                            .attr('x', function (d, i) {
+                                var x = x_pos;
+                                d.width = d3.select(this).node().getBBox().width + (vertical_label_padding * 2);
+                                d.height = d3.select(this).node().getBBox().height + (vertical_label_padding * 2);
+                                x_pos = x_pos + d.width + horizontal_label_container_padding;
+                                if (i == 0) {
+                                    //Will cause the top of the container (rect) to start at 0
+                                    //But the top of the label (text) will start at the value of vertical_labsel_padding
+                                    y_pos = d.height + label_container_padding;
+                                    additive_height = d.height;
+                                }
+                                if (x_pos > container_width) {
+                                    x_pos = label_container_padding;
+                                    x_pos = x_pos + d.width + horizontal_label_container_padding;
+                                    x = label_container_padding;
+                                    y_pos = y_pos + additive_height + veritical_label_container_padding;
+                                    if (y_pos > container_height) {
+                                        container_height = container_height + additive_height + label_container_padding;
+                                        d3.select('#container_rect').attr('height', container_height);
+                                        d3.select('#container_rect_svg').attr('height', container_height);
+                                    }
+                                }
+                                d.y = y_pos - vertical_label_padding;
+                                d.rect_y = d.y - additive_height + vertical_label_padding;
+                                d.rect_x = x;
+                                d.x = (x + horizontal_label_padding);
+                                return 0;
+                            })
+                            .attr('y', function (d) {
+                                return d.height;
+                            })
+                            .style('font', '14px sans-serif')
+                            .style('text-anchor', 'top');
+
+                    label_svg.append('rect')
+                            .attr('x', function (d) {
+                                console.log(d);
+                                return 0;
+                            })
+                            .attr('y', function (d) {
+                                return 0;
+                            })
+                            .attr('width', function (d) {
+                                return d.width;
+                            })
+                            .attr('height', function (d) {
+                                return d.height;
+                            })
+                            .attr('rx', 5)
+                            .attr('ry', 5)
+                            .attr('fill', 'none')
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 0.5);
+
+                    for(var i = 0; i < nested_data.length; i++) {
+                        var allele = nested_data[i].key;
+
+                        //May have to change this so that it finds any position with an * instead of checking last char
+                        if (allele.charAt(allele.length - 1) == '*') {
+                            var id = ('#' + allele.slice(0, -1) + '\\\*');
+                        }
+                        else {
+                            id = '#' + allele;
+                        }
+                        d3.select(id).attr('transform', function () {
+                            console.log(nested_data[i]);
+                            return 'translate(' + nested_data[i].rect_x + ','
+                                    + nested_data[i].rect_y + ')';
+                        });
+                    }
+
+                    //pad the bottom of the rect
+                    d3.select('#container_rect_svg').attr('height', container_height+label_container_padding);
+                    d3.select('#container_rect').attr('height', container_height+label_container_padding);
+
 
                 });
             }
@@ -1625,13 +1788,16 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 </div>
 
 
-<div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 500px; float: right;">
+<div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 600px; float: right;">
 </div>
 
 <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 600px; height: 600px; float: left;">
 </div>
 
-<div id="figure6" intuition-plot data="alleleified_data" style="width: 600px; height: 600px; float: right">
+<div id="figure6" intuition-plot-click data="alleleified_data" style="width: 600px; height: 600px; float: right;">
+</div>
+
+<div id="figure7" drag-trial data="alleleified_data" style="width: 600px; height: 600px; float: left;">
 </div>
 
 </body>
