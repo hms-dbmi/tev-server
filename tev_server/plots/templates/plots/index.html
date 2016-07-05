@@ -1473,7 +1473,7 @@
                         return d.allele;
                     }).entries(data);
 
-                    var container_width = 500;
+                    var container_width = width;
                     var container_margin = (width - container_width) / 2;
                     var container_height = 40;
 
@@ -1488,7 +1488,8 @@
 
                     var svg = d3.select(el).append('svg')
                             .attr('width', width)
-                            .attr('height', height);
+                            .attr('height', height)
+                            .attr('id', 'parent_svg');
 
                     var container = svg.append('svg')
                             .attr('height', container_height)
@@ -1541,8 +1542,9 @@
                                     y_pos = y_pos + d.height + 10;
                                     if (y_pos > container_height) {
                                         //make sure it fits by adding height to the y position
-                                        d3.select('#container_svg').attr('height', y_pos + d.height);
-                                        d3.select('#container_rect').attr('height', y_pos + d.height);
+                                        container_height = y_pos + d.height;
+                                        d3.select('#container_svg').attr('height', container_height);
+                                        d3.select('#container_rect').attr('height', container_height);
                                     }
                                 }
                                 d.x = x;
@@ -1601,6 +1603,28 @@
 
                     labels.style('cursor', 'pointer')
                             .call(drag);
+
+                    //Now for the canvas
+                    var canvas = svg.append('svg')
+                            .attr('height', function(){
+                                //Adjust the height of the div to fit the canvas
+                                el.clientHeight = container_height+height;
+                                //Adjust the height of the parent SVG to the new div height
+                                d3.select('#parent_svg').attr('height', container_height+height);
+                            })
+                            .attr('width', width)
+                            .attr('id', 'canvas_svg');
+
+                    canvas.append('rect')
+                            .attr('x', 0)
+                            .attr('y', container_height)
+                            .attr('width', width)
+                            .attr('height', height)
+                            .attr('stroke', 'black')
+                            .attr('stroke-width', 1)
+                            .attr('fill', 'none')
+                            .attr('rx', 10)
+                            .attr('ry', 10);
 
                 });
             }
