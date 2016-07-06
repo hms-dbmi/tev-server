@@ -1585,6 +1585,8 @@
                             .attr('stroke-width', 1)
                             .attr('fill', 'none')
                             .attr('transform', function (d) {
+                                //move the label rect upwards to center the text inside
+                                //based on natural padding calculation
                                 var y = (-1) * (d.y - d.rect_y);
                                 return 'translate(0,' + y + ')';
                             });
@@ -1597,7 +1599,6 @@
                             .on('drag', function (d) {
                                 d.x += d3.event.dx;
                                 d.y += d3.event.dy;
-                                console.log(d3.select(this));
                                 d3.select(this).attr('transform', 'translate(' + d.x + ',' + d.y + ')');
                             });
 
