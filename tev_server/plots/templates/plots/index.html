@@ -1590,7 +1590,6 @@
                             });
 
                     labels.attr('transform', function (d) {
-                        console.log(d);
                         return 'translate(' + d.x + ',' + d.y + ')';
                     });
 
@@ -1598,6 +1597,7 @@
                             .on('drag', function (d) {
                                 d.x += d3.event.dx;
                                 d.y += d3.event.dy;
+                                console.log(d3.select(this));
                                 d3.select(this).attr('transform', 'translate(' + d.x + ',' + d.y + ')');
                             });
 
@@ -1625,6 +1625,22 @@
                             .attr('fill', 'none')
                             .attr('rx', 10)
                             .attr('ry', 10);
+
+                    var x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    var num_of_timepoints = x_axis_labels.length;
+
+                    x_axis_labels.unshift('origin');
+
+                    var x_scale = d3.scale.ordinal().rangePoints([0, width], 0.5).domain(x_axis_labels);
+                    var x_axis = d3.svg.axis().scale(x_scale).orient('bottom');
+
+                    var y_scale = d3.scale.linear().range([0, (height+(container_height/2))]).domain([101, -1]);
+                    var y_axis = d3.svg.axis().scale(y_scale);
+
+                    canvas.append("svg:g")
+                        .attr("class", "axis")
+                        .attr("transform", "translate(0," + (height+(container_height/2)) + ")")
+                        .call(x_axis);
 
                 });
             }
@@ -1655,10 +1671,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 600px; height: 600px; float: left;">
 </div>
 
-<div id="figure6" intuition-plot-click data="alleleified_data" style="width: 600px; height: 600px; float: right;">
-</div>
-
-<div id="figure7" fishplot-editor data="alleleified_data" style="width: 600px; height: 600px; float: left;">
+<div id="figure6" fishplot-editor data="alleleified_data" style="width: 600px; height: 600px; float: right;">
 </div>
 
 </body>
