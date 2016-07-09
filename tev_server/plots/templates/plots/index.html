@@ -1502,7 +1502,8 @@
                             .style('height', height + 'px')
                             .style('border', '1px solid black')
                             .style('float', 'left')
-                            .style('overflow', 'visible')
+                            .style('overflow', 'scroll')
+                            .style('padding', '5px')
                             .attr('id', 'container_div');
 
                     //Div to hold canvas svg
@@ -1521,7 +1522,42 @@
                             .attr('id', 'canvas_svg');
 
                     nested_data = add_origin(nested_data);
-                    console.log(nested_data);
+
+
+                    var container_div_height = 600;
+                    var top;
+                    var mini_fishplot_container_height = 150;
+                    var mini_fishplots = container.selectAll('alleles')
+                            .data(nested_data)
+                            .enter()
+                            .append('div')
+                            .style('top', function(d, i){
+                                //150 will be height of divs holding mini fishplots
+                                if(i == 0) {
+                                    top = 0;
+                                }
+                                else{
+                                    top = top + mini_fishplot_container_height;
+                                    if(top+mini_fishplot_container_height > container_div_height){
+                                        container_div_height = top + mini_fishplot_container_height;
+                                        d3.select('#container_div').attr('height', container_div_height)
+                                    }
+                                }
+                                console.log(top);
+                                return top + 'px';
+                            })
+                            .style('left', '0px')
+                            .style('width', '100%')
+                            .style('height', mini_fishplot_container_height + 'px')
+                            .style('border', '0.5px solid black')
+                            .style('margin-top', '10px')
+                            .style('margin-bottom', '10px');
+
+                    //Lay down an svg in the divs
+                    mini_fishplots.append('svg')
+                            .attr('width', '100%')
+                            .attr('height', '100%');
+
 
                 });
             }
