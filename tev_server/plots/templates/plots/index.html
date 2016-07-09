@@ -1484,6 +1484,9 @@
                 var width = el.clientWidth;
                 var height = el.clientHeight;
 
+                var fill_colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
+                    '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928'];
+
                 scope.$watch('data', function (updated_data) {
                     d3.select(el).selectAll('svg').remove();
                     d3.select(el).selectAll('div').remove();
@@ -1521,8 +1524,90 @@
                             .attr('height', '100%')
                             .attr('id', 'canvas_svg');
 
+                    function y_scale_domain_max(nested_data){
+                        var max_array = [];
+                        for (var i = 0; i < nested_data.length; i++){
+                            var allele_alt_counts = [];
+                            var timepoint_data = nested_data[i].values;
+                            for(var j = 0; j < timepoint_data.length; j++){
+                                allele_alt_counts[j] = timepoint_data[j].alt_count;
+                            }
+                            max_array[i] = Math.max.apply(Math, allele_alt_counts);
+                        }
+                        return Math.max.apply(Math, max_array);
+                    }
+
+                    var y_max = y_scale_domain_max(nested_data);
+
                     nested_data = add_origin(nested_data);
 
+                    //May have to turn this into a function..
+                    //Used in fishplot directive as well
+                    for(var i = 0; i < nested_data.length; i++){
+                        var current_allele = nested_data[i];
+                        for(var j = 0; j < current_allele.values.length; j++){
+                            //Initialize all pinches to false
+                            //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
+                            current_allele.values[j].pinch = false;
+                        }
+                        current_allele.values = find_origin(current_allele, nested_data);
+                    }
+
+
+                    function generate_mini_fishplot_top_and_bottom(nested_data, y_max){
+                        var mid_point = y_max/2;
+                        for (var i = 0; i < nested_data.length; i++){
+                            var allele_freqs = nested_data[i].values;
+                            for(var j = 0; j < allele_freqs.length; j++){
+                                var split = allele_freqs[j].alt_count/2;
+                                allele_freqs[j].top = mid_point + split;
+                                allele_freqs[j].bottom = mid_point - split;
+                            }
+                        }
+                    }
+
+                    generate_mini_fishplot_top_and_bottom(nested_data, y_max);
+
+                    var x_axis_labels = [];
+                    x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    x_axis_labels.unshift('origin');
+
+                    var x_scale = d3.scale.ordinal().rangePoints([0, 464], 0.5).domain(x_axis_labels);
+
+                    var y_scale = d3.scale.linear().range([0, 150]).domain([y_max+1, -1]);
+
+                    var top_line_gen = d3.svg.line()
+                            .x(function(d){
+                                 if(d.pinch == true){
+                                    var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
+                                    x_pos = (x_pos * 0.25);
+                                    x_pos = x_pos + xScale(d.previous_timepoint);
+                                    return x_pos;
+                                }
+                                return x_scale(d.Sample_Barcode);
+                            })
+                            .y(function(d){
+                               return y_scale(d.top);
+                            });
+
+                    var bottom_line_gen = d3.svg.line()
+                            .x(function(d){
+                                 if(d.pinch == true){
+                                    var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
+                                    x_pos = (x_pos * 0.25);
+                                    x_pos = x_pos + xScale(d.previous_timepoint);
+                                    return x_pos;
+                                }
+                                return x_scale(d.Sample_Barcode);
+                            })
+                            .y(function(d){
+                               return y_scale(d.bottom);
+                            });
+
+                    var area_between_lines = d3.svg.area()
+                            .x(top_line_gen.x())
+                            .y0(top_line_gen.y())
+                            .y1(bottom_line_gen.y());
 
                     var container_div_height = 600;
                     var top;
@@ -1543,7 +1628,6 @@
                                         d3.select('#container_div').attr('height', container_div_height)
                                     }
                                 }
-                                console.log(top);
                                 return top + 'px';
                             })
                             .style('left', '0px')
@@ -1554,9 +1638,38 @@
                             .style('margin-bottom', '10px');
 
                     //Lay down an svg in the divs
-                    mini_fishplots.append('svg')
+                    var svgs = mini_fishplots.append('svg')
                             .attr('width', '100%')
                             .attr('height', '100%');
+
+                    svgs.append('path')
+                            .attr('fill', 'none')
+                            .attr('stroke-width', 5)
+                            .attr("stroke", "transparent")
+                            .style("stroke-linejoin", "round")
+                            .attr('d', function (d) {
+                                return top_line_gen(d.values);
+                            });
+
+                    svgs.append('path')
+                            .attr('fill', 'none')
+                            .attr("stroke", "transparent")
+                            .style("stroke-linejoin", "round")
+                            .attr('stroke-width', 8)
+                            .attr('d', function (d) {
+                                return bottom_line_gen(d.values);
+                            });
+
+                    svgs.append('path')
+                            .datum(function(d){
+                                console.log(d.values);
+                                return d.values;
+                            })
+                            .attr('fill', function (d) {
+                                return fill_colors[d[0].cluster - 1];
+                            })
+                            .attr('opacity', 0.75)
+                            .attr('d', area_between_lines);
 
 
                 });
