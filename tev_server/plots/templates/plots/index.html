@@ -1609,6 +1609,16 @@
                             .y0(top_line_gen.y())
                             .y1(bottom_line_gen.y());
 
+                    var drag = d3.behavior.drag()
+                            .on('drag', function(){
+                                var mini_fishplot = d3.select(this);
+                                var top = parseInt(mini_fishplot.style('top'));
+                                var left = parseInt(mini_fishplot.style('left'));
+
+                                mini_fishplot.style('top', top + d3.event.dy + 'px')
+                                        .style('left', left + d3.event.dx + 'px');
+                            });
+
                     var container_div_height = 600;
                     var top;
                     var mini_fishplot_container_height = 150;
@@ -1633,9 +1643,11 @@
                             .style('left', '0px')
                             .style('width', '100%')
                             .style('height', mini_fishplot_container_height + 'px')
+                            .style('position', 'relative')
                             .style('border', '0.5px solid black')
                             .style('margin-top', '10px')
-                            .style('margin-bottom', '10px');
+                            .style('margin-bottom', '10px')
+                            .call(drag);
 
                     //Lay down an svg in the divs
                     var svgs = mini_fishplots.append('svg')
@@ -1662,7 +1674,6 @@
 
                     svgs.append('path')
                             .datum(function(d){
-                                console.log(d.values);
                                 return d.values;
                             })
                             .attr('fill', function (d) {
