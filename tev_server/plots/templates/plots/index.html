@@ -1507,6 +1507,7 @@
                             .style('float', 'left')
                             .style('overflow', 'scroll')
                             .style('padding', '5px')
+                            .style('position', 'relative')
                             .attr('id', 'container_div');
 
                     //Div to hold canvas svg
@@ -1643,10 +1644,17 @@
                             .style('left', '0px')
                             .style('width', '100%')
                             .style('height', mini_fishplot_container_height + 'px')
-                            .style('position', 'relative')
                             .style('border', '0.5px solid black')
                             .style('margin-top', '10px')
                             .style('margin-bottom', '10px')
+                            .style('position', 'absolute')
+                            .on('mouseover', function(d){
+                                console.log(d3.select(this)[0][0].offsetTop);
+
+                            })
+                            .on('mouseout', function(){
+                                //d3.select('#dragable_div').remove();
+                            })
                             .call(drag);
 
                     //Lay down an svg in the divs
