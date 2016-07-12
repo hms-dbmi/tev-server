@@ -1657,8 +1657,6 @@
                                 return 'mini_fishplot_div' + i;
                             });
 
-                    var previous_mini_fishplot_svg;
-
                     //Lay down an svg in the divs
                     var svgs = mini_fishplots.append('svg')
                             .attr('width', '100%')
@@ -1668,21 +1666,30 @@
                             .attr('id', function (d, i) {
                                 return 'mini_fishplot_svg' + i;
                             })
-                            .on('mouseover', function (d, i) {
+                            .on('mouseenter', function (d, i) {
                                 d3.selectAll('.mini_fishplots').attr('opacity', 1);
-                                previous_mini_fishplot_svg = d3.select(this);
                                 var div_id = '#mini_fishplot_div' + i;
                                 var mini_fishplot = d3.select(this);
+
+                                //get svg info for clone
                                 var dragable_div_content = mini_fishplot.node().outerHTML;
 
+                                //Calculate top based on the top of the mini fishplot div and how far user scrolled
                                 var top = parseInt(d3.select(div_id).style('top')) - d3.select('#container_div').node().scrollTop;
                                 top = top + 'px';
                                 var left = d3.select(div_id).style('left');
                                 var width = d3.select(div_id).style('width');
                                 var height = d3.select(div_id).style('height');
 
+                                //remove any clones that are already layed down, if any at all
+                                //Some may be left behind if user moves mouse rapdily
                                 d3.selectAll('#dragable_div').remove();
 
+                                //Make all mini fishplots opacity 1 on mouse-up of primary div
+                                //Precaution for if user drags mouse too fast
+                                d3.select(el).on('mouseup', function(){
+                                   d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                });
 
                                 var dragable_div = dragable_div_wrapper.append('div')
                                         .style('top', top)
@@ -1694,12 +1701,20 @@
                                         .style('cursor', 'pointer')
                                         .html(dragable_div_content)
                                         .attr('id', 'dragable_div')
-                                        .on('mouseout', function () {
+                                        //Use mouseleave instead of mouseout (more consistent)
+                                        .on('mouseleave', function () {
+                                            //Put all mini fishplots back to normal opacity
+                                            //(again depends on user rapidly moving mouse)
                                             d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                             d3.select(this).remove();
                                         })
+                                        //Mouseup will be used when dropping mini fishplots
+                                        .on('mouseup', function () {
+                                            d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                        })
                                         .call(d3.behavior.drag()
                                                 .on('drag', function () {
+                                                    //Fade the original mini fishplot when the clone is dragged
                                                     mini_fishplot.attr('opacity', 0.2);
                                                     var dragable_mini_fishplot = d3.select(this);
                                                     var top = parseInt(dragable_mini_fishplot.style('top'));
@@ -1708,7 +1723,6 @@
                                                     dragable_mini_fishplot.style('top', top + d3.event.dy + 'px')
                                                             .style('left', left + d3.event.dx + 'px');
                                                 }));
-
                             });
 
 
