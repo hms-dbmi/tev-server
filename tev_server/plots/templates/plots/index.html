@@ -1740,7 +1740,6 @@
                                         .style('position', 'absolute')
                                         .style('border', '0.5px solid black')
                                         .style('cursor', 'pointer')
-                                        .attr('dragging', false)
                                         .html(dragable_div_content)
                                         .attr('id', 'dragable_div')
                                         //Use mouseleave instead of mouseout (more consistent)
@@ -1749,15 +1748,14 @@
                                             //Put all mini fishplots back to normal opacity
                                             //(again depends on user rapidly moving mouse)
                                             d3.selectAll('.mini_fishplots').attr('opacity', 1);
-                                            //old_x_pos = 0;
-                                            //old_y_pos = 0;
-                                            d3.select(this).attr('dragging', false);
                                             d3.select(this).remove();
                                         })
                                         .on('mousedown', function () {
-                                            d3.select(this).attr('dragging', true)
-                                                    .style('pointer-events', 'none');
-                                            //d3.event.stopPropagation();
+                                            old_x_pos = d3.event.x;
+                                            old_y_pos = d3.event.y;
+
+                                            dragging = true;
+                                            d3.select(this).style('pointer-events', 'none');
                                         });
 
 
@@ -1767,14 +1765,7 @@
 
                     //Make all mini fishplots opacity 1 on mouse-up of primary div
                     //Precaution for if user drags mouse too fast
-                    d3.select(el).on('mousedown', function(){
-                        if(d3.select('#dragable_div').attr('dragging') == 'true'){
-                            old_x_pos = d3.event.x;
-                            old_y_pos = d3.event.y;
-
-                            dragging = true;
-                        }
-                    })
+                    d3.select(el)
                             .on('mouseup', function () {
                                 d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                 old_x_pos = 0;
