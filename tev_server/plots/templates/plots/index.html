@@ -1536,29 +1536,18 @@
                             .style('padding', '0px')
                             .attr('id', 'canvas_div');
 
+                    var moused_over;
+
                     //Canvas svg where fishplot will be plotted
                     var canvas_svg = canvas.append('svg')
                             .attr('width', '100%')
                             .attr('height', '100%')
                             .attr('id', 'canvas_svg')
+                            .attr('index', 'canvas_svg')
                             .on('mouseenter', function(){
-                                console.log('in svg');
-                            })
-                            .on('mouseleave', function(){
-                                console.log('left svg');
-                            });
-
-                    canvas_svg.append('rect')
-                            .attr('x', 200)
-                            .attr('y', 200)
-                            .attr('width', 200)
-                            .attr('height', 200)
-                            .attr('fill', 'yellow')
-                            .on('mouseenter', function(){
-                                console.log('in yellow rect');
-                            })
-                            .on('mouseleave', function(){
-                               console.log('left yellow rect');
+                                if(dragging){
+                                    moused_over = d3.select(this).attr('index');
+                                }
                             });
 
                     var x_axis_labels = [];
@@ -1633,6 +1622,20 @@
                                return mini_y_scale(d.top);
                             });
 
+                    var canvas_top_line_gen = d3.svg.line()
+                            .x(function(d){
+                                 if(d.pinch == true){
+                                    var x_pos = canvas_x_scale(d.Sample_Barcode) - canvas_x_scale(d.previous_timepoint);
+                                    x_pos = (x_pos * 0.25);
+                                    x_pos = x_pos + canvas_x_scale(d.previous_timepoint);
+                                    return x_pos;
+                                }
+                                return canvas_x_scale(d.Sample_Barcode);
+                            })
+                            .y(function(d){
+                               return canvas_y_scale(d.top);
+                            });
+
                     var bottom_line_gen = d3.svg.line()
                             .x(function(d){
                                  if(d.pinch == true){
@@ -1647,10 +1650,29 @@
                                return mini_y_scale(d.bottom);
                             });
 
+                    var canvas_bottom_line_gen = d3.svg.line()
+                            .x(function(d){
+                                 if(d.pinch == true){
+                                    var x_pos = canvas_x_scale(d.Sample_Barcode) - canvas_x_scale(d.previous_timepoint);
+                                    x_pos = (x_pos * 0.25);
+                                    x_pos = x_pos + canvas_x_scale(d.previous_timepoint);
+                                    return x_pos;
+                                }
+                                return canvas_x_scale(d.Sample_Barcode);
+                            })
+                            .y(function(d){
+                               return canvas_y_scale(d.bottom);
+                            });
+
                     var area_between_lines = d3.svg.area()
                             .x(top_line_gen.x())
                             .y0(top_line_gen.y())
                             .y1(bottom_line_gen.y());
+
+                    var canvas_area_between_lines = d3.svg.area()
+                            .x(canvas_top_line_gen.x())
+                            .y0(canvas_top_line_gen.y())
+                            .y1(canvas_bottom_line_gen.y());
 
                     var container_div_height = 600;
                     var top;
@@ -1680,6 +1702,9 @@
                             .style('position', 'absolute')
                             .style('cursor', 'pointer')
                             .style('opacity', 1)
+                            .attr('index', function(d, i){
+                                return i;
+                            })
                             .attr('id', function(d, i){
                                 return 'mini_fishplot_div' + i;
                             });
@@ -1692,6 +1717,7 @@
                     plot_background.values.fill({alt_count: 100});
                     plot_background.children = [];
                     plot_background.groups = {0: 0};
+                    var groups = [];
 
 
                     var old_x_pos = 0;
@@ -1713,10 +1739,6 @@
                                 d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                 var div_id = '#mini_fishplot_div' + i;
                                 var mini_fishplot = d3.select(this);
-                                var old_id = mini_fishplot.attr('id');
-                                var new_id = old_id + '_copy';
-                                mini_fishplot.attr('id', new_id);
-
 
                                 //get svg info for clone
                                 var dragable_div_content = mini_fishplot.node().outerHTML;
@@ -1741,10 +1763,10 @@
                                         .style('border', '0.5px solid black')
                                         .style('cursor', 'pointer')
                                         .html(dragable_div_content)
+                                        .attr('index', i)
                                         .attr('id', 'dragable_div')
                                         //Use mouseleave instead of mouseout (more consistent)
                                         .on('mouseleave', function () {
-                                            mini_fishplot.attr('id', old_id);
                                             //Put all mini fishplots back to normal opacity
                                             //(again depends on user rapidly moving mouse)
                                             d3.selectAll('.mini_fishplots').attr('opacity', 1);
@@ -1765,15 +1787,7 @@
 
                     //Make all mini fishplots opacity 1 on mouse-up of primary div
                     //Precaution for if user drags mouse too fast
-                    d3.select(el)
-                            .on('mouseup', function () {
-                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
-                                old_x_pos = 0;
-                                old_y_pos = 0;
-                                dragging = false;
-                                d3.select('#dragable_div').remove();
-                            })
-                            .on('mousemove', function () {
+                    d3.select(el).on('mousemove', function () {
                                 if (dragging == true) {
                                     var dragable_div = d3.select('#dragable_div');
 
@@ -1798,8 +1812,83 @@
                                     dragable_div.style('pointer-events', 'none');
 
                                 }
-                                else{
+                                else {
                                     return;
+                                }
+                            })
+                            .on('mouseup', function () {
+                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                old_x_pos = 0;
+                                old_y_pos = 0;
+                                dragging = false;
+
+                                var mini_fishplot = d3.select('#dragable_div');
+
+                                //give leeway of 2px for minimum left position of mini fishplot
+                                var minimum_left_pos = parseInt(d3.select('#canvas_div').style('left')) - 2;
+                                minimum_left_pos = Math.floor(minimum_left_pos);
+                                var mini_fishplot_left = parseInt(mini_fishplot.style('left'));
+
+                                if (mini_fishplot_left > minimum_left_pos) {
+
+                                    if (moused_over == 'canvas_svg') {
+
+                                        //If the mini fishplot is dragged over the canvas background
+                                        //center the starting y value at the middle of the mini fishplot div
+                                        var half_height = mini_fishplot.node().clientHeight / 2;
+                                        var mini_fishplot_top = mini_fishplot.style('top');
+                                        var start = parseInt(mini_fishplot_top) + half_height;
+
+                                        start = canvas_y_scale.invert(start);
+
+                                        var data_index = mini_fishplot.attr('index');
+                                        var data = nested_data[data_index];
+
+                                        d3.select('#dragable_div').remove();
+
+                                        data.start_point = start;
+                                        data.group = groups.length;
+                                        groups.push(data.group);
+                                        if (plot_background.groups[data.group.toString()] == undefined) {
+                                            plot_background.groups[data.group.toString()] = data.group;
+                                        }
+                                        plot_background.children.push(data_index);
+
+                                        for (var i = 0; i < plot_background.children.length; i++) {
+                                            var parent = nested_data[plot_background.children[i]];
+                                            var start_point = parent.start_point;
+                                            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                                        }
+
+                                        canvas_svg.append('path')
+                                                .attr('fill', 'none')
+                                                .attr('stroke-width', 5)
+                                                .attr("stroke", "transparent")
+                                                .style("stroke-linejoin", "round")
+                                                .attr('d', function () {
+                                                    return canvas_top_line_gen(data.values);
+                                                });
+
+                                        canvas_svg.append('path')
+                                                .attr('fill', 'none')
+                                                .attr("stroke", "transparent")
+                                                .style("stroke-linejoin", "round")
+                                                .attr('stroke-width', 8)
+                                                .attr('d', function () {
+                                                    return canvas_bottom_line_gen(data.values);
+                                                });
+
+                                        canvas_svg.append('path')
+                                                .datum(data.values)
+                                                .attr('fill', fill_colors[data.values[0].cluster - 1])
+                                                .attr('opacity', 0.75)
+                                                .attr('d', canvas_area_between_lines);
+
+
+                                    }
+                                }
+                                else {
+                                    d3.select('#dragable_div').remove();
                                 }
                             });
 
