@@ -1496,6 +1496,7 @@
                         return d.allele;
                     }).entries(data);
 
+
                     //Div wrapper for dragable div
                     var dragable_div_wrapper = d3.select(el).append('div')
                             .style('top', '0px')
@@ -1507,7 +1508,6 @@
                             .style('padding', '0px')
                             .style('position', 'relative')
                             .attr('id', 'dragable_div_wrapper');
-
 
                     //Div to hold container svg
                     var container = dragable_div_wrapper.append('div')
@@ -1528,18 +1528,49 @@
                     //Div to hold canvas svg
                     var canvas = d3.select(el).append('div')
                             .style('top', '0px')
-                            .style('left', '27%')
+                            .style('left', width * 0.27 + 'px')
                             .style('width', '73%')
                             .style('height', height + 'px')
                             .style('border', '1px solid black')
                             .style('float', 'right')
-                            .style('padding', '0px');
+                            .style('padding', '0px')
+                            .attr('id', 'canvas_div');
 
                     //Canvas svg where fishplot will be plotted
                     var canvas_svg = canvas.append('svg')
                             .attr('width', '100%')
                             .attr('height', '100%')
-                            .attr('id', 'canvas_svg');
+                            .attr('id', 'canvas_svg')
+                            .on('mouseenter', function(){
+                                console.log('in svg');
+                            })
+                            .on('mouseleave', function(){
+                                console.log('left svg');
+                            });
+
+                    canvas_svg.append('rect')
+                            .attr('x', 200)
+                            .attr('y', 200)
+                            .attr('width', 200)
+                            .attr('height', 200)
+                            .attr('fill', 'yellow')
+                            .on('mouseenter', function(){
+                                console.log('in yellow rect');
+                            })
+                            .on('mouseleave', function(){
+                               console.log('left yellow rect');
+                            });
+
+                    var x_axis_labels = [];
+                    x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    x_axis_labels.unshift('origin');
+
+                    var canvas_range_max_x = d3.select('#canvas_svg').node().clientWidth;
+                    var canvas_x_scale = d3.scale.ordinal().rangePoints([0, canvas_range_max_x]).domain(x_axis_labels);
+                    var canvas_x_axis = d3.svg.axis().scale(canvas_x_scale);
+
+                    var canvas_range_max_y = d3.select('#canvas_svg').node().clientHeight;
+                    var canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([101, -1]);
 
                     function y_scale_domain_max(nested_data){
                         var max_array = [];
@@ -1585,40 +1616,35 @@
 
                     generate_mini_fishplot_top_and_bottom(nested_data, y_max);
 
-                    var x_axis_labels = [];
-                    x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
-                    x_axis_labels.unshift('origin');
-
-                    var x_scale = d3.scale.ordinal().rangePoints([0, 464], 0.5).domain(x_axis_labels);
-
-                    var y_scale = d3.scale.linear().range([0, 150]).domain([y_max+1, -1]);
+                    var mini_x_scale = d3.scale.ordinal().rangePoints([0, 464], 0.5).domain(x_axis_labels);
+                    var mini_y_scale = d3.scale.linear().range([0, 150]).domain([y_max+1, -1]);
 
                     var top_line_gen = d3.svg.line()
                             .x(function(d){
                                  if(d.pinch == true){
-                                    var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
+                                    var x_pos = mini_x_scale(d.Sample_Barcode) - mini_x_scale(d.previous_timepoint);
                                     x_pos = (x_pos * 0.25);
-                                    x_pos = x_pos + xScale(d.previous_timepoint);
+                                    x_pos = x_pos + mini_x_scale(d.previous_timepoint);
                                     return x_pos;
                                 }
-                                return x_scale(d.Sample_Barcode);
+                                return mini_x_scale(d.Sample_Barcode);
                             })
                             .y(function(d){
-                               return y_scale(d.top);
+                               return mini_y_scale(d.top);
                             });
 
                     var bottom_line_gen = d3.svg.line()
                             .x(function(d){
                                  if(d.pinch == true){
-                                    var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
+                                    var x_pos = mini_x_scale(d.Sample_Barcode) - mini_x_scale(d.previous_timepoint);
                                     x_pos = (x_pos * 0.25);
-                                    x_pos = x_pos + xScale(d.previous_timepoint);
+                                    x_pos = x_pos + mini_x_scale(d.previous_timepoint);
                                     return x_pos;
                                 }
-                                return x_scale(d.Sample_Barcode);
+                                return mini_x_scale(d.Sample_Barcode);
                             })
                             .y(function(d){
-                               return y_scale(d.bottom);
+                               return mini_y_scale(d.bottom);
                             });
 
                     var area_between_lines = d3.svg.area()
@@ -1653,9 +1679,26 @@
                             .style('border', '0.5px solid black')
                             .style('position', 'absolute')
                             .style('cursor', 'pointer')
+                            .style('opacity', 1)
                             .attr('id', function(d, i){
                                 return 'mini_fishplot_div' + i;
                             });
+
+                    var plot_background = {};
+                    plot_background.key = "plot";
+                    plot_background.values = [];
+                    plot_background.values.length = nested_data[0].values.length;
+                    //Depends on what the domain is for the canvas... right now the max is 100 total for the fishplot(s)
+                    plot_background.values.fill({alt_count: 100});
+                    plot_background.children = [];
+                    plot_background.groups = {0: 0};
+
+
+                    var old_x_pos = 0;
+                    var new_x_pos = 0;
+                    var old_y_pos = 0;
+                    var new_y_pos = 0;
+
 
                     //Lay down an svg in the divs
                     var svgs = mini_fishplots.append('svg')
@@ -1670,6 +1713,10 @@
                                 d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                 var div_id = '#mini_fishplot_div' + i;
                                 var mini_fishplot = d3.select(this);
+                                var old_id = mini_fishplot.attr('id');
+                                var new_id = old_id + '_copy';
+                                mini_fishplot.attr('id', new_id);
+
 
                                 //get svg info for clone
                                 var dragable_div_content = mini_fishplot.node().outerHTML;
@@ -1685,12 +1732,6 @@
                                 //Some may be left behind if user moves mouse rapdily
                                 d3.selectAll('#dragable_div').remove();
 
-                                //Make all mini fishplots opacity 1 on mouse-up of primary div
-                                //Precaution for if user drags mouse too fast
-                                d3.select(el).on('mouseup', function(){
-                                   d3.selectAll('.mini_fishplots').attr('opacity', 1);
-                                });
-
                                 var dragable_div = dragable_div_wrapper.append('div')
                                         .style('top', top)
                                         .style('left', left)
@@ -1699,30 +1740,76 @@
                                         .style('position', 'absolute')
                                         .style('border', '0.5px solid black')
                                         .style('cursor', 'pointer')
+                                        .attr('dragging', false)
                                         .html(dragable_div_content)
                                         .attr('id', 'dragable_div')
                                         //Use mouseleave instead of mouseout (more consistent)
                                         .on('mouseleave', function () {
+                                            mini_fishplot.attr('id', old_id);
                                             //Put all mini fishplots back to normal opacity
                                             //(again depends on user rapidly moving mouse)
                                             d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                            //old_x_pos = 0;
+                                            //old_y_pos = 0;
+                                            d3.select(this).attr('dragging', false);
                                             d3.select(this).remove();
                                         })
-                                        //Mouseup will be used when dropping mini fishplots
-                                        .on('mouseup', function () {
-                                            d3.selectAll('.mini_fishplots').attr('opacity', 1);
-                                        })
-                                        .call(d3.behavior.drag()
-                                                .on('drag', function () {
-                                                    //Fade the original mini fishplot when the clone is dragged
-                                                    mini_fishplot.attr('opacity', 0.2);
-                                                    var dragable_mini_fishplot = d3.select(this);
-                                                    var top = parseInt(dragable_mini_fishplot.style('top'));
-                                                    var left = parseInt(dragable_mini_fishplot.style('left'));
+                                        .on('mousedown', function () {
+                                            d3.select(this).attr('dragging', true)
+                                                    .style('pointer-events', 'none');
+                                            //d3.event.stopPropagation();
+                                        });
 
-                                                    dragable_mini_fishplot.style('top', top + d3.event.dy + 'px')
-                                                            .style('left', left + d3.event.dx + 'px');
-                                                }));
+
+                            });
+
+                    var dragging = false;
+
+                    //Make all mini fishplots opacity 1 on mouse-up of primary div
+                    //Precaution for if user drags mouse too fast
+                    d3.select(el).on('mousedown', function(){
+                        if(d3.select('#dragable_div').attr('dragging') == 'true'){
+                            old_x_pos = d3.event.x;
+                            old_y_pos = d3.event.y;
+
+                            dragging = true;
+                        }
+                    })
+                            .on('mouseup', function () {
+                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                old_x_pos = 0;
+                                old_y_pos = 0;
+                                dragging = false;
+                                d3.select('#dragable_div').remove();
+                            })
+                            .on('mousemove', function () {
+                                if (dragging == true) {
+                                    var dragable_div = d3.select('#dragable_div');
+
+                                    new_x_pos = d3.event.x;
+                                    var x_difference = new_x_pos - old_x_pos;
+
+                                    new_y_pos = d3.event.y;
+                                    var y_difference = new_y_pos - old_y_pos;
+
+                                    //console.log(old_x_pos + ', ' + old_y_pos);
+                                    //console.log(new_x_pos + ', ' + new_y_pos);
+
+                                    old_x_pos = new_x_pos;
+                                    old_y_pos = new_y_pos;
+
+                                    dragable_div.style('left', function () {
+                                                return parseInt(dragable_div.style('left')) + x_difference + 'px';
+                                            })
+                                            .style('top', function () {
+                                                return parseInt(dragable_div.style('top')) + y_difference + 'px';
+                                            });
+                                    dragable_div.style('pointer-events', 'none');
+
+                                }
+                                else{
+                                    return;
+                                }
                             });
 
 
@@ -1753,7 +1840,6 @@
                             })
                             .attr('opacity', 0.75)
                             .attr('d', area_between_lines);
-
 
                 });
             }
