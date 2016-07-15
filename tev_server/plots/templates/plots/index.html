@@ -1369,7 +1369,6 @@
                             //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                             current_allele.values[j].pinch = false;
                         }
-                        current_allele.values = find_origin(current_allele, nestedData);
                     }
 
                     var topLineGen = d3.svg.line()
@@ -1492,9 +1491,18 @@
                     d3.select(el).selectAll('div').remove();
                     data = updated_data;
 
-                    var nested_data = d3.nest().key(function (d) {
+                    var mini_nested_data = d3.nest().key(function (d) {
                         return d.allele;
                     }).entries(data);
+
+                    var canvas_nested_data = d3.nest().key(function(d){
+                        return d.allele;
+                    }).entries(data);
+
+                    //Add children field
+                    for(var i = 0; i < canvas_nested_data.length; i++){
+                        canvas_nested_data[i].children = [];
+                    }
 
 
                     //Div wrapper for dragable div
@@ -1552,6 +1560,7 @@
 
                     var x_axis_labels = [];
                     x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    var num_of_timepoints = x_axis_labels.length;
                     x_axis_labels.unshift('origin');
 
                     var canvas_range_max_x = d3.select('#canvas_svg').node().clientWidth;
@@ -1574,20 +1583,21 @@
                         return Math.max.apply(Math, max_array);
                     }
 
-                    var y_max = y_scale_domain_max(nested_data);
+                    var y_max = y_scale_domain_max(mini_nested_data);
 
-                    nested_data = add_origin(nested_data);
+                    mini_nested_data = add_origin(mini_nested_data);
+                    canvas_nested_data = add_origin(canvas_nested_data);
 
                     //May have to turn this into a function..
                     //Used in fishplot directive as well
-                    for(var i = 0; i < nested_data.length; i++){
-                        var current_allele = nested_data[i];
+                    for(var i = 0; i < mini_nested_data.length; i++){
+                        var current_allele = mini_nested_data[i];
                         for(var j = 0; j < current_allele.values.length; j++){
                             //Initialize all pinches to false
                             //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                             current_allele.values[j].pinch = false;
                         }
-                        current_allele.values = find_origin(current_allele, nested_data);
+                        current_allele.values = find_origin(current_allele, mini_nested_data);
                     }
 
 
@@ -1603,7 +1613,7 @@
                         }
                     }
 
-                    generate_mini_fishplot_top_and_bottom(nested_data, y_max);
+                    generate_mini_fishplot_top_and_bottom(mini_nested_data, y_max);
 
                     var mini_x_scale = d3.scale.ordinal().rangePoints([0, 464], 0.5).domain(x_axis_labels);
                     var mini_y_scale = d3.scale.linear().range([0, 150]).domain([y_max+1, -1]);
@@ -1678,7 +1688,7 @@
                     var top;
                     var mini_fishplot_container_height = 150;
                     var mini_fishplots = container.selectAll('alleles')
-                            .data(nested_data)
+                            .data(mini_nested_data)
                             .enter()
                             .append('div')
                             .style('top', function(d, i){
@@ -1712,7 +1722,7 @@
                     var plot_background = {};
                     plot_background.key = "plot";
                     plot_background.values = [];
-                    plot_background.values.length = nested_data[0].values.length;
+                    plot_background.values.length = canvas_nested_data[0].values.length;
                     //Depends on what the domain is for the canvas... right now the max is 100 total for the fishplot(s)
                     plot_background.values.fill({alt_count: 100});
                     plot_background.children = [];
@@ -1785,6 +1795,12 @@
 
                     var dragging = false;
 
+                    //Keep track of fishplots on canvas & order they're in
+                    //In case new plot added to canvas background and need to move/shift everything
+                    var fishplot_svgs = [];
+                    var complete_values = [];
+
+
                     //Make all mini fishplots opacity 1 on mouse-up of primary div
                     //Precaution for if user drags mouse too fast
                     d3.select(el).on('mousemove', function () {
@@ -1833,6 +1849,8 @@
 
                                     if (moused_over == 'canvas_svg') {
 
+                                        var nested_data = canvas_nested_data.slice(0);
+
                                         //If the mini fishplot is dragged over the canvas background
                                         //center the starting y value at the middle of the mini fishplot div
                                         var half_height = mini_fishplot.node().clientHeight / 2;
@@ -1842,47 +1860,99 @@
                                         start = canvas_y_scale.invert(start);
 
                                         var data_index = mini_fishplot.attr('index');
+
                                         var data = nested_data[data_index];
 
                                         d3.select('#dragable_div').remove();
 
                                         data.start_point = start;
                                         data.group = groups.length;
+                                        data.parent_index_of_this = 'plot';
+
+
+                                        //Re-do top and bottom based on start position from mousedown
+                                        for(var i = 0; i < num_of_timepoints; i++){
+                                            data.values[i].top = data.start_point + (data.values[i].alt_count/2);
+                                            data.values[i].bottom = data.start_point - (data.values[i].alt_count/2);
+                                        }
+
                                         groups.push(data.group);
                                         if (plot_background.groups[data.group.toString()] == undefined) {
-                                            plot_background.groups[data.group.toString()] = data.group;
+                                            plot_background.groups[data.group.toString()] = data_index;
                                         }
-                                        plot_background.children.push(data_index);
+
+                                        plot_background.children.push(parseInt(data_index));
+                                        fishplot_svgs.push(data_index);
+
+                                        canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
+
+                                        //MAKE THIS A FUNCTION (retains un-trimmed copy of updated values)
+                                        for(var i = 0; i < fishplot_svgs.length; i++){
+                                            var current_index = fishplot_svgs[i];
+                                            canvas_nested_data[current_index] = JSON.parse(JSON.stringify(canvas_nested_data[current_index]));
+                                        }
+                                        var nested_data_copy = nested_data;
 
                                         for (var i = 0; i < plot_background.children.length; i++) {
-                                            var parent = nested_data[plot_background.children[i]];
+                                            var parent = nested_data_copy[plot_background.children[i]];
                                             var start_point = parent.start_point;
-                                            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                                            nested_data_copy[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
                                         }
 
-                                        canvas_svg.append('path')
-                                                .attr('fill', 'none')
-                                                .attr('stroke-width', 5)
-                                                .attr("stroke", "transparent")
-                                                .style("stroke-linejoin", "round")
-                                                .attr('d', function () {
-                                                    return canvas_top_line_gen(data.values);
-                                                });
+                                        adjust_independent_evolution_positions(nested_data_copy, plot_background, num_of_timepoints);
 
-                                        canvas_svg.append('path')
-                                                .attr('fill', 'none')
-                                                .attr("stroke", "transparent")
-                                                .style("stroke-linejoin", "round")
-                                                .attr('stroke-width', 8)
-                                                .attr('d', function () {
-                                                    return canvas_bottom_line_gen(data.values);
-                                                });
+                                        //will eventually need to do collision detection for children
+                                        //nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
 
-                                        canvas_svg.append('path')
-                                                .datum(data.values)
-                                                .attr('fill', fill_colors[data.values[0].cluster - 1])
-                                                .attr('opacity', 0.75)
-                                                .attr('d', canvas_area_between_lines);
+                                        //load pinches
+                                        //Have to use fishplot svgs to select specific indices of nested_data
+                                        //Otherwise, we prematurely clip off the origin of fishplots starting after
+                                        //The first timepoint (i.e. Pretreatment in example file)
+                                        for (var i = 0; i < fishplot_svgs.length; i++) {
+                                            var current_allele = nested_data_copy[fishplot_svgs[i]];
+                                            for (var j = 0; j < current_allele.values.length; j++) {
+                                                //Initialize all pinches to false
+                                                //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
+                                                current_allele.values[j].pinch = false;
+                                            }
+                                            current_allele.values = find_origin(current_allele, nested_data_copy);
+                                        }
+
+                                        console.log(canvas_nested_data);
+
+                                        d3.selectAll('.big_fish').remove();
+
+
+                                        for(var i = 0; i < fishplot_svgs.length; i++) {
+                                            var current_data = nested_data[fishplot_svgs[i]];
+
+                                            canvas_svg.append('path')
+                                                    .attr('fill', 'none')
+                                                    .attr('stroke-width', 5)
+                                                    .attr("stroke", "transparent")
+                                                    .attr('class', 'big_fish')
+                                                    .style("stroke-linejoin", "round")
+                                                    .attr('d', function () {
+                                                        return canvas_top_line_gen(current_data.values);
+                                                    });
+
+                                            canvas_svg.append('path')
+                                                    .attr('fill', 'none')
+                                                    .attr("stroke", "transparent")
+                                                    .style("stroke-linejoin", "round")
+                                                    .attr('class', 'big_fish')
+                                                    .attr('stroke-width', 8)
+                                                    .attr('d', function () {
+                                                        return canvas_bottom_line_gen(current_data.values);
+                                                    });
+
+                                            canvas_svg.append('path')
+                                                    .datum(current_data.values)
+                                                    .attr('fill', fill_colors[current_data.values[0].cluster - 1])
+                                                    .attr('opacity', 0.75)
+                                                    .attr('class', 'big_fish')
+                                                    .attr('d', canvas_area_between_lines);
+                                        }
 
 
                                     }
@@ -1890,6 +1960,7 @@
                                 else {
                                     d3.select('#dragable_div').remove();
                                 }
+                                return;
                             });
 
 
