@@ -160,36 +160,41 @@
     function adjust_children_positioning(nestedData, num_of_timepoints) {
         for (var i = 0; i < nestedData.length; i++) {
             var parent_index = nestedData[i].parent_index_of_this;
+            //Added || != 'none' to satisfy fishplot editor (Had to add separate if statement for some reason??)
+            //All fishplots that havent been placed down yet have a parent_index of 'none'
+            //This is so I can do the collision prevention for the children that are already plotted
             if (parent_index != "plot") {
-                var parent = nestedData[parent_index];
-                var children = parent.children;
-                var start_point = parent.start_point;
-                //Potentially include an && the children has not already been checked
-                //If parent has 2+ children, then the loop below will have taken care of those children already
-                if (children.length != 0) {
-                    for (var j = 0; j < children.length; j++) {
-                        var child = nestedData[children[j]];
-                        for (k = 0; k < child.values.length; k++) {
-                            var start_point_space = parent.values[k].alt_count / children.length;
-                            var start_point_base = start_point_space / 2;
-                            child.start_point = start_point_base + (start_point_space * j) + parent.values[k].bottom;
-                            child.values[k].start_point = child.start_point;
-                            if ((child.start_point - child.values[k].alt_count / 2) < parent.values[k].bottom) {
-                                child.values[k].bottom = parent.values[k].bottom;
-                                child.values[k].top = child.values[k].bottom + child.values[k].alt_count;
-                            }
-                            else if (( child.start_point + child.values[k].alt_count / 2) > parent.values[k].top) {
-                                child.values[k].top = parent.values[k].top;
-                                child.values[k].bottom = child.values[k].top - child.values[k].alt_count;
-                            }
-                            else {
-                                child.values[k].top = (child.start_point + child.values[k].alt_count / 2);
-                                child.values[k].bottom = (child.start_point - child.values[k].alt_count / 2);
+                if (parent_index != "none") {
+                    var parent = nestedData[parent_index];
+                    var children = parent.children;
+                    var start_point = parent.start_point;
+                    //Potentially include an && the children has not already been checked
+                    //If parent has 2+ children, then the loop below will have taken care of those children already
+                    if (children.length != 0) {
+                        for (var j = 0; j < children.length; j++) {
+                            var child = nestedData[children[j]];
+                            for (k = 0; k < child.values.length; k++) {
+                                var start_point_space = parent.values[k].alt_count / children.length;
+                                var start_point_base = start_point_space / 2;
+                                child.start_point = start_point_base + (start_point_space * j) + parent.values[k].bottom;
+                                child.values[k].start_point = child.start_point;
+                                if ((child.start_point - child.values[k].alt_count / 2) < parent.values[k].bottom) {
+                                    child.values[k].bottom = parent.values[k].bottom;
+                                    child.values[k].top = child.values[k].bottom + child.values[k].alt_count;
+                                }
+                                else if (( child.start_point + child.values[k].alt_count / 2) > parent.values[k].top) {
+                                    child.values[k].top = parent.values[k].top;
+                                    child.values[k].bottom = child.values[k].top - child.values[k].alt_count;
+                                }
+                                else {
+                                    child.values[k].top = (child.start_point + child.values[k].alt_count / 2);
+                                    child.values[k].bottom = (child.start_point - child.values[k].alt_count / 2);
+                                }
                             }
                         }
-                    }
-                    for (var j = 0; j < num_of_timepoints + 1; j++) {
-                        nestedData = collision_detection(nestedData, children, j, parent.values[j].bottom, parent.values[j].top);
+                        for (var j = 0; j < num_of_timepoints + 1; j++) {
+                            nestedData = collision_detection(nestedData, children, j, parent.values[j].bottom, parent.values[j].top);
+                        }
                     }
                 }
             }
@@ -1502,6 +1507,7 @@
                     //Add children field
                     for(var i = 0; i < canvas_nested_data.length; i++){
                         canvas_nested_data[i].children = [];
+                        canvas_nested_data[i].parent_index_of_this = 'none';
                     }
 
 
@@ -1800,6 +1806,14 @@
                     var fishplot_svgs = [];
                     var complete_values = [];
 
+                    //Retains un-trimmed copy of updated values
+                    function update_canvas_nested_data(canvas_nested_data, fishplot_svgs) {
+                        for (var i = 0; i < fishplot_svgs.length; i++) {
+                            var current_index = fishplot_svgs[i];
+                            canvas_nested_data[current_index] = JSON.parse(JSON.stringify(canvas_nested_data[current_index]));
+                        }
+                    }
+
 
                     //Make all mini fishplots opacity 1 on mouse-up of primary div
                     //Precaution for if user drags mouse too fast
@@ -1886,11 +1900,9 @@
 
                                         canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
 
-                                        //MAKE THIS A FUNCTION (retains un-trimmed copy of updated values)
-                                        for(var i = 0; i < fishplot_svgs.length; i++){
-                                            var current_index = fishplot_svgs[i];
-                                            canvas_nested_data[current_index] = JSON.parse(JSON.stringify(canvas_nested_data[current_index]));
-                                        }
+                                        //Create shallow copy for values of each fishplot used
+                                        //Prevents find_origin function from permanently trimming allele values
+                                        update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
 
                                         for (var i = 0; i < plot_background.children.length; i++) {
                                             var parent = nested_data[plot_background.children[i]];
@@ -1901,7 +1913,7 @@
                                         adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
 
                                         //will eventually need to do collision detection for children
-                                        //nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
+                                        nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
 
                                         //load pinches
                                         //Have to use fishplot svgs to select specific indices of nested_data
@@ -1916,8 +1928,6 @@
                                             }
                                             current_allele.values = find_origin(current_allele, nested_data);
                                         }
-
-                                        console.log(canvas_nested_data);
 
                                         d3.selectAll('.big_fish').remove();
 
