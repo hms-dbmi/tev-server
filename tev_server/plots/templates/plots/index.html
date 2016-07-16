@@ -1891,15 +1891,14 @@
                                             var current_index = fishplot_svgs[i];
                                             canvas_nested_data[current_index] = JSON.parse(JSON.stringify(canvas_nested_data[current_index]));
                                         }
-                                        var nested_data_copy = nested_data;
 
                                         for (var i = 0; i < plot_background.children.length; i++) {
-                                            var parent = nested_data_copy[plot_background.children[i]];
+                                            var parent = nested_data[plot_background.children[i]];
                                             var start_point = parent.start_point;
-                                            nested_data_copy[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                                            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
                                         }
 
-                                        adjust_independent_evolution_positions(nested_data_copy, plot_background, num_of_timepoints);
+                                        adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
 
                                         //will eventually need to do collision detection for children
                                         //nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
@@ -1909,13 +1908,13 @@
                                         //Otherwise, we prematurely clip off the origin of fishplots starting after
                                         //The first timepoint (i.e. Pretreatment in example file)
                                         for (var i = 0; i < fishplot_svgs.length; i++) {
-                                            var current_allele = nested_data_copy[fishplot_svgs[i]];
+                                            var current_allele = nested_data[fishplot_svgs[i]];
                                             for (var j = 0; j < current_allele.values.length; j++) {
                                                 //Initialize all pinches to false
                                                 //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                                                 current_allele.values[j].pinch = false;
                                             }
-                                            current_allele.values = find_origin(current_allele, nested_data_copy);
+                                            current_allele.values = find_origin(current_allele, nested_data);
                                         }
 
                                         console.log(canvas_nested_data);
