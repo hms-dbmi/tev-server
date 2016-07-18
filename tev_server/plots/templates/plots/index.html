@@ -1504,13 +1504,61 @@
                         return d.allele;
                     }).entries(data);
 
-                    //Add children field
+                    //Add children, parent, and index fields
+                    var sort_array = [];
                     for (var i = 0; i < canvas_nested_data.length; i++) {
                         canvas_nested_data[i].children = [];
                         canvas_nested_data[i].parent_index_of_this = 'none';
                         canvas_nested_data[i].index = i;
                     }
 
+
+                      //Set up data for comparisons
+                    var fishplot_data = [];
+
+                    canvas_nested_data.forEach(function(d, i){
+                        var allele_data = {};
+                        allele_data['allele'] = d.key;
+                        allele_data['freqs'] = [];
+                        var freqs = d.values;
+                        for(var j = 0; j < freqs.length; j++){
+                            allele_data['freqs'].push(freqs[j].alt_count);
+                        }
+                        fishplot_data.push(allele_data);
+                    });
+
+                    var x_axis_labels = [];
+                    x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    var num_of_timepoints = x_axis_labels.length;
+                    x_axis_labels.unshift('origin');
+
+
+                    var sort_array = [];
+                    for(var i = 0; i < fishplot_data.length; i++){
+                        //Have to rank when ordering, because a subclone that develops later
+                        //cannot be parent of clone that derived earlier, even if it has a higher variant allele freq
+                        var ranking_adjustment = Math.pow(10, num_of_timepoints);
+                        var allele_freqs = fishplot_data[i].freqs;
+                        for(var j = 1; j < allele_freqs.length; j++){
+                            if(allele_freqs[j] != 0){
+                                var rank = ranking_adjustment * allele_freqs[j];
+                                sort_array.push({
+                                    allele: fishplot_data[i].allele,
+                                    rank: rank
+                                });
+                                break;
+                            }
+                            ranking_adjustment = ranking_adjustment/10;
+                        }
+                    }
+
+                    sort_array.sort(function(a, b){
+                       return b.rank - a.rank;
+                    });
+
+                    //Order data based on rank
+                    canvas_nested_data = order_by_rank(canvas_nested_data, sort_array);
+                    mini_nested_data = order_by_rank(mini_nested_data, sort_array);
 
                     //Div wrapper for dragable div
                     var dragable_div_wrapper = d3.select(el).append('div')
@@ -1569,11 +1617,6 @@
                                     moused_over = d3.select(this).attr('index');
                                 }
                             });
-
-                    var x_axis_labels = [];
-                    x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
-                    var num_of_timepoints = x_axis_labels.length;
-                    x_axis_labels.unshift('origin');
 
                     var canvas_range_max_x = d3.select('#canvas_svg').node().clientWidth;
                     var canvas_x_scale = d3.scale.ordinal().rangePoints([0, canvas_range_max_x]).domain(x_axis_labels);
@@ -2026,11 +2069,6 @@
                                             //Add the current fish as a subclone
                                             parent.children.push(data.index);
                                             fishplot_svgs.push(data_index);
-                                            canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
-
-                                            //Create shallow copy for values of each fishplot used
-                                            //Prevents find_origin function from permanently trimming allele values
-                                            update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
 
                                             //Re-do top and bottom based on start position of parent
                                             for (var i = 0; i < num_of_timepoints; i++) {
@@ -2038,11 +2076,17 @@
                                                 data.values[i].bottom = data.start_point - (data.values[i].alt_count / 2);
                                             }
 
-                                            for (var i = 0; i < plot_background.children.length; i++) {
-                                                var parent = nested_data[plot_background.children[i]];
-                                                var start_point = parent.start_point;
-                                                nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
-                                            }
+                                            canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
+
+                                            //Create shallow copy for values of each fishplot used
+                                            //Prevents find_origin function from permanently trimming allele values
+                                            update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
+{##}
+{#                                            for (var i = 0; i < plot_background.children.length; i++) {#}
+{#                                                var parent = nested_data[plot_background.children[i]];#}
+{#                                                var start_point = parent.start_point;#}
+{#                                                nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);#}
+{#                                            }#}
 
                                             adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
 
@@ -2060,7 +2104,6 @@
                                             }
 
                                             d3.selectAll('.big_fish').remove();
-
 
                                             for (var i = 0; i < fishplot_svgs.length; i++) {
                                                 var current_data = nested_data[fishplot_svgs[i]];
@@ -2171,7 +2214,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 </div>
 
 <div id="figure6" fishplot-editor data="alleleified_data" style="width: 100%; height: 600px; float: left;
-overflow: hidden;">
+overflow: hidden; margin-bottom: 25px;">
 </div>
 
 </body>
