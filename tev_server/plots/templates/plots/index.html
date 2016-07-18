@@ -1520,9 +1520,14 @@
                             .style('height', height + 'px')
                             .style('float', 'left')
                             .style('overflow', 'visible')
-                            .style('padding', '0px')
+                            .style('border', '1px solid black')
+                            .style('padding', '2px')
                             .style('position', 'relative')
                             .attr('id', 'dragable_div_wrapper');
+
+                    var new_height = d3.select('#dragable_div_wrapper').node().offsetHeight;
+                    d3.select(el).style('height', new_height + 'px');
+
 
                     //Div to hold container svg
                     var container = dragable_div_wrapper.append('div')
@@ -1530,9 +1535,9 @@
                             .style('left', '0px')
                             .style('width', '100%')
                             .style('height', height + 'px')
-                            .style('border', '1px solid black')
                             .style('float', 'left')
-                            .style('overflow', 'scroll')
+                            .style('overflow-y', 'scroll')
+                            .style('overflow-x', 'hidden')
                             .style('padding', '0px')
                             .style('position', 'absolute')
                             .attr('id', 'container_div')
@@ -1547,8 +1552,8 @@
                             .style('width', '73%')
                             .style('height', height + 'px')
                             .style('border', '1px solid black')
+                            .style('padding', '2px')
                             .style('float', 'right')
-                            .style('padding', '0px')
                             .attr('id', 'canvas_div');
 
                     var moused_over;
@@ -1795,6 +1800,7 @@
 
                                             dragging = true;
                                             d3.select(this).style('pointer-events', 'none');
+                                            d3.select(el).style('cursor', 'pointer');
                                         });
 
 
@@ -1855,7 +1861,7 @@
                                             .style('top', function () {
                                                 return parseInt(dragable_div.style('top')) + y_difference + 'px';
                                             });
-                                    dragable_div.style('pointer-events', 'none');
+                                    dragable_div.style('pointer-events', 'none').style('cursor', 'pointer');
 
                                 }
                                 else {
@@ -1876,6 +1882,7 @@
                                 var mini_fishplot_left = parseInt(mini_fishplot.style('left'));
 
                                 if (mini_fishplot_left > minimum_left_pos) {
+                                    d3.select(el).style('cursor', 'default');
 
                                     if (moused_over == 'canvas_svg') {
 
@@ -2163,7 +2170,8 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 100%; height: 600px; float: left;">
 </div>
 
-<div id="figure6" fishplot-editor data="alleleified_data" style="width: 100%; height: 600px; float: left;">
+<div id="figure6" fishplot-editor data="alleleified_data" style="width: 100%; height: 600px; float: left;
+overflow: hidden;">
 </div>
 
 </body>
