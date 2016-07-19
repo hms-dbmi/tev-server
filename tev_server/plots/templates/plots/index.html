@@ -1504,16 +1504,7 @@
                         return d.allele;
                     }).entries(data);
 
-                    //Add children, parent, and index fields
-                    var sort_array = [];
-                    for (var i = 0; i < canvas_nested_data.length; i++) {
-                        canvas_nested_data[i].children = [];
-                        canvas_nested_data[i].parent_index_of_this = 'none';
-                        canvas_nested_data[i].index = i;
-                    }
 
-
-                      //Set up data for comparisons
                     var fishplot_data = [];
 
                     canvas_nested_data.forEach(function(d, i){
@@ -1532,7 +1523,7 @@
                     var num_of_timepoints = x_axis_labels.length;
                     x_axis_labels.unshift('origin');
 
-
+                    //Sorting data by what can fit in what
                     var sort_array = [];
                     for(var i = 0; i < fishplot_data.length; i++){
                         //Have to rank when ordering, because a subclone that develops later
@@ -1556,9 +1547,18 @@
                        return b.rank - a.rank;
                     });
 
-                    //Order data based on rank
-                    canvas_nested_data = order_by_rank(canvas_nested_data, sort_array);
+                    //Order mini fishplot svgs by rank
                     mini_nested_data = order_by_rank(mini_nested_data, sort_array);
+                    //Also reorder nested data to be used for canvas to keep it consistent
+                    canvas_nested_data = order_by_rank(canvas_nested_data, sort_array);
+
+                    //Add children, parent, and index fields
+                    for (var i = 0; i < canvas_nested_data.length; i++) {
+                        canvas_nested_data[i].children = [];
+                        canvas_nested_data[i].parent_index_of_this = 'none';
+                        canvas_nested_data[i].index = i;
+                    }
+
 
                     //Div wrapper for dragable div
                     var dragable_div_wrapper = d3.select(el).append('div')
@@ -1604,6 +1604,7 @@
                             .style('float', 'right')
                             .attr('id', 'canvas_div');
 
+                    //Will contain the index in the nested data of what fish the user is currently moused over
                     var moused_over;
 
                     //Canvas svg where fishplot will be plotted
@@ -1882,6 +1883,25 @@
                         return true;
                     }
 
+                    //Make nested data in correct order using only those plotted
+                    //This makes the data being plotted compatible with the adjust children positioning function
+                    function reconstruct_data(nested_data, fishplot_svgs){
+                        var new_data = [];
+                       for(var i = 0; i < fishplot_svgs.length; i++){
+                           var current_data = nested_data[fishplot_svgs[i]];
+                           var new_children = [];
+                           if(current_data.parent_index_of_this != 'plot'){
+                               current_data.parent_index_of_this = fishplot_svgs.indexOf(current_data.parent_index_of_this);
+                           }
+                           for(var j = 0; j < current_data.children.length; j++){
+                               new_children.push(fishplot_svgs.indexOf(parseInt(current_data.children[j])));
+                           }
+                           current_data.children = new_children;
+                           new_data.push(current_data);
+                       }
+                        return new_data;
+                    }
+
 
                     //Make all mini fishplots opacity 1 on mouse-up of primary div
                     //Precaution for if user drags mouse too fast
@@ -1947,7 +1967,7 @@
 
                                         var fit = can_fit(nested_data, plot_background, data, num_of_timepoints);
 
-                                        //If it can fit, plot it and readjust all other independent clonal evolutions
+                                        //If it can fit, plot it and re-adjust all other independent clonal evolutions
                                         if (fit) {
 
                                             data.start_point = start;
@@ -1967,7 +1987,7 @@
                                             }
 
                                             plot_background.children.push(parseInt(data_index));
-                                            fishplot_svgs.push(data_index);
+                                            fishplot_svgs.push(parseInt(data_index));
 
                                             canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
 
@@ -1983,6 +2003,8 @@
 
                                             adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
 
+                                            nested_data = reconstruct_data(nested_data, fishplot_svgs);
+
                                             //collision detection for children after adjusting the independent evolution positions
                                             nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
 
@@ -1991,7 +2013,7 @@
                                             //Otherwise, we prematurely clip off the origin of fishplots starting after
                                             //The first timepoint (i.e. Pretreatment in example file)
                                             for (var i = 0; i < fishplot_svgs.length; i++) {
-                                                var current_allele = nested_data[fishplot_svgs[i]];
+                                                var current_allele = nested_data[i];
                                                 for (var j = 0; j < current_allele.values.length; j++) {
                                                     //Initialize all pinches to false
                                                     //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
@@ -2003,8 +2025,8 @@
                                             d3.selectAll('.big_fish').remove();
 
 
-                                            for (var i = 0; i < fishplot_svgs.length; i++) {
-                                                var current_data = nested_data[fishplot_svgs[i]];
+                                            for (var i = 0; i < nested_data.length; i++) {
+                                                var current_data = nested_data[i];
 
                                                 canvas_svg.append('path')
                                                         .attr('fill', 'none')
@@ -2059,16 +2081,18 @@
 
                                         data.start_point = parent.start_point;
                                         data.group = parent.group;
-                                        data.parent_index_of_this = parent_of_this;
+                                        data.parent_index_of_this = parseInt(parent_of_this);
 
                                         d3.select('#dragable_div').remove();
 
+                                        //If it can git, make it a child of the current fishplot
+                                        //And re-adjust everything that has already been plotted
                                         var fit = can_fit(nested_data, parent, data, num_of_timepoints);
 
                                         if (fit) {
                                             //Add the current fish as a subclone
-                                            parent.children.push(data.index);
-                                            fishplot_svgs.push(data_index);
+                                            parent.children.push(parseInt(data.index));
+                                            fishplot_svgs.push(parseInt(data_index));
 
                                             //Re-do top and bottom based on start position of parent
                                             for (var i = 0; i < num_of_timepoints; i++) {
@@ -2081,20 +2105,23 @@
                                             //Create shallow copy for values of each fishplot used
                                             //Prevents find_origin function from permanently trimming allele values
                                             update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
-{##}
-{#                                            for (var i = 0; i < plot_background.children.length; i++) {#}
-{#                                                var parent = nested_data[plot_background.children[i]];#}
-{#                                                var start_point = parent.start_point;#}
-{#                                                nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);#}
-{#                                            }#}
+
+                                            for (var i = 0; i < plot_background.children.length; i++) {
+                                                var parent = nested_data[plot_background.children[i]];
+                                                var start_point = parent.start_point;
+                                                nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                                            }
 
                                             adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
+
+                                            nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
                                             //collision detection for children after adjusting the independent evolution positions
                                             nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
 
-                                            for (var i = 0; i < fishplot_svgs.length; i++) {
-                                                var current_allele = nested_data[fishplot_svgs[i]];
+
+                                            for (var i = 0; i < nested_data.length; i++) {
+                                                var current_allele = nested_data[i];
                                                 for (var j = 0; j < current_allele.values.length; j++) {
                                                     //Initialize all pinches to false
                                                     //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
@@ -2103,10 +2130,11 @@
                                                 current_allele.values = find_origin(current_allele, nested_data);
                                             }
 
+
                                             d3.selectAll('.big_fish').remove();
 
-                                            for (var i = 0; i < fishplot_svgs.length; i++) {
-                                                var current_data = nested_data[fishplot_svgs[i]];
+                                            for (var i = 0; i < nested_data.length; i++) {
+                                                var current_data = nested_data[i];
 
                                                 canvas_svg.append('path')
                                                         .attr('fill', 'none')
