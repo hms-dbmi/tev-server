@@ -1790,6 +1790,7 @@
                     var new_x_pos = 0;
                     var old_y_pos = 0;
                     var new_y_pos = 0;
+                    var top_in_container, left_in_container;
 
 
                     //Lay down an svg in the divs
@@ -1810,9 +1811,9 @@
                                 var dragable_div_content = mini_fishplot.node().outerHTML;
 
                                 //Calculate top based on the top of the mini fishplot div and how far user scrolled
-                                var top = parseInt(d3.select(div_id).style('top')) - d3.select('#container_div').node().scrollTop;
-                                top = top + 'px';
-                                var left = d3.select(div_id).style('left');
+                                top_in_container = parseInt(d3.select(div_id).style('top')) - d3.select('#container_div').node().scrollTop;
+                                top_in_container = top_in_container + 'px';
+                                left_in_container = d3.select(div_id).style('left');
                                 var width = d3.select(div_id).style('width');
                                 var height = d3.select(div_id).style('height');
 
@@ -1821,8 +1822,8 @@
                                 d3.selectAll('#dragable_div').remove();
 
                                 var dragable_div = dragable_div_wrapper.append('div')
-                                        .style('top', top)
-                                        .style('left', left)
+                                        .style('top', top_in_container)
+                                        .style('left', left_in_container)
                                         .style('width', width)
                                         .style('height', height)
                                         .style('position', 'absolute')
@@ -1954,12 +1955,12 @@
 
                                         var data = nested_data[data_index];
 
-                                        d3.select('#dragable_div').remove();
-
                                         var fit = can_fit(nested_data, plot_background, data, num_of_timepoints);
 
                                         //If it can fit, plot it and re-adjust all other independent clonal evolutions
                                         if (fit) {
+
+                                            d3.select('#dragable_div').remove();
 
                                             data.start_point = start;
                                             data.group = groups.length;
@@ -2042,21 +2043,24 @@
                                                 canvas_svg.append('path')
                                                         .datum(current_data.values)
                                                         .attr('fill', fill_colors[current_data.values[0].cluster - 1])
-                                                        .attr('opacity', 0.75)
+                                                        .attr('opacity', 1)
                                                         .attr('class', 'big_fish')
                                                         .attr('d', canvas_area_between_lines)
                                                         .attr('id', current_data.index)
                                                         .on('mouseenter', function (d) {
-                                                            d3.select(this).attr('opacity', 1);
+                                                            d3.select(this).attr('opacity', 0.75);
                                                             moused_over = parseInt(d3.select(this).attr('id'));
                                                         })
                                                         .on('mouseleave', function () {
-                                                            d3.select(this).attr('opacity', 0.75);
+                                                            d3.select(this).attr('opacity', 1);
                                                         });
                                             }
                                         }
                                         else {
-                                            alert(data.key + ' cannot fit as parent for independent clonal evolution');
+                                            d3.select('#dragable_div').transition()
+                                            .duration(500)
+                                            .style('top', top_in_container)
+                                            .style('left', left_in_container);
                                         }
                                     }
                                     else {
@@ -2064,7 +2068,6 @@
 
                                         var parent_of_this = moused_over;
                                         var parent = nested_data[parent_of_this];
-                                        d3.select('#dragable_div').remove();
 
                                         var data_index = mini_fishplot.attr('index');
 
@@ -2074,13 +2077,14 @@
                                         data.group = parent.group;
                                         data.parent_index_of_this = parseInt(parent_of_this);
 
-                                        d3.select('#dragable_div').remove();
-
                                         //If it can git, make it a child of the current fishplot
                                         //And re-adjust everything that has already been plotted
                                         var fit = can_fit(nested_data, parent, data, num_of_timepoints);
 
                                         if (fit) {
+
+                                            d3.select('#dragable_div').remove();
+
                                             //Add the current fish as a subclone
                                             parent.children.push(parseInt(data.index));
                                             fishplot_svgs.push(parseInt(data_index));
@@ -2150,26 +2154,32 @@
                                                 canvas_svg.append('path')
                                                         .datum(current_data.values)
                                                         .attr('fill', fill_colors[current_data.values[0].cluster - 1])
-                                                        .attr('opacity', 0.75)
+                                                        .attr('opacity', 1)
                                                         .attr('class', 'big_fish')
                                                         .attr('d', canvas_area_between_lines)
                                                         .attr('id', current_data.index)
                                                         .on('mouseenter', function (d) {
-                                                            d3.select(this).attr('opacity', 1);
+                                                            d3.select(this).attr('opacity', 0.75);
                                                             moused_over = parseInt(d3.select(this).attr('id'));
                                                         })
                                                         .on('mouseleave', function () {
-                                                            d3.select(this).attr('opacity', 0.75);
+                                                            d3.select(this).attr('opacity', 1);
                                                         });
                                             }
                                         }
                                         else {
-                                            alert(data.key + ' does not fit as a subclone of this');
+                                            d3.select('#dragable_div').transition()
+                                            .duration(500)
+                                            .style('top', top_in_container)
+                                            .style('left', left_in_container);
                                         }
                                     }
                                 }
                                 else {
-                                    d3.select('#dragable_div').remove();
+                                    d3.select('#dragable_div').transition()
+                                            .duration(500)
+                                            .style('top', top_in_container)
+                                            .style('left', left_in_container);
                                 }
                                 return;
                             });
@@ -2200,7 +2210,7 @@
                             .attr('fill', function (d) {
                                 return fill_colors[d[0].cluster - 1];
                             })
-                            .attr('opacity', 0.75)
+                            .attr('opacity', 1)
                             .attr('d', area_between_lines);
 
                 });
