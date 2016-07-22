@@ -1801,7 +1801,7 @@
                             .attr('id', function (d, i) {
                                 return 'mini_fishplot_svg' + i;
                             })
-                            .on('mouseenter', function (d, i) {
+                            .on('mousedown', function (d, i) {
                                 d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                 var div_id = '#mini_fishplot_div' + i;
                                 var mini_fishplot = d3.select(this);
@@ -1830,23 +1830,14 @@
                                         .style('cursor', 'pointer')
                                         .html(dragable_div_content)
                                         .attr('index', i)
-                                        .attr('id', 'dragable_div')
-                                        //Use mouseleave instead of mouseout (more consistent)
-                                        .on('mouseleave', function () {
-                                            //Put all mini fishplots back to normal opacity
-                                            //(again depends on user rapidly moving mouse)
-                                            d3.selectAll('.mini_fishplots').attr('opacity', 1);
-                                            d3.select(this).remove();
-                                        })
-                                        .on('mousedown', function () {
-                                            old_x_pos = d3.event.x;
-                                            old_y_pos = d3.event.y;
+                                        .attr('id', 'dragable_div');
 
-                                            dragging = true;
-                                            d3.select(this).style('pointer-events', 'none');
-                                            d3.select(el).style('cursor', 'pointer');
-                                        });
+                                old_x_pos = d3.event.x;
+                                old_y_pos = d3.event.y;
 
+                                dragging = true;
+                                d3.select('#dragable_div').style('pointer-events', 'none');
+                                d3.select(el).style('cursor', 'pointer');
 
                             });
 
