@@ -1670,9 +1670,10 @@
                     }
 
                     generate_mini_fishplot_top_and_bottom(mini_nested_data, y_max);
+                    var mini_x_range_max = d3.select('#container_div').node().clientWidth;
 
-                    var mini_x_scale = d3.scale.ordinal().rangePoints([0, 464], 0.5).domain(x_axis_labels);
-                    var mini_y_scale = d3.scale.linear().range([0, 150]).domain([y_max + 1, -1]);
+                    var mini_x_scale = d3.scale.ordinal().rangePoints([0, mini_x_range_max], 0.5).domain(x_axis_labels);
+                    var mini_y_scale = d3.scale.linear().range([0, 120]).domain([y_max + 1, -1]);
 
                     var top_line_gen = d3.svg.line()
                             .x(function (d) {
@@ -1742,7 +1743,7 @@
 
                     var container_div_height = 600;
                     var top;
-                    var mini_fishplot_container_height = 150;
+                    var mini_fishplot_container_height = 140;
                     var mini_fishplots = container.selectAll('alleles')
                             .data(mini_nested_data)
                             .enter()
@@ -1762,18 +1763,21 @@
                                 return top + 'px';
                             })
                             .style('left', '0px')
-                            .style('width', '100%')
+                            .style('width', mini_x_range_max + 'px')
                             .style('height', mini_fishplot_container_height + 'px')
                             .style('border', '0.5px solid black')
                             .style('position', 'absolute')
                             .style('cursor', 'pointer')
+                            .style('background', '#FFF')
                             .style('opacity', 1)
                             .attr('index', function (d, i) {
                                 return i;
                             })
+                            .attr('class', 'mini_fishplot_divs')
                             .attr('id', function (d, i) {
                                 return 'mini_fishplot_div' + i;
                             });
+
 
                     var plot_background = {};
                     plot_background.key = "plot";
@@ -1821,6 +1825,10 @@
                                 //Some may be left behind if user moves mouse rapdily
                                 d3.selectAll('#dragable_div').remove();
 
+                                if(fishplot_svgs.indexOf(i) != -1){
+                                    return;
+                                }
+
                                 var dragable_div = dragable_div_wrapper.append('div')
                                         .style('top', top_in_container)
                                         .style('left', left_in_container)
@@ -1832,6 +1840,9 @@
                                         .html(dragable_div_content)
                                         .attr('index', i)
                                         .attr('id', 'dragable_div');
+
+                                //remove cog wheel
+                                d3.select('#dragable_div').select('#cog_wheel').remove();
 
                                 old_x_pos = d3.event.x;
                                 old_y_pos = d3.event.y;
@@ -1959,7 +1970,8 @@
 
                                         //If it can fit, plot it and re-adjust all other independent clonal evolutions
                                         if (fit) {
-
+                                            var svg_index = mini_fishplot.attr('index');
+                                            d3.select('#mini_fishplot_div' + svg_index).style('opacity', 0.35);
                                             d3.select('#dragable_div').remove();
 
                                             data.start_point = start;
@@ -2083,6 +2095,8 @@
 
                                         if (fit) {
 
+                                            var svg_index = mini_fishplot.attr('index');
+                                            d3.select('#mini_fishplot_div' + svg_index).style('opacity', 0.35);
                                             d3.select('#dragable_div').remove();
 
                                             //Add the current fish as a subclone
@@ -2184,7 +2198,158 @@
                                 return;
                             });
 
+                    //Cog wheel glyph icon
+                    svgs.append('svg:image')
+                            .attr('x', mini_x_range_max*0.01)
+                            .attr('y', mini_fishplot_container_height*0.85)
+                            .attr('width',  mini_fishplot_container_height*0.15)
+                            .attr('height', mini_fishplot_container_height*0.15)
+                            .attr('id', 'cog_wheel')
+                            .attr('xlink:href', 'https://cdn1.iconfinder.com/data/icons/trycons/32/settings-512.png')
+                            .on('click', function(d, i){
+                                if(fishplot_svgs.indexOf(i) != -1){
+                                    return;
+                                }
+                                d3.select('#dragable_div').remove();
 
+                                var top_of_mini_fishplot = d3.select('#mini_fishplot_div' + i).style('top');
+                                var left_of_mini_fishplot = d3.select('#mini_fishplot_div' + i).style('left');
+                                var width_of_mini_fishplot = d3.select('#mini_fishplot_div' + i).style('width');
+
+                                for(var j = i; j < canvas_nested_data.length; j++){
+                                    var current_div = d3.select('#mini_fishplot_div' + j);
+
+                                    var top = parseInt(current_div.style('top'));
+                                    var pushed_down_top = top + 50;
+                                    pushed_down_top = pushed_down_top + 'px';
+                                    current_div.attr('pushed_down_top', pushed_down_top);
+                                    current_div.attr('class', 'mini_fishplot_divs pushed')
+                                }
+
+                                var input = d3.select('#container_div')
+                                        .append('div')
+                                        .style('top', top_of_mini_fishplot)
+                                        .style('left', left_of_mini_fishplot)
+                                        .style('height', 50 + 'px')
+                                        .style('width', width_of_mini_fishplot)
+                                        .style('border', '0.5px solid black')
+                                        .style('position', 'absolute');
+
+                                /**************************************************/
+                                /*              copy number variation             */
+                                /**************************************************/
+
+                                //div column to hold copy number (CN) input
+                                var copy_number_div = input.append('div')
+                                        .style('top', top_of_mini_fishplot)
+                                        .style('left', '0%')
+                                        .style('height', 50 + 'px')
+                                        .style('width', '50%')
+                                        .style('float', 'left')
+                                        .style('border-right', '0.5px solid black')
+                                        .attr('id', 'CN_div' + i);
+
+                                copy_number_div.append('input')
+                                        .attr('type', "number")
+                                        .attr('min', "0")
+                                        .attr('max', "100")
+                                        .attr('value', "2")
+                                        .attr('id', 'CN_input' + i)
+                                        .style('left', '50%')
+                                        .style('width', '30px')
+                                        .style('position', 'relative');
+
+                                copy_number_div.append('text')
+                                        .attr('x', function(){
+                                            return d3.select('#CN_div'+i).node().offsetWidth/2;
+                                        })
+                                        .attr('y', 0)
+                                        .style('text-align', 'center')
+                                        .attr('id', 'CN_text_label'+i)
+                                        .text('Copy Number:');
+
+                                //center the CN input within its div column
+                                //then put it halfway between the label and the bottom of the div
+                                d3.select('#CN_input' + i)
+                                        .style('left', function () {
+                                            var left = (d3.select('#CN_div' + i).node().offsetWidth / 2)
+                                                    - (d3.select(this).node().offsetWidth / 2);
+                                            left = left + 'px';
+                                            return left;
+                                        })
+                                        .style('top', function () {
+                                            var input_height = d3.select(this).node().offsetHeight;
+                                            var label_height = d3.select('#CN_text_label'+i).node().offsetHeight;
+                                            var total_div_height = d3.select('#CN_div'+i).node().offsetHeight;
+                                            var total_space = total_div_height - (input_height + label_height);
+                                            top = label_height + total_space/2;
+                                            top = top + 'px';
+                                            return top;
+                                        });
+
+
+                                /**************************************************/
+                                /*                     ploidy                     */
+                                /**************************************************/
+
+{#                                //div to hold ploidy input#}
+{#                                var ploidy_div  = input.append('div')#}
+{#                                        .style('top', top_of_mini_fishplot)#}
+{#                                        .style('left', '50%')#}
+{#                                        .style('height', 50 + 'px')#}
+{#                                        .style('width', '50%')#}
+{#                                        .style('float', 'left')#}
+{#                                        .style('border-left', '0.5px solid black')#}
+{#                                        .attr('ploidy_div' + i);#}
+{##}
+{#                                ploidy_div.append('input')#}
+{#                                        .attr('type', "number")#}
+{#                                        .attr('min', "0")#}
+{#                                        .attr('max', "100")#}
+{#                                        .attr('value', "2")#}
+{#                                        .attr('id', 'ploidy_input' + i)#}
+{#                                        .style('left', '50%')#}
+{#                                        .style('width', '30px')#}
+{#                                        .style('position', 'relative');#}
+{##}
+{#                                ploidy_div.append('text')#}
+{#                                        .attr('x', function(){#}
+{#                                            return d3.select('#ploidy_div'+i).node().offsetWidth/2;#}
+{#                                        })#}
+{#                                        .attr('y', 0)#}
+{#                                        .style('text-align', 'center')#}
+{#                                        .attr('id', 'ploidy_text_label'+i)#}
+{#                                        .text('Ploidy:');#}
+
+
+                                //center the CN input within its div column
+                                //then put it halfway between the label and the bottom of the div
+                                d3.select('#ploidy_input' + i)
+                                        .style('left', function () {
+                                            var left = (d3.select('#ploidy_div' + i).node().offsetWidth / 2)
+                                                    - (d3.select(this).node().offsetWidth / 2);
+                                            left = left + 'px';
+                                            return left;
+                                        })
+                                        .style('top', function () {
+                                            var input_height = d3.select(this).node().offsetHeight;
+                                            var label_height = d3.select('#ploidy_text_label'+i).node().offsetHeight;
+                                            var total_div_height = d3.select('#ploidy_div'+i).node().offsetHeight;
+                                            var total_space = total_div_height - (input_height + label_height);
+                                            top = label_height + total_space/2;
+                                            top = top + 'px';
+                                            return top;
+                                        });
+
+
+                                d3.selectAll('.pushed').transition()
+                                        .duration(500)
+                                        .style('top', function(){
+                                            return d3.select(this).attr('pushed_down_top');
+                                        });
+                            });
+
+                    //Mini fishplot divs in scroll container
                     svgs.append('path')
                             .attr('fill', 'none')
                             .attr('stroke-width', 5)
@@ -2212,6 +2377,18 @@
                             })
                             .attr('opacity', 1)
                             .attr('d', area_between_lines);
+
+                    svgs.append('text')
+                            .attr('x', function(d, i){
+                                var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
+                                return center + 'px';
+                            })
+                            .attr('y', '135px') //if it were a formula this would be 13/14 using container height = 140
+                            .text(function(d){
+                               return d.key;
+                            })
+                            .attr('font-size', '15px')
+                            .attr('text-anchor', 'middle');
 
                 });
             }
