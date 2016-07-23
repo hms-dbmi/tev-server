@@ -1673,7 +1673,7 @@
                     var mini_x_range_max = d3.select('#container_div').node().clientWidth;
 
                     var mini_x_scale = d3.scale.ordinal().rangePoints([0, mini_x_range_max], 0.5).domain(x_axis_labels);
-                    var mini_y_scale = d3.scale.linear().range([0, 120]).domain([y_max + 1, -1]);
+                    var mini_y_scale = d3.scale.linear().range([20, 140]).domain([y_max + 1, -1]);
 
                     var top_line_gen = d3.svg.line()
                             .x(function (d) {
@@ -1743,7 +1743,7 @@
 
                     var container_div_height = 600;
                     var top;
-                    var mini_fishplot_container_height = 140;
+                    var mini_fishplot_container_height = 160;
                     var mini_fishplots = container.selectAll('alleles')
                             .data(mini_nested_data)
                             .enter()
@@ -2383,12 +2383,60 @@
                                 var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
                                 return center + 'px';
                             })
-                            .attr('y', '135px') //if it were a formula this would be 13/14 using container height = 140
+                            .attr('y', '155px')//if it were a formula this would be 15.5/16 using container height = 160
                             .text(function(d){
                                return d.key;
                             })
                             .attr('font-size', '15px')
                             .attr('text-anchor', 'middle');
+
+                    svgs.append('text')
+                            .attr('x', function(d, i){
+                                var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
+                                center = center * 0.5; //cut in half, then cut in half again
+                                return center + 'px';
+                            })
+                            .attr('y', '15px')
+                            .text(function(){
+                                return 'CN: ' + 2;
+                            })
+                            .attr('font-size', '15px')
+                            .attr('text-anchor', 'middle');
+
+                    svgs.append('text')
+                            .attr('x', function(d, i){
+                                var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
+                                center = center * 1.5; //cut in half, then cut in half again
+                                return center + 'px';
+                            })
+                            .attr('y', '15px')
+                            .text(function(){
+                                return 'Ploidy: ' + 2;
+                            })
+                            .attr('font-size', '15px')
+                            .attr('text-anchor', 'middle');
+
+                    svgs.append('line')
+                            .attr('x1', '0px')
+                            .attr('x2', function(d, i){
+                                return d3.select('#mini_fishplot_svg'+i).node().clientWidth;
+                            })
+                            .attr('y1', '20px')
+                            .attr('y2', '20px')
+                            .attr('fill', 'none')
+                            .attr('stroke', '#000000');
+
+                    svgs.append('line')
+                            .attr('x1', function(d, i){
+                                return d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
+                            })
+                            .attr('x2', function(d, i){
+                                return d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
+                            })
+                            .attr('y1', '0px')
+                            .attr('y2', '20px')
+                            .attr('stroke', '#000000')
+
 
                 });
             }
