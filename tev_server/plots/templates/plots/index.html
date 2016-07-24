@@ -46,6 +46,24 @@
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.js"></script>
 <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+      integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+      crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css"
+      integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r"
+      crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
+        integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
+        crossorigin="anonymous"></script>
+
 <script>
     //Find unique values for oridinal scale
     function uniqueAxisLabels(data, key) {
@@ -455,12 +473,12 @@
                             .attr("class", "tooltip")
                             .style("opacity", 0);
 
-                    var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
+                    var yScale = d3.scale.linear().range([40, height-40]).domain([1, 0]);
                     var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
                     var axisLabels = uniqueAxisLabels(data, 'Sample_Barcode');
 
-                    var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
+                    var xScale = d3.scale.ordinal().rangePoints([40, width-40], 0.5).domain(axisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
 
                     var lineGen = d3.svg.line()
@@ -523,7 +541,7 @@
 
                     canvas.append("svg:g")
                         .attr("class", "axis")
-                        .attr("transform", "translate(0," + 500 + ")")
+                        .attr("transform", "translate(0," + (height-40) + ")")
                         .call(xAxis);
 
                     canvas.append("svg:g")
@@ -595,16 +613,16 @@
                        return a - b;
                     });
 
-                    var yScale = d3.scale.linear().range([40, 500]).domain([1, 0]);
+                    var yScale = d3.scale.linear().range([40, height-40]).domain([1, 0]);
                     var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
-                    var xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
+                    var xScale = d3.scale.ordinal().rangePoints([40, width-40], 0.5).domain(axisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
 
                     if(alleles.length == axisLabels.length){
                         axisLabels = uniqueAxisLabels(data, 'allele');
                         var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
-                        xScale = d3.scale.ordinal().rangePoints([40, 500], 0.5).domain(axisLabels);
+                        xScale = d3.scale.ordinal().rangePoints([40, width-40], 0.5).domain(axisLabels);
                         xAxis = d3.svg.axis().scale(xScale);
                     }
                     else{
@@ -822,7 +840,7 @@
 
                     canvas.append("svg:g")
                         .attr("class", "axis")
-                        .attr("transform", "translate(0," + 500 + ")")
+                        .attr("transform", "translate(0," + (height-40) + ")")
                         .call(xAxis)
                             .selectAll("text")
                             .style('text-anchor', 'end')
@@ -2449,19 +2467,27 @@
 <!--
 Dont need to provide alleles to figure 1 because all that's changing is the colors
 -->
-<div id="figure1" figure1-plot data="clustered_alleleified_data" style="width: 650px; height: 650px; float:left;">
+
+<div class="row">
+<div id="figure1" figure1-plot data="clustered_alleleified_data" class="col-md-5"
+     style="height: 650px; float:left;">
 </div>
 
 
-<div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" style="width: 700px; height: 650px; float: right;">
+<div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" class="col-md-5"
+     style="height: 650px; float: right;">
+</div>
 </div>
 
-<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]"
-     style="width: 550px; height: 600px; float: left;">
+<div class="row">
+<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]" class="col-md-5"
+     style="height: 600px; float: left;">
 </div>
 
 
-<div id="figure4" figure4-plot data="fishbone_data" style="width: 550px; height: 600px; float: right;">
+<div id="figure4" figure4-plot data="fishbone_data" class="col-md-5"
+     style="height: 600px; float: right;">
+</div>
 </div>
 
 <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 100%; height: 600px; float: left;">
