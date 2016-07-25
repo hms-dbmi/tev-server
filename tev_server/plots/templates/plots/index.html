@@ -41,6 +41,15 @@
         border-radius: 8px;
     }
 
+    .noselect {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
 </style>
 
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.js"></script>
@@ -1792,6 +1801,7 @@
                                 return i;
                             })
                             .attr('class', 'mini_fishplot_divs')
+                            .attr('z-index', 5)
                             .attr('id', function (d, i) {
                                 return 'mini_fishplot_div' + i;
                             });
@@ -1857,6 +1867,7 @@
                                         .style('cursor', 'pointer')
                                         .html(dragable_div_content)
                                         .attr('index', i)
+                                        .attr('z-index', 10)
                                         .attr('id', 'dragable_div');
 
                                 //remove cog wheel
@@ -2406,7 +2417,8 @@
                                return d.key;
                             })
                             .attr('font-size', '15px')
-                            .attr('text-anchor', 'middle');
+                            .attr('text-anchor', 'middle')
+                            .attr('class', 'noselect');
 
                     svgs.append('text')
                             .attr('x', function(d, i){
@@ -2419,7 +2431,8 @@
                                 return 'CN: ' + 2;
                             })
                             .attr('font-size', '15px')
-                            .attr('text-anchor', 'middle');
+                            .attr('text-anchor', 'middle')
+                            .attr('class', 'noselect');
 
                     svgs.append('text')
                             .attr('x', function(d, i){
@@ -2432,7 +2445,8 @@
                                 return 'Ploidy: ' + 2;
                             })
                             .attr('font-size', '15px')
-                            .attr('text-anchor', 'middle');
+                            .attr('text-anchor', 'middle')
+                            .attr('class', 'noselect');
 
                     svgs.append('line')
                             .attr('x1', '0px')
