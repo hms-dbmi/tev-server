@@ -1647,10 +1647,12 @@
                             });
 
                     var canvas_range_max_x = d3.select('#canvas_svg').node().clientWidth;
-                    var canvas_x_scale = d3.scale.ordinal().rangePoints([0, canvas_range_max_x]).domain(x_axis_labels);
+                    var canvas_x_scale = d3.scale.ordinal()
+                            .rangePoints([canvas_range_max_x*0.01, canvas_range_max_x*0.99], 0.25)
+                            .domain(x_axis_labels);
                     var canvas_x_axis = d3.svg.axis().scale(canvas_x_scale);
 
-                    var canvas_range_max_y = d3.select('#canvas_svg').node().clientHeight;
+                    var canvas_range_max_y = d3.select('#canvas_svg').node().clientHeight * 0.95;
                     var canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([101, -1]);
 
                     function y_scale_domain_max(nested_data) {
@@ -2333,6 +2335,11 @@
                             .attr('y1', '0px')
                             .attr('y2', '20px')
                             .attr('stroke', '#000000')
+
+                    canvas_svg.append("svg:g")
+                        .attr("class", "axis")
+                        .attr("transform", "translate(0," + canvas_range_max_y + ")")
+                        .call(canvas_x_axis);
 
 
                 });
