@@ -705,8 +705,8 @@
 
                                 div_tooltip.style("opacity", 0.9)
                                     .html(d.alleles)
-                                        .style("top", (d3.event.pageY-40) + "px")
-                                        .style("left", (d3.event.pageX + 40) + "px");
+                                        .style("top", (d3.mouse(this)[1] - 40) + "px")
+                                        .style("left", (d3.mouse(this)[0] + 40) + "px");
                             })
                             .on('mouseout', function(d){
                                 d3.selectAll('.box_info').remove();
@@ -835,8 +835,8 @@
 
                                     div_tooltip.style("opacity", 0.9)
                                             .html(d.alleles)
-                                            .style("top", (d3.event.pageY - 40) + "px")
-                                            .style("left", (d3.event.pageX + 40) + "px");
+                                            .style("top", (d3.event.y - 40) + "px")
+                                            .style("left", (d3.event.x + 40) + "px");
                                 }
                             })
                             .on('mouseout', function(d){
