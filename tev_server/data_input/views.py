@@ -56,7 +56,8 @@ def data_to_database(request):
 #  This depends on future files having same structure  #
 ########################################################
 def parse_tev_file(file, source):
-    file = file.read()
+    file = file.read().decode('UTF-8')
+    print(file)
     file = file.split('\n')
     file = [row.split('\t') for row in file]
 
