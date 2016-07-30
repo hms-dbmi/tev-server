@@ -1835,53 +1835,6 @@
                             .attr('opacity', 1)
                             .attr('id', function (d, i) {
                                 return 'mini_fishplot_svg' + i;
-                            })
-                            .on('mousedown', function (d, i) {
-                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
-                                var div_id = '#mini_fishplot_div' + i;
-                                var mini_fishplot = d3.select(this);
-
-                                //get svg info for clone
-                                var dragable_div_content = mini_fishplot.node().outerHTML;
-
-                                //Calculate top based on the top of the mini fishplot div and how far user scrolled
-                                top_in_container = parseInt(d3.select(div_id).style('top')) - d3.select('#container_div').node().scrollTop;
-                                top_in_container = top_in_container + 'px';
-                                left_in_container = d3.select(div_id).style('left');
-                                var width = d3.select(div_id).style('width');
-                                var height = d3.select(div_id).style('height');
-
-                                //remove any clones that are already layed down, if any at all
-                                //Some may be left behind if user moves mouse rapdily
-                                d3.selectAll('#dragable_div').remove();
-
-                                if(fishplot_svgs.indexOf(i) != -1){
-                                    return;
-                                }
-
-                                var dragable_div = dragable_div_wrapper.append('div')
-                                        .style('top', top_in_container)
-                                        .style('left', left_in_container)
-                                        .style('width', width)
-                                        .style('height', height)
-                                        .style('position', 'absolute')
-                                        .style('border', '0.5px solid black')
-                                        .style('cursor', 'pointer')
-                                        .html(dragable_div_content)
-                                        .attr('index', i)
-                                        .attr('z-index', 10)
-                                        .attr('id', 'dragable_div');
-
-                                //remove cog wheel
-                                d3.select('#dragable_div').select('#cog_wheel').remove();
-
-                                old_x_pos = d3.event.x;
-                                old_y_pos = d3.event.y;
-
-                                dragging = true;
-                                d3.select('#dragable_div').style('pointer-events', 'none');
-                                d3.select(el).style('cursor', 'pointer');
-
                             });
 
                     var dragging = false;
@@ -1978,7 +1931,7 @@
                                 minimum_left_pos = Math.floor(minimum_left_pos);
                                 var mini_fishplot_left = parseInt(mini_fishplot.style('left'));
 
-                                if (mini_fishplot_left > minimum_left_pos) {
+                                if ((mini_fishplot_left + left_adjustment) > minimum_left_pos) {
                                     d3.select(el).style('cursor', 'default');
 
                                     if (moused_over == 'canvas_svg') {
@@ -2264,6 +2217,9 @@
                                 return bottom_line_gen(d.values);
                             });
 
+                    //difference between edge of mini fishplot div, and where fishplot fill starts
+                    var left_adjustment = 0;
+
                     svgs.append('path')
                             .datum(function (d) {
                                 return d.values;
@@ -2272,8 +2228,70 @@
                                 return fill_colors[d[0].cluster - 1];
                             })
                             .attr('opacity', 1)
-                            .attr('d', area_between_lines);
+                            .attr('d', area_between_lines)
+                            .attr('id', function(d, i){
+                                return 'fishplot_area'+i
+                            })
+                            .on('mousedown', function (d, i) {
+                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                var div_id = '#mini_fishplot_div' + i;
+                                var svg_id = '#mini_fishplot_svg' + i;
+                                var mini_fishplot = d3.select(svg_id);
 
+                                //get svg info for clone
+                                var dragable_div_content = mini_fishplot.node().outerHTML;
+
+                                //Calculate top based on the top of the mini fishplot div and how far user scrolled
+                                top_in_container = parseInt(d3.select(div_id).style('top')) - d3.select('#container_div').node().scrollTop;
+                                top_in_container = top_in_container + 'px';
+                                left_in_container = d3.select(div_id).style('left');
+                                var width = d3.select(div_id).style('width');
+                                var height = d3.select(div_id).style('height');
+
+                                //remove any clones that are already layed down, if any at all
+                                //Some may be left behind if user moves mouse rapdily
+                                d3.selectAll('#dragable_div').remove();
+
+                                if(fishplot_svgs.indexOf(i) != -1){
+                                    return;
+                                }
+
+                                var dragable_div = dragable_div_wrapper.append('div')
+                                        .style('top', top_in_container)
+                                        .style('left', left_in_container)
+                                        .style('width', width)
+                                        .style('height', height)
+                                        .style('position', 'absolute')
+                                        .style('cursor', 'pointer')
+                                        .html(dragable_div_content)
+                                        .attr('index', i)
+                                        .attr('z-index', 10)
+                                        .attr('id', 'dragable_div');
+
+                                d3.select('#dragable_div').selectAll('.info_text').remove();
+                                d3.select('#dragable_div').selectAll('.info_lines').remove();
+
+                                //remove cog wheel
+                                d3.select('#dragable_div').select('#cog_wheel').remove();
+
+                                var bounding = d3.select('#fishplot_area' + i).node().getBoundingClientRect();
+                                left_adjustment = bounding.left - parseInt(left_in_container);
+
+                                old_x_pos = d3.event.x;
+                                old_y_pos = d3.event.y;
+
+                                dragging = true;
+                                d3.select('#dragable_div').style('pointer-events', 'none')
+                                        //give mouseup remove functionality
+                                        .on('mouseup', function(){
+                                           d3.select(this).remove();
+                                        });
+                                d3.select(el).style('cursor', 'pointer');
+
+                            });
+
+
+                    //Ploidy and CN table configuration
                     svgs.append('text')
                             .attr('x', function(d, i){
                                 var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
@@ -2285,7 +2303,7 @@
                             })
                             .attr('font-size', '15px')
                             .attr('text-anchor', 'middle')
-                            .attr('class', 'noselect');
+                            .attr('class', 'noselect info_text');
 
                     svgs.append('text')
                             .attr('x', function(d, i){
@@ -2299,7 +2317,7 @@
                             })
                             .attr('font-size', '15px')
                             .attr('text-anchor', 'middle')
-                            .attr('class', 'noselect');
+                            .attr('class', 'noselect info_text');
 
                     svgs.append('text')
                             .attr('x', function(d, i){
@@ -2313,7 +2331,7 @@
                             })
                             .attr('font-size', '15px')
                             .attr('text-anchor', 'middle')
-                            .attr('class', 'noselect');
+                            .attr('class', 'noselect info_text');
 
                     svgs.append('line')
                             .attr('x1', '0px')
@@ -2323,7 +2341,8 @@
                             .attr('y1', '20px')
                             .attr('y2', '20px')
                             .attr('fill', 'none')
-                            .attr('stroke', '#000000');
+                            .attr('stroke', '#000000')
+                            .attr('class', 'info_lines');
 
                     svgs.append('line')
                             .attr('x1', function(d, i){
@@ -2335,9 +2354,10 @@
                             .attr('y1', '0px')
                             .attr('y2', '20px')
                             .attr('stroke', '#000000')
+                            .attr('class', 'info_lines');
 
                     canvas_svg.append("svg:g")
-                        .attr("class", "axis")
+                        .attr("class", "axis noselect")
                         .attr("transform", "translate(0," + canvas_range_max_y + ")")
                         .call(canvas_x_axis);
 
@@ -2405,8 +2425,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 </div>
 
 <div class="row">
-    <div class="col-lg-1 col-md-1 col-sm-1" style="float: left"></div>
-    <div class="col-lg-11 col-md-11 col-sm-11">
+    <div class="col-lg-12 col-md-12 col-sm-12">
         <div id="figure6" fishplot-editor data="alleleified_data" style="width: 100%; height: 600px; float: left;
 overflow: hidden; margin-bottom: 25px;">
         </div>
