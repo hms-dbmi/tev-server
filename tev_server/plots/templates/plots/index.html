@@ -2405,6 +2405,19 @@
 
     })();
 
+    function update_clonal_information_text(){
+        var fishplot_index = d3.select('#cn_input').attr('fishplot_index');
+        d3.select('#cn_text'+fishplot_index)
+                .text(function(){
+                    return 'CN: ' + d3.select('#cn_input').node().valueAsNumber;
+                });
+
+        d3.select('#ploidy_text'+fishplot_index).node()
+                .text(function(){
+                   return 'Ploidy: ' + d3.select('#ploidy_input').node().valueAsNumber;
+                });
+    }
+
 </script>
 <body ng-controller = "tevDataController">
 <!--
@@ -2493,7 +2506,8 @@ overflow: hidden; margin-bottom: 25px;">
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                                onclick="update_clonal_information_text()">Save</button>
                     </div>
                 </div>
             </div>
