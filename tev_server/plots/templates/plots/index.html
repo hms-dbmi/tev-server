@@ -1584,8 +1584,9 @@
                         canvas_nested_data[i].children = [];
                         canvas_nested_data[i].parent_index_of_this = 'none';
                         canvas_nested_data[i].index = i;
+                        canvas_nested_data[i].color = fill_colors[canvas_nested_data[i].values[0].cluster-1];
+                        mini_nested_data[i].color = fill_colors[mini_nested_data[i].values[0].cluster-1];
                     }
-
 
                     //Div wrapper for dragable div
                     var dragable_div_wrapper = d3.select(el).append('div')
@@ -1842,7 +1843,6 @@
                     //Keep track of fishplots on canvas & order they're in
                     //In case new plot added to canvas background and need to move/shift everything
                     var fishplot_svgs = [];
-                    var complete_values = [];
 
                     //Retains un-trimmed copy of updated values
                     function update_canvas_nested_data(canvas_nested_data, fishplot_svgs) {
@@ -1889,6 +1889,8 @@
                         return new_data;
                     }
 
+                    //Indices of used fishplots where the one being dragged wont be able to fit
+                    var cant_fit = [];
 
                     //Make all mini fishplots opacity 1 on mouse-up of primary div
                     //Precaution for if user drags mouse too fast
@@ -1923,6 +1925,13 @@
                                 old_x_pos = 0;
                                 old_y_pos = 0;
                                 dragging = false;
+
+                                for(var i = 0; i < cant_fit.length; i++){
+                                    d3.select('#big_fish'+cant_fit[i])
+                                            .attr('fill', canvas_nested_data[cant_fit[i]].color);
+                                }
+
+                                cant_fit = [];
 
                                 var mini_fishplot = d3.select('#dragable_div');
 
@@ -2042,10 +2051,11 @@
                                                         .attr('opacity', 1)
                                                         .attr('class', 'big_fish')
                                                         .attr('d', canvas_area_between_lines)
-                                                        .attr('id', current_data.index)
+                                                        .attr('index', current_data.index)
+                                                        .attr('id', 'big_fish'+current_data.index)
                                                         .on('mouseenter', function (d) {
                                                             d3.select(this).attr('opacity', 0.75);
-                                                            moused_over = parseInt(d3.select(this).attr('id'));
+                                                            moused_over = parseInt(d3.select(this).attr('index'));
                                                         })
                                                         .on('mouseleave', function () {
                                                             d3.select(this).attr('opacity', 1);
@@ -2063,6 +2073,7 @@
                                         var nested_data = canvas_nested_data.slice(0);
 
                                         var parent_of_this = moused_over;
+
                                         var parent = nested_data[parent_of_this];
 
                                         var data_index = mini_fishplot.attr('index');
@@ -2155,10 +2166,11 @@
                                                         .attr('opacity', 1)
                                                         .attr('class', 'big_fish')
                                                         .attr('d', canvas_area_between_lines)
-                                                        .attr('id', current_data.index)
+                                                        .attr('index', current_data.index)
+                                                        .attr('id', 'big_fish'+current_data.index)
                                                         .on('mouseenter', function (d) {
                                                             d3.select(this).attr('opacity', 0.75);
-                                                            moused_over = parseInt(d3.select(this).attr('id'));
+                                                            moused_over = parseInt(d3.select(this).attr('index'));
                                                         })
                                                         .on('mouseleave', function () {
                                                             d3.select(this).attr('opacity', 1);
@@ -2220,12 +2232,13 @@
                     //difference between edge of mini fishplot div, and where fishplot fill starts
                     var left_adjustment = 0;
 
+
                     svgs.append('path')
+                            .attr('fill', function (d) {
+                                return d.color;
+                            })
                             .datum(function (d) {
                                 return d.values;
-                            })
-                            .attr('fill', function (d) {
-                                return fill_colors[d[0].cluster - 1];
                             })
                             .attr('opacity', 1)
                             .attr('d', area_between_lines)
@@ -2254,6 +2267,17 @@
 
                                 if(fishplot_svgs.indexOf(i) != -1){
                                     return;
+                                }
+
+                                for(var j=0; j<fishplot_svgs.length; j++) {
+                                    var plotted_data = canvas_nested_data[fishplot_svgs[j]];
+                                    var data = canvas_nested_data[i];
+                                    var fit = can_fit(canvas_nested_data, plotted_data, data, num_of_timepoints);
+                                    if(!fit){
+                                        cant_fit.push(fishplot_svgs[j]);
+                                        d3.select('#big_fish'+ plotted_data.index)
+                                                .attr('fill', '#d3d3d3');
+                                    }
                                 }
 
                                 var dragable_div = dragable_div_wrapper.append('div')
