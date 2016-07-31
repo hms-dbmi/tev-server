@@ -1596,8 +1596,7 @@
                             .style('height', height + 'px')
                             .style('float', 'left')
                             .style('overflow', 'visible')
-                            .style('border', '1px solid black')
-                            .style('padding', '2px')
+                            .style('padding', '0px')
                             .style('position', 'relative')
                             .attr('id', 'dragable_div_wrapper');
 
@@ -1614,7 +1613,8 @@
                             .style('float', 'left')
                             .style('overflow-y', 'scroll')
                             .style('overflow-x', 'hidden')
-                            .style('padding', '0px')
+                            .style('padding', '2px')
+                            .style('border', '1px solid black')
                             .style('position', 'absolute')
                             .attr('id', 'container_div')
                             .on('scroll', function () {
