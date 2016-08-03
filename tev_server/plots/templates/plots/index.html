@@ -1971,7 +1971,6 @@
                                             data.group = groups.length;
                                             data.parent_index_of_this = 'plot';
 
-
                                             //Re-do top and bottom based on start position from mousedown
                                             for (var i = 0; i < num_of_timepoints; i++) {
                                                 data.values[i].top = data.start_point + (data.values[i].alt_count / 2);
@@ -1984,6 +1983,11 @@
                                             }
 
                                             plot_background.children.push(parseInt(data_index));
+
+                                            plot_background.children.sort(function(a, b){
+                                               return nested_data[a].start_point - nested_data[b].start_point;
+                                            });
+
                                             fishplot_svgs.push(parseInt(data_index));
 
                                             canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
@@ -2420,7 +2424,7 @@
     }
 
 </script>
-<body ng-controller = "tevDataController" style="margin: 2.5%;">
+<body ng-controller = "tevDataController" style="margin-left: 2.5%; margin-right: 2.5%; margin-bottom: 2.5%">
 <!--
 Dont need to provide alleles to figure 1 because all that's changing is the colors
 -->
