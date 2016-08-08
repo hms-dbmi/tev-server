@@ -9,6 +9,7 @@ def index(request):
         source = request.GET['source']
     else:
         source = request.session['source']
+        print(source)
 
     cluster_results = cluster(request, source)
     d3_dendro_data = cluster_results[0]
@@ -48,9 +49,10 @@ def cluster(request, source):
     for sample in samples:
         for allele in sample.VariantAlleles.get_queryset():
             data.append({'allele': str(allele),
-                         'alternative_freq': allele.alternative_freq})
+                         'alternative_freq': allele.alternative_freq,
+                         'timepoint': allele.sample.timepoint})
 
-    data = sorted(data, key=lambda k: k['allele'])
+    data = sorted(data, key=lambda k: (k['allele'], k['timepoint']))
 
     matrix = []
     row = []
@@ -61,14 +63,25 @@ def cluster(request, source):
         if(data[i]['allele'] == current_allele):
             row.append(data[i]['alternative_freq'])
         else:
+            #If a variant wasn't around at a timepoint, fill in a VAF of 0 for that timepoint
+            if(len(row) < len(samples)):
+                empty_timepoint = len(samples) - len(row)
+                zeroes = [0]*empty_timepoint
+                row = row + zeroes
             matrix.append(row)
             row = []
             alleles.append(current_allele)
             current_allele = data[i]['allele']
             row.append(data[i]['alternative_freq'])
+
     #Append last row to matrix
+    if(len(row) < len(samples)):
+                empty_timepoint = len(samples) - len(row)
+                zeroes = [0]*empty_timepoint
+                row = row + zeroes
     matrix.append(row)
     alleles.append(current_allele)
+
 
     data_dist = pdist(matrix) # computing the distance
     data_link = linkage(data_dist, method='complete')
@@ -80,17 +93,3 @@ def cluster(request, source):
     #clip root tip
     d3Dendro = d3Dendro['children'][0]
     return [d3Dendro, y_array]
-
-
-
-
-
-
-
-
-
-
-
-
-
-

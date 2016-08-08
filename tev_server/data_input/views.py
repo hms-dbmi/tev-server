@@ -1,16 +1,14 @@
 from django.shortcuts import render, HttpResponse, redirect
-from .forms import SourceForm, TevFileForm
+from .forms import TevFileForm
 from .models import Source, Sample, Gene, VariantAllele
 from .serializers import SourceSerializer, SampleSerializer, GeneSerializer, VariantAlleleSerializer
 from rest_framework import viewsets
-from time import strftime
+import datetime
 import re
 
 def index(request):
-    source = SourceForm()
     tev_file = TevFileForm()
-    context = {'source': source,
-               'tev_file': tev_file}
+    context = {'tev_file': tev_file}
     return render(request, 'data_input/index.html', context)
 
 #View for REST API containing everything nested within a source
@@ -35,56 +33,94 @@ class VariantAlleleRESTAPI(viewsets.ModelViewSet):
 #View that parses the TEV test results
 #Saves patient information and TEV test information to database
 def data_to_database(request):
-        data = request.POST
-        source = Source()
-        source.name = data['name']
-        source.save()
-
-        #Save the uuid of the source that was just entered in the session
-        #Now we can reference it in the views of the plots app
-        request.session['source'] = str(source.uuid)
-
         file = request.FILES.get('file')
         #Parse the Tev file
-        parse_tev_file(file, source)
+        parse_tev_file(file)
 
-        return redirect('plots:index')
+        return redirect('data_manager:sources')
 
 
 
 #########################################################
 #  This depends on future files having same structure  #
 ########################################################
-def parse_tev_file(file, source):
+def parse_tev_file(file):
     file = file.read().decode('UTF-8')
-    print(file)
     file = file.split('\n')
     file = [row.split('\t') for row in file]
 
+    subject_id_index = int(file[0].index("Subject ID"))
+    date_index = int(file[0].index("Date"))
+    gene_index = int(file[0].index("Gene"))
+    chromosome_index = int(file[0].index("Chr"))
+    position_index = int(file[0].index("Position"))
+    aa_change_index = int(file[0].index("AA_change"))
+    total_read_index = int(file[0].index("Total Read"))
+    ref_read_index = int(file[0].index("Ref_read"))
+    alt_read_index = int(file[0].index("Var_read"))
+    alternative_index = int(file[0].index("Alt"))
+    reference_index = int(file[0].index("Ref"))
+    alt_freq_index = int(file[0].index("VAF"))
+    cDNA_change_index = int(file[0].index("cDNA_change"))
+    variant_type_index = int(file[0].index("VariantType"))
+    assay_index = int(file[0].index("Assay"))
+    ref_seq_index = int(file[0].index("RefSeq"))
+
+
     #Possible error: Have an empty line at bottom of file from hitting enter
     for i in range(1, len(file)):
-        if Sample.objects.filter(source=source, timepoint=file[i][2]).exists():
-            sample = Sample.objects.get(source=source, timepoint=file[i][2])
+        patient_id = file[i][subject_id_index]
+
+        sample_date = file[i][date_index]
+        sample_date = sample_date.split('/')
+        if(len(sample_date[0]) == 1):
+            sample_date[0] = "0" + sample_date[0]
+        if(len(sample_date[1]) == 1):
+            sample_date[1] = "0" + sample_date[1]
+        sample_date[2] = "20" + sample_date[2]
+        sample_date = sample_date[2] + "-" + sample_date[0] + "-" + sample_date[1]
+        sample_date = datetime.datetime.strptime(sample_date, "%Y-%m-%d").date()
+
+        if(Source.objects.filter(subject_id=patient_id).exists()):
+            source = Source.objects.get(subject_id=patient_id)
+        else:
+            source = Source()
+            source.subject_id = patient_id
+            source.save()
+
+        if Sample.objects.filter(source=source, timestamp=sample_date).exists():
+            sample = Sample.objects.get(source=source, timestamp=sample_date)
         else:
             sample = Sample()
-            sample.timepoint = file[i][2]
-            sample.timestamp = strftime("%Y-%m-%d")
+            sample.timepoint = 0
+            sample.timestamp = sample_date
+            sample.assay = file[i][assay_index]
             sample.source = source
             sample.save()
-        if Gene.objects.filter(hugo_symbol=file[i][0]).exists():
-            gene = Gene.objects.get(hugo_symbol=file[i][0])
+        if Gene.objects.filter(name=file[i][gene_index]).exists():
+            gene = Gene.objects.get(name=file[i][gene_index])
         else:
             gene = Gene()
-            gene.hugo_symbol = file[i][0]
+            gene.name = file[i][gene_index]
+            gene.chromosome = file[i][chromosome_index]
+            gene.position = int(file[i][position_index])
             gene.save()
         variant_allele = VariantAllele()
-        AA_change = file[i][1]
+        variant_allele.sample = sample
+        variant_allele.gene = gene
+        AA_change = file[i][aa_change_index]
         AA_change = re.split('(\d+)', AA_change)
         variant_allele.AA_original = AA_change[0]
         variant_allele.AA_position = int(AA_change[1])
         variant_allele.AA_variant = AA_change[2]
-        variant_allele.sample = sample
-        variant_allele.gene = gene
-        variant_allele.alternative_freq = int(file[i][3])
-        variant_allele.reference_freq = int(file[i][4])
+        variant_allele.total_reads = int(file[i][total_read_index])
+        variant_allele.ref_reads = int(file[i][ref_read_index])
+        variant_allele.alt_reads = int(file[i][alt_read_index])
+        variant_allele.alternative = file[i][alternative_index]
+        variant_allele.reference = file[i][reference_index]
+        variant_allele.alternative_freq = round(float(file[i][alt_freq_index]))
+        variant_allele.reference_freq = int(100 - variant_allele.alternative_freq)
+        variant_allele.cDNA_change = file[i][cDNA_change_index]
+        variant_allele.type = file[i][variant_type_index]
+        variant_allele.ref_seq = file[i][ref_seq_index]
         variant_allele.save()

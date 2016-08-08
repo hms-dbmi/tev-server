@@ -5,7 +5,7 @@ def sources(request):
     source_table_data = []
     source_data = Source.objects.all();
     for source in source_data:
-        name = source.name
+        name = source.subject_id
         uuid = source.uuid
         timepoints = source.Samples.get_queryset()
         alleles = []

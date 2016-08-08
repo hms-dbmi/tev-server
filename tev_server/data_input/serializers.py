@@ -17,10 +17,10 @@ class SourceSerializer(serializers.ModelSerializer):
     Samples = SampleSerializer(many=True)
     class Meta:
         model = Source
-        fields = ('name', 'Samples', 'uuid')
+        fields = ('subject_id', 'Samples', 'uuid')
 
 class GeneSerializer(serializers.ModelSerializer):
     VariantAlleles = VariantAlleleSerializer(many=True)
     class Meta:
         model = Gene
-        fields = ('hugo_symbol', 'VariantAlleles', 'uuid')
+        fields = ('name', 'VariantAlleles', 'uuid')
