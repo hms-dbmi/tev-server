@@ -124,3 +124,16 @@ def parse_tev_file(file):
         variant_allele.type = file[i][variant_type_index]
         variant_allele.ref_seq = file[i][ref_seq_index]
         variant_allele.save()
+
+        correct_timepoints(patient_id)
+
+def correct_timepoints(subject_id):
+    source_uuid = Source.objects.get(subject_id=subject_id).uuid
+    samples = Sample.objects.filter(source=source_uuid)
+    #order by timestamp (the date the sample was taken)
+    earliest_date = Sample.objects.filter(source=source_uuid).order_by('timestamp')[0]
+    for sample in samples:
+        days_elapsed = (sample.timestamp - earliest_date.timestamp).days
+        sample.timepoint = days_elapsed
+        sample.save()
+    return
