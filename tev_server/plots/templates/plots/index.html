@@ -120,11 +120,11 @@
 
     //Dirty way of adding origin (tail fin of fish plot)
     //Important to unshift, because the order of the x-values matters when using d3.line.svg()!
-    function add_origin(nestedData) {
+    function add_origin(nestedData, Sample_Barcode) {
         for (var i = 0; i < nestedData.length; i++) {
             var allele_cluster = nestedData[i].values[0].cluster;
             nestedData[i].values.unshift({
-                Sample_Barcode: 'origin',
+                Sample_Barcode: Sample_Barcode,
                 alt_count: 0,
                 allele: nestedData[i].key,
                 cluster: allele_cluster
@@ -1258,11 +1258,13 @@
                        return a - b;
                     });
                     var num_of_timepoints = xAxisLabels.length;
+                    var sample_timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
+                    var ten_percent_below_zero = 0.1 * Math.max.apply(null, xAxisLabels);
+                    ten_percent_below_zero = parseInt(0 - ten_percent_below_zero);
+                    xAxisLabels.unshift(ten_percent_below_zero);
 
-                    xAxisLabels.unshift('origin');
-
-                    var xScale = d3.scale.ordinal().rangePoints([40, width-40], 0.5).domain(xAxisLabels);
-                    var xAxis = d3.svg.axis().scale(xScale);
+                    var xScale = d3.scale.linear().range([40, width-40], 0.5).domain(d3.extent(xAxisLabels, function(d){return d;}));
+                    var xAxis = d3.svg.axis().scale(xScale).tickValues(sample_timepoints);
 
                     var yScale = d3.scale.linear().range([40, height-40], 0.5).domain([101, -1]);
                     var yAxis = d3.svg.axis().scale(yScale).orient('left').ticks(0);
@@ -1270,7 +1272,7 @@
                     var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
                     nestedData = sort_nested_alleles(nestedData);
 
-                    nestedData = add_origin(nestedData);
+                    nestedData = add_origin(nestedData, ten_percent_below_zero);
 
                     //Set up data for comparisons
                     var fishplot_data = [];
@@ -1295,8 +1297,6 @@
                         var allele_freqs = fishplot_data[i].freqs;
                         for(var j = 1; j < allele_freqs.length; j++){
                             if(allele_freqs[j] != 0){
-                                //console.log(fishplot_data[i]);
-                                //console.log(fishplot_data[i].freqs);
                                 var rank = ranking_adjustment * allele_freqs[j];
                                 sort_array.push({
                                     allele: fishplot_data[i].allele,
@@ -1314,6 +1314,8 @@
 
                     //Order data based on rank
                     nestedData = order_by_rank(nestedData, sort_array);
+
+                    console.log(nestedData);
 
                     var plot_background = {};
                     plot_background.key = "plot";
@@ -1614,7 +1616,10 @@
                        return a - b;
                     });
                     var num_of_timepoints = x_axis_labels.length;
-                    x_axis_labels.unshift('origin');
+                    var sample_timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
+                    var ten_percent_below_zero = 0.1 * Math.max.apply(null, x_axis_labels);
+                    ten_percent_below_zero = parseInt(0 - ten_percent_below_zero);
+                    x_axis_labels.unshift(ten_percent_below_zero);
 
                     //Sorting data by what can fit in what
                     var sort_array = [];
@@ -1644,6 +1649,8 @@
                     mini_nested_data = order_by_rank(mini_nested_data, sort_array);
                     //Also reorder nested data to be used for canvas to keep it consistent
                     canvas_nested_data = order_by_rank(canvas_nested_data, sort_array);
+
+                    console.log(canvas_nested_data);
 
                     //Add children, parent, and index fields
                     for (var i = 0; i < canvas_nested_data.length; i++) {
@@ -1714,10 +1721,10 @@
                             });
 
                     var canvas_range_max_x = d3.select('#canvas_svg').node().clientWidth;
-                    var canvas_x_scale = d3.scale.ordinal()
-                            .rangePoints([canvas_range_max_x*0.01, canvas_range_max_x*0.99], 0.25)
-                            .domain(x_axis_labels);
-                    var canvas_x_axis = d3.svg.axis().scale(canvas_x_scale);
+                    var canvas_x_scale = d3.scale.linear()
+                            .range([canvas_range_max_x*0.01, canvas_range_max_x*0.99], 0.25)
+                            .domain(d3.extent(x_axis_labels, function(d){ return d;}));
+                    var canvas_x_axis = d3.svg.axis().scale(canvas_x_scale).tickValues(sample_timepoints);
 
                     var canvas_range_max_y = d3.select('#canvas_svg').node().clientHeight * 0.95;
                     var canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([101, -1]);
@@ -1737,8 +1744,8 @@
 
                     var y_max = y_scale_domain_max(mini_nested_data);
 
-                    mini_nested_data = add_origin(mini_nested_data);
-                    canvas_nested_data = add_origin(canvas_nested_data);
+                    mini_nested_data = add_origin(mini_nested_data, ten_percent_below_zero);
+                    canvas_nested_data = add_origin(canvas_nested_data, ten_percent_below_zero);
 
                     //May have to turn this into a function..
                     //Used in fishplot directive as well
@@ -1768,7 +1775,8 @@
                     generate_mini_fishplot_top_and_bottom(mini_nested_data, y_max);
                     var mini_x_range_max = d3.select('#container_div').node().clientWidth;
 
-                    var mini_x_scale = d3.scale.ordinal().rangePoints([0, mini_x_range_max], 0.5).domain(x_axis_labels);
+                    var mini_x_scale = d3.scale.linear().range([0, mini_x_range_max], 0.5)
+                            .domain(d3.extent(x_axis_labels, function(d){return d;}));
                     var mini_y_scale = d3.scale.linear().range([20, 140]).domain([y_max + 1, -1]);
 
                     var top_line_gen = d3.svg.line()
