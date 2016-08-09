@@ -94,6 +94,16 @@
     return this.filter(function(i) {return a.indexOf(i) < 0;});
     };
 
+    //Sort each allele in nested data by timepoint
+    function sort_nested_alleles(nested_data){
+        for(var i = 0; i < nested_data.length; i++){
+            nested_data[i].values = nested_data[i].values.sort(function(a, b){
+               return a.Sample_Barcode - b.Sample_Barcode;
+            });
+        }
+        return nested_data;
+    }
+
 
     //Order fish plot data by first timepoint, and then by alternative allele freq
     //Directives used in: figure5Plot
@@ -387,7 +397,7 @@
                         var timepoint = data[i].timepoint;
                         var alleles = data[i].VariantAlleles;
                         for(var j = 0; j < alleles.length; j++){
-                            var allele = gene_data[gene_uuids.indexOf(alleles[j].gene)].hugo_symbol
+                            var allele = gene_data[gene_uuids.indexOf(alleles[j].gene)].name
                                     + '-'
                                     + alleles[j].AA_original
                                     + alleles[j].AA_position.toString()
@@ -401,6 +411,46 @@
                         }
                     }
                     return allele_data;
+                },
+
+                patch: function(data){
+                    var timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
+                    data.sort(function(a,b) {return (a.allele > b.allele) ? 1 : ((b.allele > a.allele) ? -1 : 0);} );
+
+                    var current_allele = data[0].allele;
+                    var timepoints_hit = [];
+                    var unhit_array = [];
+
+                    for(var i = 0; i < data.length; i++){
+                        if(data[i].allele == current_allele){
+                            timepoints_hit.push(data[i].Sample_Barcode);
+                        }
+                        else{
+                            var unhit_timepoints = timepoints.diff(timepoints_hit);
+                            for(var j = 0; j < unhit_timepoints.length; j++){
+                                unhit_array.push({
+                                    allele: current_allele,
+                                    Sample_Barcode: unhit_timepoints[j],
+                                    alt_count: 0
+                                });
+                            }
+                            timepoints_hit = [];
+                            current_allele = data[i].allele;
+                            timepoints_hit.push(data[i].Sample_Barcode);
+                        }
+                    }
+                    //Get the unhit timepoints from last remaining allele
+                    unhit_timepoints = timepoints.diff(timepoints_hit);
+                    for(var j = 0; j < unhit_timepoints.length; j++){
+                                unhit_array.push({
+                                    allele: current_allele,
+                                    Sample_Barcode: unhit_timepoints[j],
+                                    alt_count: 0
+                                });
+                            }
+
+                    data = data.concat(unhit_array);
+                    return data;
                 }
             };
         });
@@ -427,16 +477,17 @@
                 var dendro_y_data = {{ dendro_y_data }};
 
                 //Get the data from the API
-                var source_data = $http.get('http://127.0.0.1:8000/api/v1/sources/');
-                var gene_data = $http.get('http://127.0.0.1:8000/api/v1/genes/');
+                var source_request = $http.get('http://127.0.0.1:8000/api/v1/sources/');
+                var gene_request = $http.get('http://127.0.0.1:8000/api/v1/genes/');
 
-                $q.all([source_data, gene_data]).then(function(results_array){
-                    var gene_data = results_array[1].data;
+                $q.all([source_request, gene_request]).then(function(results_array){
                     var tevData = results_array[0].data;
+                    var gene_data = results_array[1].data;
                     tevData = $filter('filter')(tevData, {'uuid': source_uuid})[0];
                     $scope.tevData = tevData.Samples;
 
                     var alleleified_data = allelify.alleleify($scope.tevData, gene_data);
+                    alleleified_data = allelify.patch(alleleified_data);
                     $scope.alleleified_data = alleleified_data;
 
                     //Send through this data, when the data from the API has been recieved
@@ -486,6 +537,9 @@
                     var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
                     var axisLabels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    axisLabels = axisLabels.sort(function(a, b){
+                       return a - b;
+                    });
 
                     var xScale = d3.scale.ordinal().rangePoints([40, width-40], 0.5).domain(axisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
@@ -503,6 +557,8 @@
                                return d.allele;
                             })
                             .entries(data);
+
+                    nestedData = sort_nested_alleles(nestedData);
 
                     var lineSvg = canvas.append("g");
                     var pointSvg = canvas.append("g");
@@ -1198,6 +1254,9 @@
                         .attr('height', height);
 
                     var xAxisLabels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    xAxisLabels = xAxisLabels.sort(function(a, b){
+                       return a - b;
+                    });
                     var num_of_timepoints = xAxisLabels.length;
 
                     xAxisLabels.unshift('origin');
@@ -1209,6 +1268,7 @@
                     var yAxis = d3.svg.axis().scale(yScale).orient('left').ticks(0);
 
                     var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
+                    nestedData = sort_nested_alleles(nestedData);
 
                     nestedData = add_origin(nestedData);
 
@@ -1527,10 +1587,13 @@
                         return d.allele;
                     }).entries(data);
 
+                    mini_nested_data = sort_nested_alleles(mini_nested_data);
+
                     var canvas_nested_data = d3.nest().key(function (d) {
                         return d.allele;
                     }).entries(data);
 
+                    canvas_nested_data = sort_nested_alleles(canvas_nested_data);
 
                     var fishplot_data = [];
 
@@ -1547,6 +1610,9 @@
 
                     var x_axis_labels = [];
                     x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    x_axis_labels = x_axis_labels.sort(function(a, b){
+                       return a - b;
+                    });
                     var num_of_timepoints = x_axis_labels.length;
                     x_axis_labels.unshift('origin');
 
