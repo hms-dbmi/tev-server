@@ -1263,7 +1263,8 @@
                     ten_percent_below_zero = parseInt(0 - ten_percent_below_zero);
                     xAxisLabels.unshift(ten_percent_below_zero);
 
-                    var xScale = d3.scale.linear().range([40, width-40], 0.5).domain(d3.extent(xAxisLabels, function(d){return d;}));
+                    var xScale = d3.scale.linear().rangeRound([40, width-40], 0.5)
+                            .domain(d3.extent(xAxisLabels, function(d){return d;}));
                     var xAxis = d3.svg.axis().scale(xScale).tickValues(sample_timepoints);
 
                     var yScale = d3.scale.linear().range([40, height-40], 0.5).domain([101, -1]);
@@ -1722,7 +1723,7 @@
 
                     var canvas_range_max_x = d3.select('#canvas_svg').node().clientWidth;
                     var canvas_x_scale = d3.scale.linear()
-                            .range([canvas_range_max_x*0.01, canvas_range_max_x*0.99], 0.25)
+                            .rangeRound([canvas_range_max_x*0.01, canvas_range_max_x*0.99], 0.25)
                             .domain(d3.extent(x_axis_labels, function(d){ return d;}));
                     var canvas_x_axis = d3.svg.axis().scale(canvas_x_scale).tickValues(sample_timepoints);
 
@@ -1775,7 +1776,7 @@
                     generate_mini_fishplot_top_and_bottom(mini_nested_data, y_max);
                     var mini_x_range_max = d3.select('#container_div').node().clientWidth;
 
-                    var mini_x_scale = d3.scale.linear().range([0, mini_x_range_max], 0.5)
+                    var mini_x_scale = d3.scale.linear().rangeRound([0, mini_x_range_max], 0.5)
                             .domain(d3.extent(x_axis_labels, function(d){return d;}));
                     var mini_y_scale = d3.scale.linear().range([20, 140]).domain([y_max + 1, -1]);
 
@@ -1999,6 +2000,7 @@
                                 old_x_pos = 0;
                                 old_y_pos = 0;
                                 dragging = false;
+                                var svg_index = d3.select('#dragable_div').attr('index');
 
                                 for(var i = 0; i < cant_fit.length; i++){
                                     d3.select('#big_fish'+cant_fit[i])
@@ -2037,7 +2039,9 @@
 
                                         //If it can fit, plot it and re-adjust all other independent clonal evolutions
                                         if (fit) {
-                                            var svg_index = mini_fishplot.attr('index');
+                                            svg_index = mini_fishplot.attr('index');
+                                            d3.select('#fishplot_area'+ svg_index).attr('opacity', 1);
+
                                             d3.select('#mini_fishplot_div' + svg_index).style('opacity', 0.35);
                                             d3.select('#dragable_div').remove();
 
@@ -2141,22 +2145,27 @@
                                             }
                                         }
                                         else {
+                                            setTimeout(function() {
+                                                var index = d3.select('#dragable_div').attr('index');
+                                                d3.select('#fishplot_area'+index).attr('opacity', 1);
+                                            }, 500);
                                             d3.select('#dragable_div').transition()
-                                            .duration(500)
-                                            .style('top', top_in_container)
-                                            .style('left', left_in_container);
+                                                    .duration(500)
+                                                    .style('top', top_in_container)
+                                                    .style('left', left_in_container)
+                                                    .remove();
                                         }
                                     }
                                     else {
-                                        var nested_data = canvas_nested_data.slice(0);
+                                        nested_data = canvas_nested_data.slice(0);
 
                                         var parent_of_this = moused_over;
 
-                                        var parent = nested_data[parent_of_this];
+                                        parent = nested_data[parent_of_this];
 
-                                        var data_index = mini_fishplot.attr('index');
+                                        data_index = mini_fishplot.attr('index');
 
-                                        var data = nested_data[data_index];
+                                        data = nested_data[data_index];
 
                                         data.start_point = parent.start_point;
                                         data.group = parent.group;
@@ -2164,11 +2173,13 @@
 
                                         //If it can git, make it a child of the current fishplot
                                         //And re-adjust everything that has already been plotted
-                                        var fit = can_fit(nested_data, parent, data, num_of_timepoints);
+                                        fit = can_fit(nested_data, parent, data, num_of_timepoints);
 
                                         if (fit) {
 
-                                            var svg_index = mini_fishplot.attr('index');
+                                            svg_index = mini_fishplot.attr('index');
+                                            d3.select('#fishplot_area'+ svg_index).attr('opacity', 1);
+
                                             d3.select('#mini_fishplot_div' + svg_index).style('opacity', 0.35);
                                             d3.select('#dragable_div').remove();
 
@@ -2189,8 +2200,8 @@
                                             update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
 
                                             for (var i = 0; i < plot_background.children.length; i++) {
-                                                var parent = nested_data[plot_background.children[i]];
-                                                var start_point = parent.start_point;
+                                                parent = nested_data[plot_background.children[i]];
+                                                start_point = parent.start_point;
                                                 nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
                                             }
 
@@ -2203,7 +2214,7 @@
 
 
                                             for (var i = 0; i < nested_data.length; i++) {
-                                                var current_allele = nested_data[i];
+                                                current_allele = nested_data[i];
                                                 for (var j = 0; j < current_allele.values.length; j++) {
                                                     //Initialize all pinches to false
                                                     //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
@@ -2216,7 +2227,7 @@
                                             d3.selectAll('.big_fish').remove();
 
                                             for (var i = 0; i < nested_data.length; i++) {
-                                                var current_data = nested_data[i];
+                                                current_data = nested_data[i];
 
                                                 canvas_svg.append('path')
                                                         .attr('fill', 'none')
@@ -2256,19 +2267,33 @@
                                             }
                                         }
                                         else {
+                                            setTimeout(function() {
+                                                var index = d3.select('#dragable_div').attr('index');
+                                                d3.select('#fishplot_area'+index).attr('opacity', 1);
+                                            }, 500);
+
                                             d3.select('#dragable_div').transition()
-                                            .duration(500)
-                                            .style('top', top_in_container)
-                                            .style('left', left_in_container);
+                                                    .duration(500)
+                                                    .style('top', top_in_container)
+                                                    .style('left', left_in_container)
+                                                    .remove();
                                         }
                                     }
                                 }
                                 else {
+                                    setTimeout(function() {
+                                                var index = d3.select('#dragable_div').attr('index');
+                                                d3.select('#fishplot_area'+index).attr('opacity', 1);
+                                            }, 500);
+
                                     d3.select('#dragable_div').transition()
                                             .duration(500)
                                             .style('top', top_in_container)
-                                            .style('left', left_in_container);
+                                            .style('left', left_in_container)
+                                            .remove();
+
                                 }
+                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                 return;
                             });
 
@@ -2390,6 +2415,9 @@
                                 old_y_pos = d3.event.y;
 
                                 dragging = true;
+
+                                d3.select('#fishplot_area'+i).attr('opacity', 0);
+
                                 d3.select('#dragable_div').style('pointer-events', 'none')
                                         //give mouseup remove functionality
                                         .on('mouseup', function(){
