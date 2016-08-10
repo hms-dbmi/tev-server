@@ -74,6 +74,7 @@
         crossorigin="anonymous"></script>
 
 <script>
+
     //Find unique values for oridinal scale
     function uniqueAxisLabels(data, key) {
         var unique = {};
@@ -371,6 +372,7 @@
 
 
     (function() {
+
         //Application name: tevApp
         //Dependencies: None
         var tevApp = angular.module('tevApp', []);
@@ -470,7 +472,6 @@
                 // it would keep calling itself
                 $scope.clustered_alleleified_data = [];
                 $scope.alleles = [];
-
 
                 var source_uuid = '{{ source }}';
                 var dendro_data = {{ d3_dendro_data|safe }};
@@ -2011,7 +2012,6 @@
                                 }
                             })
                             .on('mouseup', function () {
-                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                 old_x_pos = 0;
                                 old_y_pos = 0;
                                 dragging = false;
@@ -2308,8 +2308,20 @@
                                             .remove();
 
                                 }
-                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                 return;
+                            });
+
+                    //dirty fish to preventing blank mini fishplots
+                    d3.select('body')
+                            .on('mouseup', function () {
+                                for (var i = 0; i < cant_fit.length; i++) {
+                                    d3.select('#big_fish' + cant_fit[i])
+                                            .attr('fill', canvas_nested_data[cant_fit[i]].color);
+                                }
+                                setTimeout(function () {
+                                    d3.select('#dragable_div').remove();
+                                    d3.selectAll('.fishplot_areas').attr('opacity', 1);
+                                }, 500);
                             });
 
                     //Cog wheel glyph icon
@@ -2370,6 +2382,7 @@
                             .attr('id', function(d, i){
                                 return 'fishplot_area'+i
                             })
+                            .attr('class', 'fishplot_areas')
                             .on('mousedown', function (d, i) {
                                 d3.selectAll('.mini_fishplots').attr('opacity', 1);
                                 var div_id = '#mini_fishplot_div' + i;
