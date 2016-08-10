@@ -1259,9 +1259,16 @@
                     });
                     var num_of_timepoints = xAxisLabels.length;
                     var sample_timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
-                    var ten_percent_below_zero = 0.1 * Math.max.apply(null, xAxisLabels);
+
+                    var x_max = Math.max.apply(null, xAxisLabels);
+
+                    var ten_percent_below_zero = 0.1 * x_max;
                     ten_percent_below_zero = parseInt(0 - ten_percent_below_zero);
                     xAxisLabels.unshift(ten_percent_below_zero);
+
+                    var ten_percent_above_max = 0.1 * x_max;
+                    ten_percent_above_max = x_max + ten_percent_above_max;
+                    xAxisLabels.push(ten_percent_above_max);
 
                     var xScale = d3.scale.linear().rangeRound([40, width-40], 0.5)
                             .domain(d3.extent(xAxisLabels, function(d){return d;}));
@@ -1616,11 +1623,19 @@
                     x_axis_labels = x_axis_labels.sort(function(a, b){
                        return a - b;
                     });
+
                     var num_of_timepoints = x_axis_labels.length;
                     var sample_timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
-                    var ten_percent_below_zero = 0.1 * Math.max.apply(null, x_axis_labels);
+
+                    var x_max = Math.max.apply(null, x_axis_labels);
+
+                    var ten_percent_below_zero = 0.1 * x_max;
                     ten_percent_below_zero = parseInt(0 - ten_percent_below_zero);
                     x_axis_labels.unshift(ten_percent_below_zero);
+
+                    var ten_percent_above_max = 0.1 * x_max;
+                    ten_percent_above_max = x_max + ten_percent_above_max;
+                    x_axis_labels.push(ten_percent_above_max);
 
                     //Sorting data by what can fit in what
                     var sort_array = [];
