@@ -243,14 +243,13 @@
 
     //Function to find the actual origin of the fishplots
     //Directives used in: figure5Plot
-    function find_origin(current_allele, nestedData){
-        var parent = nestedData[current_allele.parent_index_of_this];
+    function find_origin(current_allele){
         var allele_data = current_allele.values;
-        var zeros = [];
+        var zeroes = [];
         //Find out if "origin" is the only timepoint that has an alternative allele frequency of zero
         for(var i = 0; i < allele_data.length; i++){
             if(allele_data[i].alt_count == 0){
-                zeros.push(i);
+                zeroes.push(i);
             }
             else {
                 break;
@@ -258,9 +257,9 @@
         }
         //If "origin" is not the actuall origin of the tumor
         //Trim the data until one timepoint before the actual origin
-        if(zeros.length > 1){
-            allele_data.splice(0, zeros.length-1);
-        }
+        if(zeroes.length > 1){
+                allele_data.splice(0, zeroes.length - 1);
+            }
         return allele_data;
     }
 
@@ -1324,7 +1323,7 @@
                     //Order data based on rank
                     nestedData = order_by_rank(nestedData, sort_array);
 
-                    console.log(nestedData);
+
 
                     var plot_background = {};
                     plot_background.key = "plot";
@@ -1478,9 +1477,7 @@
                             .interpolate('linear')
                             .x(function(d){
                                 if(d.pinch == true){
-                                    var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
-                                    x_pos = (x_pos * 0.25);
-                                    x_pos = x_pos + xScale(d.previous_timepoint);
+                                    var x_pos = (xScale(d.Sample_Barcode) + xScale(d.next_timepoint))/2;
                                     return x_pos;
                                 }
                                 return xScale(d.Sample_Barcode);
@@ -1493,9 +1490,7 @@
                             .interpolate('linear')
                             .x(function(d, i){
                                 if(d.pinch == true){
-                                    var x_pos = xScale(d.Sample_Barcode) - xScale(d.previous_timepoint);
-                                    x_pos = (x_pos * 0.25);
-                                    x_pos = x_pos + xScale(d.previous_timepoint);
+                                    var x_pos = (xScale(d.Sample_Barcode) + xScale(d.next_timepoint))/2;
                                     return x_pos;
                                 }
                                 return xScale(d.Sample_Barcode);
@@ -1667,7 +1662,7 @@
                     //Also reorder nested data to be used for canvas to keep it consistent
                     canvas_nested_data = order_by_rank(canvas_nested_data, sort_array);
 
-                    console.log(canvas_nested_data);
+                    //console.log(canvas_nested_data);
 
                     //Add children, parent, and index fields
                     for (var i = 0; i < canvas_nested_data.length; i++) {
@@ -1764,18 +1759,6 @@
                     mini_nested_data = add_origin(mini_nested_data, ten_percent_below_zero);
                     canvas_nested_data = add_origin(canvas_nested_data, ten_percent_below_zero);
 
-                    //May have to turn this into a function..
-                    //Used in fishplot directive as well
-                    for (var i = 0; i < mini_nested_data.length; i++) {
-                        var current_allele = mini_nested_data[i];
-                        for (var j = 0; j < current_allele.values.length; j++) {
-                            //Initialize all pinches to false
-                            //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
-                            current_allele.values[j].pinch = false;
-                        }
-                        current_allele.values = find_origin(current_allele, mini_nested_data);
-                    }
-
 
                     function generate_mini_fishplot_top_and_bottom(nested_data, y_max) {
                         var mid_point = y_max / 2;
@@ -1797,11 +1780,10 @@
                     var mini_y_scale = d3.scale.linear().range([20, 140]).domain([y_max + 1, -1]);
 
                     var top_line_gen = d3.svg.line()
+                            .interpolate('linear')
                             .x(function (d) {
                                 if (d.pinch == true) {
-                                    var x_pos = mini_x_scale(d.Sample_Barcode) - mini_x_scale(d.previous_timepoint);
-                                    x_pos = (x_pos * 0.25);
-                                    x_pos = x_pos + mini_x_scale(d.previous_timepoint);
+                                    var x_pos = (mini_x_scale(d.Sample_Barcode) + mini_x_scale(d.next_timepoint))/2;
                                     return x_pos;
                                 }
                                 return mini_x_scale(d.Sample_Barcode);
@@ -1811,11 +1793,10 @@
                             });
 
                     var canvas_top_line_gen = d3.svg.line()
+                            .interpolate('linear')
                             .x(function (d) {
                                 if (d.pinch == true) {
-                                    var x_pos = canvas_x_scale(d.Sample_Barcode) - canvas_x_scale(d.previous_timepoint);
-                                    x_pos = (x_pos * 0.25);
-                                    x_pos = x_pos + canvas_x_scale(d.previous_timepoint);
+                                    var x_pos = (canvas_x_scale(d.Sample_Barcode) + canvas_x_scale(d.next_timepoint))/2;
                                     return x_pos;
                                 }
                                 return canvas_x_scale(d.Sample_Barcode);
@@ -1825,11 +1806,10 @@
                             });
 
                     var bottom_line_gen = d3.svg.line()
+                            .interpolate('linear')
                             .x(function (d) {
                                 if (d.pinch == true) {
-                                    var x_pos = mini_x_scale(d.Sample_Barcode) - mini_x_scale(d.previous_timepoint);
-                                    x_pos = (x_pos * 0.25);
-                                    x_pos = x_pos + mini_x_scale(d.previous_timepoint);
+                                    var x_pos = (mini_x_scale(d.Sample_Barcode) + mini_x_scale(d.next_timepoint))/2;
                                     return x_pos;
                                 }
                                 return mini_x_scale(d.Sample_Barcode);
@@ -1839,11 +1819,10 @@
                             });
 
                     var canvas_bottom_line_gen = d3.svg.line()
+                            .interpolate('linear')
                             .x(function (d) {
                                 if (d.pinch == true) {
-                                    var x_pos = canvas_x_scale(d.Sample_Barcode) - canvas_x_scale(d.previous_timepoint);
-                                    x_pos = (x_pos * 0.25);
-                                    x_pos = x_pos + canvas_x_scale(d.previous_timepoint);
+                                    var x_pos = (canvas_x_scale(d.Sample_Barcode) + canvas_x_scale(d.next_timepoint))/2;
                                     return x_pos;
                                 }
                                 return canvas_x_scale(d.Sample_Barcode);
@@ -1853,11 +1832,13 @@
                             });
 
                     var area_between_lines = d3.svg.area()
+                            .interpolate('linear')
                             .x(top_line_gen.x())
                             .y0(top_line_gen.y())
                             .y1(bottom_line_gen.y());
 
                     var canvas_area_between_lines = d3.svg.area()
+                            .interpolate('linear')
                             .x(canvas_top_line_gen.x())
                             .y0(canvas_top_line_gen.y())
                             .y1(canvas_bottom_line_gen.y());
@@ -2031,20 +2012,20 @@
                                 minimum_left_pos = Math.floor(minimum_left_pos);
                                 var mini_fishplot_left = parseInt(mini_fishplot.style('left'));
 
+                                //If the mini fishplot is dragged over the canvas background
+                                //center the starting y value at the middle of the mini fishplot div
+                                var half_height = mini_fishplot.node().clientHeight / 2;
+                                var mini_fishplot_top = mini_fishplot.style('top');
+                                var start = parseInt(mini_fishplot_top) + half_height;
+
+                                start = canvas_y_scale.invert(start);
+
                                 if ((mini_fishplot_left + left_adjustment) > minimum_left_pos) {
                                     d3.select(el).style('cursor', 'default');
 
                                     if (moused_over == 'canvas_svg') {
 
                                         var nested_data = canvas_nested_data.slice(0);
-
-                                        //If the mini fishplot is dragged over the canvas background
-                                        //center the starting y value at the middle of the mini fishplot div
-                                        var half_height = mini_fishplot.node().clientHeight / 2;
-                                        var mini_fishplot_top = mini_fishplot.style('top');
-                                        var start = parseInt(mini_fishplot_top) + half_height;
-
-                                        start = canvas_y_scale.invert(start);
 
                                         var data_index = mini_fishplot.attr('index');
 
@@ -2113,7 +2094,7 @@
                                                     //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                                                     current_allele.values[j].pinch = false;
                                                 }
-                                                current_allele.values = find_origin(current_allele, nested_data);
+                                                current_allele.values = find_origin(current_allele);
                                             }
 
                                             d3.selectAll('.big_fish').remove();
@@ -2182,8 +2163,9 @@
 
                                         data = nested_data[data_index];
 
-                                        data.start_point = parent.start_point;
+                                        data.start_point = start;
                                         data.group = parent.group;
+                                        data.values[0].start_point = start;
                                         data.parent_index_of_this = parseInt(parent_of_this);
 
                                         //If it can git, make it a child of the current fishplot
@@ -2200,6 +2182,11 @@
 
                                             //Add the current fish as a subclone
                                             parent.children.push(parseInt(data.index));
+                                            parent.children.sort(function(a, b){
+                                                console.log(canvas_nested_data[a], canvas_nested_data[b]);
+                                               return canvas_nested_data[a].values[0].start_point
+                                                       - canvas_nested_data[b].values[0].start_point;
+                                            });
                                             fishplot_svgs.push(parseInt(data_index));
 
                                             //Re-do top and bottom based on start position of parent
@@ -2235,7 +2222,7 @@
                                                     //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                                                     current_allele.values[j].pinch = false;
                                                 }
-                                                current_allele.values = find_origin(current_allele, nested_data);
+                                                current_allele.values = find_origin(current_allele);
                                             }
 
 
