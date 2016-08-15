@@ -75,6 +75,158 @@
 
 <script>
 
+    //Function to calculate CCF based on ploidy and purity specified
+    function find_CCFs(independent_evos, trimmed_evos, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array, timepoints){
+        if(independent_evos.length < 2){
+            return;
+        }
+        //need to update to keep track of how many times we need to recursively call this function
+        if(trimmed_evos.length > 1) {
+            var updated_independent_evos = trimmed_evos.slice(0, 1);
+        }
+        else{
+            updated_independent_evos = trimmed_evos;
+        }
+        var max_cells_of_this_evo = num_of_cancer_cells; //- (num_of_evos-1);
+
+        //The following lines of this function are for generating all possible combinations of cell counts per
+        //independent clonal expansion based on the purity
+
+        //initialize cells_per_evo_array
+        if(trimmed_evos.length == num_of_evos){
+            for(var i = 0; i < max_cells_of_this_evo+1; i++){
+                cells_per_evo_array.push(i);
+                find_CCFs(independent_evos, updated_independent_evos, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array, timepoints);
+                cells_per_evo_array = [];
+            }
+        }
+        //generate additional combinations if the below is true
+        if((cells_per_evo_array.length != (num_of_evos-1)) && (trimmed_evos.length != num_of_evos)) {
+            for (var i = 0; i < max_cells_of_this_evo + 1; i++) {
+                cells_per_evo_array.push(i);
+                var sum = cells_per_evo_array.reduce(function(a, b){
+                    return a+b;
+                }, 0);
+                //if we've already reached our limit, break out of the loop
+                if(sum > num_of_cancer_cells){
+                   break;
+                }
+                else {
+                    find_CCFs(independent_evos, updated_independent_evos, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array);
+                }
+            }
+        }
+        //else if we are on the last one, start checking the combinations
+        else{
+            for(var i = 0; i < max_cells_of_this_evo+1; i++){
+                sum = cells_per_evo_array.reduce(function(a, b){
+                    return a + b;
+                }, 0);
+                sum = sum + i;
+                if(sum > num_of_cancer_cells){
+                    break;
+                }
+                //if we have a good combination, see if it is possible to calculate the cancer cell fraction
+                if(sum == num_of_cancer_cells){
+                    //function to see if there is a solution using the given ploidys
+                    calculate_CCF(cells_per_evo_array, [i], independent_evos, nested_data, num_of_cancer_cells, timepoints);
+                }
+                else{
+                    continue;
+                }
+            }
+        }
+        return;
+    }
+
+    //Function to see if there is a solution for CCF given the independent clonal expansions and cell ploidys
+    //cells_per_evo_array contains proposed cell counts for all independent clonal expansions except the last listed one
+    function calculate_CCF(cells_per_evo_array, last_evo_cell_count, independent_evos, nested_data, num_of_cancer_cells, timepoints){
+        var normal_cells =  100-num_of_cancer_cells;
+        //number of chromosomes coming from normal (impure) cells
+        var num_chrs_normal_cells = normal_cells*2;
+
+        //Initialize the total number of chromosomes from all cells
+        var total_chromosomes = num_chrs_normal_cells;
+        //and the number of chromosomes in each independent clonal expansion
+        var chromosome_counts = {};
+
+        //get the cells counts from each independent clonal expansion by adding the last cell count to array
+        var all_evo_cell_counts = cells_per_evo_array.concat(last_evo_cell_count);
+
+        console.log(all_evo_cell_counts);
+
+        //Initialize the chromosome count coming from normal cells
+        chromosome_counts.normal = num_chrs_normal_cells;
+
+        for(var t = 0; t < timepoints.length; t++) {
+            chromosome_counts[timepoints[t].toString()] = {};
+            for (var i = 0; i < independent_evos.length; i++) {
+                //calculate number of chromsomes from this each specific independent evolution
+                //by multiplying number of cells for that independent evolution by the proposed ploidy of those cells
+                var chrs_for_this_evo = all_evo_cell_counts[i] * nested_data[independent_evos[i]].ploidy;
+                total_chromosomes = total_chromosomes + chrs_for_this_evo;
+                chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].allele] = chrs_for_this_evo;
+            }
+        }
+
+        var chromosomes_affected_of_each = [];
+        var will_work = true;
+
+        for(var t = 0; t < timepoints.length; t++) {
+            if(will_work == false){
+                break;
+            }
+            for (var i = 0; i < independent_evos.length; i++) {
+                //variant allele frequency
+                var vaf = nested_data[independent_evos[i]].values[t].alt_count;
+                var chromosomes_needed = total_chromosomes * vaf;
+
+                //if the number of cells we have for this independent evolution is less than the chromosomes needed for
+                //the VAF at this timepoint, then it wont work
+                if ((all_evo_cell_counts[i] < chromosomes_needed) || (chromosomes_needed > chromosome_counts[independent_evos[i].toString()])) {
+                    will_work = false;
+                    break;
+                }
+                //else, try to find the closest number of chromosomes affected per independent evolution
+                else {
+                    var proportions = generate_portions(nested_data[independent_evos[i]].ploidy);
+                    var proportion_affected = chromosomes_needed / chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].allele];
+                    var closest_proportion = find_closest_proportion(proportions, proportion_affected);
+                    var num_of_chromosomes_affected = proportions.indexOf(closest_proportion) + 1;
+                    chromosomes_affected_of_each.push(num_of_chromosomes_affected);
+                }
+            }
+        }
+        if(will_work == true){
+            //console.log(chromosome_counts);
+        }
+        return;
+    }
+
+    //function to generate possible proportions of chromosomes affected in cell based on ploidy
+    function generate_portions(ploidy){
+        var proportions_array = [];
+        var increment = 1/ploidy;
+        for(var i = 0; i < ploidy; i++){
+            var proportion = (i+1)*increment;
+            proportion = parseFloat(proportion.toFixed(2));
+            proportions_array.push(proportion);
+        }
+        return proportions_array;
+    }
+
+    //find the closest proportion of chromosomes affected by variation
+    function find_closest_proportion(proportions, proportion_affected){
+        var closest = proportions[0];
+        for(var i = 1; i < proportions.length; i++){
+            if(Math.abs(proportion_affected-proportions[i]) < Math.abs(proportion_affected-closest)){
+                closest = proportions[i];
+            }
+        }
+        return closest;
+    }
+
     //Find unique values for oridinal scale
     function uniqueAxisLabels(data, key) {
         var unique = {};
@@ -1622,12 +1774,17 @@
 
                     var num_of_timepoints = x_axis_labels.length;
                     var sample_timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
+                    sample_timepoints = sample_timepoints.sort(function(a, b){
+                       return a - b;
+                    });
 
                     var x_max = Math.max.apply(null, x_axis_labels);
 
                     var ten_percent_below_zero = 0.1 * x_max;
                     ten_percent_below_zero = parseInt(0 - ten_percent_below_zero);
                     x_axis_labels.unshift(ten_percent_below_zero);
+
+                    sample_timepoints.unshift(ten_percent_below_zero);
 
                     var ten_percent_above_max = 0.1 * x_max;
                     ten_percent_above_max = x_max + ten_percent_above_max;
@@ -1669,7 +1826,10 @@
                         canvas_nested_data[i].children = [];
                         canvas_nested_data[i].parent_index_of_this = 'none';
                         canvas_nested_data[i].index = i;
+                        canvas_nested_data[i].ploidy = 2;
                         canvas_nested_data[i].color = fill_colors[canvas_nested_data[i].values[0].cluster-1];
+
+                        mini_nested_data[i].ploidy = 2;
                         mini_nested_data[i].color = fill_colors[mini_nested_data[i].values[0].cluster-1];
                     }
 
@@ -2035,6 +2195,7 @@
 
                                         //If it can fit, plot it and re-adjust all other independent clonal evolutions
                                         if (fit) {
+
                                             svg_index = mini_fishplot.attr('index');
                                             d3.select('#fishplot_area'+ svg_index).attr('opacity', 1);
 
@@ -2063,6 +2224,8 @@
                                             });
 
                                             fishplot_svgs.push(parseInt(data_index));
+                                            find_CCFs(plot_background.children, plot_background.children, nested_data, 80, fishplot_svgs.length, [], sample_timepoints);
+
 
                                             canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
 
@@ -2589,12 +2752,14 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 </div>
 </div>
 
+<!--
 <div class="row">
     <div class="col-lg-12 col-md-12 col-sm-12">
         <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 100%; height: 600px; float: left;">
         </div>
     </div>
 </div>
+-->
 
 <div class="row">
     <div class="col-lg-12 col-md-12 col-sm-12">

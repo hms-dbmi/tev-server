@@ -24,7 +24,7 @@ class Sample(models.Model):
 class Gene(models.Model):
     name = models.CharField(max_length=250)
     chromosome = models.CharField(max_length=2)
-    position = models.IntegerField()
+    position = models.IntegerField(null=True)
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     def __str__(self):
@@ -33,16 +33,16 @@ class Gene(models.Model):
 class VariantAllele(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name='VariantAlleles')
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE, related_name='VariantAlleles')
-    AA_position = models.IntegerField()
+    AA_position = models.IntegerField(null=True)
     AA_original = models.CharField(max_length=10)
     AA_variant = models.CharField(max_length=10)
-    total_reads = models.IntegerField()
-    alt_reads = models.IntegerField()
-    ref_reads = models.IntegerField()
+    total_reads = models.IntegerField(null=True)
+    alt_reads = models.IntegerField(null=True)
+    ref_reads = models.IntegerField(null=True)
     alternative = models.CharField(max_length=250)
-    alternative_freq = models.IntegerField()
+    alternative_freq = models.IntegerField(null=True)
     reference = models.CharField(max_length=250)
-    reference_freq = models.IntegerField()
+    reference_freq = models.IntegerField(null=True)
     type = models.CharField(max_length=250)
     cDNA_change = models.CharField(max_length=250)
     ref_seq = models.CharField(max_length=250)

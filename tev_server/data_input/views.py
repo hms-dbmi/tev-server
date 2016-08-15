@@ -66,9 +66,13 @@ def parse_tev_file(file):
     assay_index = int(file[0].index("Assay"))
     ref_seq_index = int(file[0].index("RefSeq"))
 
+    number_of_columns = len(file[0])
 
     #Possible error: Have an empty line at bottom of file from hitting enter
     for i in range(1, len(file)):
+        if(len(file[i]) != number_of_columns):
+            continue
+
         patient_id = file[i][subject_id_index]
 
         sample_date = file[i][date_index]
@@ -113,13 +117,31 @@ def parse_tev_file(file):
         variant_allele.AA_original = AA_change[0]
         variant_allele.AA_position = int(AA_change[1])
         variant_allele.AA_variant = AA_change[2]
-        variant_allele.total_reads = int(file[i][total_read_index])
-        variant_allele.ref_reads = int(file[i][ref_read_index])
-        variant_allele.alt_reads = int(file[i][alt_read_index])
+
+        try:
+            variant_allele.total_reads = int(file[i][total_read_index])
+        except ValueError:
+            variant_allele.total_reads = None
+
+        try:
+            variant_allele.ref_reads = int(file[i][ref_read_index])
+        except ValueError:
+            variant_allele.ref_reads = None
+
+        try:
+            variant_allele.alt_reads = int(file[i][alt_read_index])
+        except ValueError:
+            variant_allele.alt_reads = None
         variant_allele.alternative = file[i][alternative_index]
         variant_allele.reference = file[i][reference_index]
-        variant_allele.alternative_freq = round(float(file[i][alt_freq_index]))
-        variant_allele.reference_freq = int(100 - variant_allele.alternative_freq)
+
+        try:
+            variant_allele.alternative_freq = round(float(file[i][alt_freq_index]))
+            variant_allele.reference_freq = int(100 - variant_allele.alternative_freq)
+        except ValueError:
+            variant_allele.alternative_freq = None
+            variant_allele.reference_freq = None
+
         variant_allele.cDNA_change = file[i][cDNA_change_index]
         variant_allele.type = file[i][variant_type_index]
         variant_allele.ref_seq = file[i][ref_seq_index]
