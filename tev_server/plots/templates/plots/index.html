@@ -194,10 +194,12 @@
                     will_work = false;
                     break;
                 }
-                if(chromosomes_needed > chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]){
+
+                if (chromosomes_needed > ((chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]) + nested_data[independent_evos[i]].ploidy)) {
                     will_work = false;
                     break;
                 }
+
                 //else, try to find the closest number of chromosomes affected per independent evolution
                 else {
                     var proportions = generate_portions(nested_data[independent_evos[i]].ploidy);
@@ -2498,6 +2500,7 @@
                             .attr('id', 'cog_wheel')
                             .attr('xlink:href', 'https://cdn1.iconfinder.com/data/icons/trycons/32/settings-512.png')
                             .on('click', function(d, i){
+                                //return if the fishplot of this allele has already been plotted
                                 if(fishplot_svgs.indexOf(i) != -1){
                                     return;
                                 }
@@ -2653,6 +2656,12 @@
                             .attr('class', 'noselect info_text');
 
                     svgs.append('text')
+                            .attr('font-size', '15px')
+                            .attr('text-anchor', 'middle')
+                            .attr('id', function(d, i){
+                                return 'ploidy_text'+i;
+                            })
+                            .attr('class', 'noselect info_text')
                             .attr('x', function(d, i){
                                 var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
                                 center = center * 1.5; //cut in half, then cut in half again
@@ -2661,13 +2670,15 @@
                             .attr('y', '15px')
                             .text(function(){
                                 return 'Ploidy: ' + 2; //Will put variable for Ploidy eventually
-                            })
-                            .attr('font-size', '15px')
-                            .attr('text-anchor', 'middle')
-                            .attr('id', function(d, i){
-                                return 'ploidy_text'+i;
-                            })
-                            .attr('class', 'noselect info_text');
+                            });
+
+                    //update the ploidy after the user saves the changes
+                    d3.select('#save_button')
+                            .on('click', function(){
+                                var index =  d3.select('#ploidy_input').attr('fishplot_index');
+                                var value = d3.select('#ploidy_input').node().valueAsNumber;
+                                canvas_nested_data[index].ploidy = value;
+                            });
 
                     svgs.append('line')
                             .attr('x1', '0px')
@@ -2808,7 +2819,7 @@ overflow: hidden;">
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button"
                                 onclick="update_clonal_information_text()">Save</button>
                     </div>
                 </div>
