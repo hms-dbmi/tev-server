@@ -1845,6 +1845,56 @@
                         mini_nested_data[i].color = fill_colors[mini_nested_data[i].values[0].cluster-1];
                     }
 
+                    //Add input for purity atop the canvas
+                    var purity_div_height  = height*0.05;
+
+                    var purity_div_wrapper = d3.select(el).append('div')
+                            .style('top', '0px')
+                            .style('left', '0px')
+                            .style('width', '100%')
+                            .style('height', purity_div_height+'px')
+                            .style('position', 'relative')
+                            .style('float', 'left')
+                            .style('padding', '0px')
+                            .attr('id', 'purity_div_wrapper');
+
+                    var purity_input_div = purity_div_wrapper.append('div')
+                            .style('top', '0px')
+                            .style('left', function(){
+                                //left of canvas is actually set below
+                                var canvas_left = (width * 0.27);
+                                var rightmost_of_div = purity_div_wrapper.node().clientWidth;
+                                var middle_of_canvas = (canvas_left + rightmost_of_div)/2;
+                                return middle_of_canvas + 'px';
+                            })
+                            .style('width', '73%')
+                            .style('height', '100%')
+                            .style('float', 'right')
+                            .style('position', 'absolute')
+                            .attr('id', 'purity_input_div');
+
+                    var purity_input_label = purity_input_div.append('label')
+                            .attr('for', 'purity_input')
+                            .style('padding-right', '5px')
+                            .html(function(){
+                                return 'Purity:     '
+                            });
+
+                    //push the label and input to the left by the length of the label (this will center it)
+                    purity_input_div.style('left', function(){
+                        var current_left = parseFloat(purity_input_div.style('left'));
+                        return (current_left - purity_input_label.node().clientWidth) + 'px';
+                    });
+
+                    var purity_input = purity_input_div.append('input')
+                            .attr('id', 'purity_input')
+                            .attr('type', 'number')
+                            .attr('name', 'Purity: ')
+                            .attr('min', '0')
+                            .attr('max', '100')
+                            .attr('value', '80');
+
+
                     //Div wrapper for dragable div
                     var dragable_div_wrapper = d3.select(el).append('div')
                             .style('top', '0px')
@@ -1858,6 +1908,7 @@
                             .attr('id', 'dragable_div_wrapper');
 
                     var new_height = d3.select('#dragable_div_wrapper').node().offsetHeight;
+                    new_height = new_height + purity_div_height;
                     d3.select(el).style('height', new_height + 'px');
 
 
@@ -1880,7 +1931,7 @@
 
                     //Div to hold canvas svg
                     var canvas = d3.select(el).append('div')
-                            .style('top', '0px')
+                            .style('top', purity_div_height + 'px')
                             .style('left', width * 0.27 + 'px')
                             .style('width', '73%')
                             .style('height', height + 'px')
