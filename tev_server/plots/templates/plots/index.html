@@ -148,8 +148,9 @@
         //number of chromosomes coming from normal (impure) cells
         var num_chrs_normal_cells = normal_cells*2;
 
-        //Initialize the total number of chromosomes from all cells
-        var total_chromosomes = num_chrs_normal_cells;
+        //calculate total number of chromosomes
+        var total_chromosomes = calculate_chromosome_total(cells_per_evo_array, num_chrs_normal_cells, nested_data, independent_evos);
+
         //and the number of chromosomes in each independent clonal expansion
         var chromosome_counts = {};
 
@@ -162,11 +163,9 @@
         for (var t = 0; t < timepoints.length; t++) {
             chromosome_counts[timepoints[t].toString()] = {};
             for (var i = 0; i < independent_evos.length; i++) {
-                var chrs_for_this_evo = all_evo_cell_counts[i] * nested_data[independent_evos[i]].ploidy;
-
-                //calculate number of chromsomes from this each specific independent evolution
+                //calculate number of chromsomes from each specific independent evolution
                 //by multiplying number of cells for that independent evolution by the proposed ploidy of those cells
-                total_chromosomes = total_chromosomes + chrs_for_this_evo;
+                var chrs_for_this_evo = all_evo_cell_counts[i] * nested_data[independent_evos[i]].ploidy;
                 chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key] = chrs_for_this_evo;
             }
         }
@@ -175,7 +174,7 @@
         var will_work = true;
 
         for(var t = 1; t < timepoints.length; t++) {
-            console.log(timepoints[t]);
+            //console.log(timepoints[t]);
             if(will_work == false){
                 break;
             }
@@ -195,7 +194,7 @@
                     break;
                 }
 
-                if (chromosomes_needed > ((chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]) + nested_data[independent_evos[i]].ploidy)) {
+                if (chromosomes_needed > ((chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]))){ //+ nested_data[independent_evos[i]].ploidy)) {
                     will_work = false;
                     break;
                 }
@@ -226,6 +225,16 @@
             proportions_array.push(proportion);
         }
         return proportions_array;
+    }
+
+    //calculate the total number of chromosomes based on the purity, ploidy, and cells distribution
+    function calculate_chromosome_total(cells_per_evo_array, num_chrs_normal_cells, nested_data, independent_evos) {
+        var total_chromosomes = num_chrs_normal_cells;
+        for (var i = 0; i < cells_per_evo_array.length; i++) {
+            var chrs_for_this_evo = cells_per_evo_array[i] * nested_data[independent_evos[i]].ploidy;
+            total_chromosomes = total_chromosomes + chrs_for_this_evo;
+        }
+        return total_chromosomes;
     }
 
     //find the closest proportion of chromosomes affected by variation
@@ -1892,8 +1901,32 @@
                             .attr('name', 'Purity: ')
                             .attr('min', '0')
                             .attr('max', '100')
-                            .attr('value', '80');
-
+                            .attr('value', '80')
+                            .on('change', function(){
+                                if(parseInt(purity_input.node().value) > 100){
+                                    purity_input.node().value = 100;
+                                    if(plot_background.children.length != 0) {
+                                        var complete_nested_data = canvas_nested_data.slice();
+                                        find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
+                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints);
+                                    }
+                                }
+                                if(parseInt(purity_input.node().value) < 0){
+                                    purity_input.node().value = 0;
+                                    if(plot_background.children.length != 0) {
+                                        complete_nested_data = canvas_nested_data.slice();
+                                        find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
+                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints);
+                                    }
+                                }
+                                else {
+                                    if(plot_background.children.length != 0) {
+                                        complete_nested_data = canvas_nested_data.slice();
+                                        find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
+                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints);
+                                    }
+                                }
+                            });
 
                     //Div wrapper for dragable div
                     var dragable_div_wrapper = d3.select(el).append('div')
@@ -2368,8 +2401,8 @@
                                                         });
                                             }
 
-                                            find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data, 80,
-                                                    plot_background.children.length, [], sample_timepoints);
+                                            find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
+                                                    parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints);
                                         }
                                         else {
                                             setTimeout(function() {
