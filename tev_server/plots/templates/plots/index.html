@@ -76,7 +76,7 @@
 <script>
 
     //Function to calculate CCF based on ploidy and purity specified
-    function find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array, timepoints){
+    function find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array, timepoints, options){
         //need to update to keep track of how many times we need to recursively call this function
         var max_cells_of_this_evo = num_of_cancer_cells; //- (num_of_evos-1);
 
@@ -91,7 +91,7 @@
             counter =  counter-1;
             for(var i = 0; i < max_cells_of_this_evo+1; i++){
                 cells_per_evo_array.push(i);
-                find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array, timepoints);
+                find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array, timepoints, options);
                 cells_per_evo_array = [];
             }
         }
@@ -111,7 +111,7 @@
                    break;
                 }
                 else {
-                    find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_array, timepoints);
+                    find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_array, timepoints, options);
                 }
             }
         }
@@ -130,7 +130,7 @@
                     //if we have a good combination, see if it is possible to calculate the cancer cell fraction
                     if ((sum == num_of_cancer_cells) && (cells_array.length == num_of_evos)) {
                         //function to see if there is a solution using the given ploidys
-                        calculate_CCF(cells_array, independent_evos, nested_data, num_of_cancer_cells, timepoints);
+                        calculate_CCF(cells_array, independent_evos, nested_data, num_of_cancer_cells, timepoints, options);
                     }
                     else {
                         continue;
@@ -138,12 +138,11 @@
                 }
             }
         }
-        return;
     }
 
     //Function to see if there is a solution for CCF given the independent clonal expansions and cell ploidys
     //cells_per_evo_array contains proposed cell counts for all independent clonal expansions except the last listed one
-    function calculate_CCF(cells_per_evo_array, independent_evos, nested_data, num_of_cancer_cells, timepoints){
+    function calculate_CCF(cells_per_evo_array, independent_evos, nested_data, num_of_cancer_cells, timepoints, options){
         var normal_cells =  100-num_of_cancer_cells;
         //number of chromosomes coming from normal (impure) cells
         var num_chrs_normal_cells = normal_cells*2;
@@ -184,8 +183,8 @@
                 var chromosomes_needed = total_chromosomes * (vaf/100);
                 chromosomes_needed = Math.round(chromosomes_needed);
 
-                console.log(nested_data[independent_evos[i]].key);
-                console.log(chromosomes_needed, " --- ", chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]);
+                //console.log(nested_data[independent_evos[i]].key);
+                //console.log(chromosomes_needed, " --- ", chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]);
 
                 //if the number of cells we have for this independent evolution is less than the chromosomes needed for
                 //the VAF at this timepoint, then it wont work
@@ -194,7 +193,7 @@
                     break;
                 }
 
-                if (chromosomes_needed > ((chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]))){ //+ nested_data[independent_evos[i]].ploidy)) {
+                if (chromosomes_needed > ((chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]) + nested_data[independent_evos[i]].ploidy-1)) {
                     will_work = false;
                     break;
                 }
@@ -209,8 +208,9 @@
                 }
             }
         }
+        console.log(will_work);
         if(will_work == true){
-            console.log(chromosome_counts);
+            options.push(chromosome_counts);
         }
         return;
     }
@@ -1900,6 +1900,8 @@
                         return (current_left - purity_input_label.node().clientWidth) + 'px';
                     });
 
+                    var CCF_options = [];
+
                     var purity_input = purity_input_div.append('input')
                             .attr('id', 'purity_input')
                             .attr('type', 'number')
@@ -1911,24 +1913,27 @@
                                 if(parseInt(purity_input.node().value) > 100){
                                     purity_input.node().value = 100;
                                     if(plot_background.children.length != 0) {
+                                        CCF_options = [];
                                         var complete_nested_data = canvas_nested_data.slice();
                                         find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints);
+                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
                                     }
                                 }
                                 if(parseInt(purity_input.node().value) < 0){
                                     purity_input.node().value = 0;
                                     if(plot_background.children.length != 0) {
+                                        CCF_options = [];
                                         complete_nested_data = canvas_nested_data.slice();
                                         find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints);
+                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
                                     }
                                 }
                                 else {
                                     if(plot_background.children.length != 0) {
+                                        CCF_options = [];
                                         complete_nested_data = canvas_nested_data.slice();
                                         find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints);
+                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
                                     }
                                 }
                             });
@@ -2406,8 +2411,12 @@
                                                         });
                                             }
 
+                                            CCF_options = [];
+
                                             find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                    parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints);
+                                                    parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
+
+                                            console.log(CCF_options);
                                         }
                                         else {
                                             setTimeout(function() {
