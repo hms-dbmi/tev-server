@@ -1799,6 +1799,11 @@
                        return a - b;
                     });
 
+                    var tick_labels = uniqueAxisLabels(data, 'Sample_Barcode');
+                    tick_labels = tick_labels.sort(function(a, b){
+                       return a - b;
+                    });
+
                     var x_max = Math.max.apply(null, x_axis_labels);
 
                     var ten_percent_below_zero = 0.1 * x_max;
@@ -1992,7 +1997,7 @@
                     var canvas_x_scale = d3.scale.linear()
                             .rangeRound([canvas_range_max_x*0.01, canvas_range_max_x*0.99], 0.25)
                             .domain(d3.extent(x_axis_labels, function(d){ return d;}));
-                    var canvas_x_axis = d3.svg.axis().scale(canvas_x_scale).tickValues(sample_timepoints);
+                    var canvas_x_axis = d3.svg.axis().scale(canvas_x_scale).tickValues(tick_labels);
 
                     var canvas_range_max_y = d3.select('#canvas_svg').node().clientHeight * 0.95;
                     var canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([101, -1]);
