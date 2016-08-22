@@ -2414,18 +2414,22 @@
                                             CCF_options = [];
 
                                             if(plot_background.children.length > 1) {
+
+                                                d3.select('#modal_table').remove();
+
                                                 find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
                                                         parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
 
                                                 var modal_table = d3.select('#CCF_modal_body').append('table')
-                                                        .attr('class', 'table');
+                                                        .attr('id', 'modal_table')
+                                                        .attr('class', 'table table-hover');
                                                 var thead = modal_table.append('thead').append('tr');
 
                                                 var alleles_column = thead.append('th').html('Alleles');
-
                                                 var timepoints_column = thead.append('th').html('CCFs at Timepoints');
 
-                                                var table_body = modal_table.append('tbody');
+                                                var table_body = modal_table.append('tbody')
+                                                        .style('cursor', 'pointer');
 
                                                 var rows = table_body.selectAll('possible_ccfs')
                                                         .data(CCF_options)
