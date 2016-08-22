@@ -2413,10 +2413,56 @@
 
                                             CCF_options = [];
 
-                                            find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                    parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
+                                            if(plot_background.children.length > 1) {
+                                                find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
+                                                        parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
 
-                                            console.log(CCF_options);
+                                                var modal_table = d3.select('#CCF_modal_body').append('table')
+                                                        .attr('class', 'table');
+                                                var thead = modal_table.append('thead').append('tr');
+
+                                                var alleles_column = thead.append('th').html('Alleles');
+
+                                                var timepoints_column = thead.append('th').html('CCFs at Timepoints');
+
+                                                var table_body = modal_table.append('tbody');
+
+                                                var rows = table_body.selectAll('possible_ccfs')
+                                                        .data(CCF_options)
+                                                        .enter()
+                                                        .append('tr');
+
+                                                rows.append('td')
+                                                        .html(function(d, i){
+                                                            var alleles = d[tick_labels[0].toString()];
+                                                            alleles = Object.keys(alleles);
+                                                            alleles = alleles.join(' </br> ');
+                                                            return alleles;
+                                                        });
+
+                                                rows.append('td')
+                                                        .html(function (d) {
+                                                            var alleles = d[tick_labels[0].toString()];
+                                                            alleles = Object.keys(alleles);
+                                                            var cell_fraction_array = [];
+                                                            for (var i = 0; i < alleles.length; i++) {
+                                                                var current_allele = alleles[i];
+                                                                var allele_array = [];
+                                                                for (var j = 0; j < tick_labels.length; j++) {
+                                                                    var timepoint_string = tick_labels[j].toString() + ": ";
+                                                                    timepoint_string = timepoint_string + d[tick_labels[j].toString()][current_allele];
+                                                                    allele_array.push(timepoint_string);
+                                                                }
+                                                                allele_array = allele_array.join(', ');
+                                                                cell_fraction_array.push(allele_array);
+                                                            }
+                                                            cell_fraction_array = cell_fraction_array.join(' </br> ');
+                                                            return cell_fraction_array;
+                                                        });
+
+                                                $("#CCF_modal").modal('show');
+                                            }
+
                                         }
                                         else {
                                             setTimeout(function() {
@@ -2891,6 +2937,9 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 overflow: hidden;">
         </div>
 
+        <!--
+        Modal for editing ploidy
+        -->
         <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
              aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -2919,6 +2968,32 @@ overflow: hidden;">
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button"
                                 onclick="update_clonal_information_text()">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--
+        Modal for selecting the CCF
+        -->
+
+             <div class="modal fade" id="CCF_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="exampleModalLabel">Choose CCF Distribution</h4>
+                    </div>
+                    <div id="CCF_modal_body" class="modal-body">
+                        <!--
+                        Using D3 in the fishplot editor div, a table will be filled in here
+                        -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button">Choose</button>
                     </div>
                 </div>
             </div>
