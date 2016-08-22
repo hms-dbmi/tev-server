@@ -2757,6 +2757,66 @@
                                 }, 500);
                             });
 
+                    //Save the current configuration of the fishplots
+                    var save_fishplot_div_height = 30;
+                    var save_fishplot_div_top = d3.select(el).node().clientHeight;
+                    var save_fishplot_top_padding = 0.10; //pad the top by 10 percent
+
+                    d3.select(el).style('height', function () {
+                        var height = d3.select(this).node().clientHeight;
+                        var extra_pixels = save_fishplot_div_height * save_fishplot_top_padding;
+                        var total_save_fishplot_div_pixels = save_fishplot_div_height + extra_pixels;
+                        height = height + total_save_fishplot_div_pixels;
+                        return height + 'px';
+                    });
+
+                    var save_fishplot_div_wrapper = d3.select(el).append('div')
+                            .attr('id', 'save_fishplot_div_wrapper')
+                            .style('top', save_fishplot_div_top + 'px')
+                            .style('left', '0px')
+                            .style('height', save_fishplot_div_height + 'px')
+                            .style('width', '100%')
+                            .style('float', 'left')
+                            .style('padding-top', function () {
+                                return (d3.select(this).node().clientHeight * save_fishplot_top_padding) + 'px';
+                            });
+
+                    var save_fishplot_div = save_fishplot_div_wrapper.append('div')
+                            .attr('id', 'save_fishplot_div')
+                            .style('top', '0px')
+                            .style('left', '0px')
+                            .style('width', '100%')
+                            .style('height', '100%')
+                            .style('position', 'relative')
+                            .style('float', 'left');
+
+                    var save_fishplot_button = save_fishplot_div.append('button')
+                            .attr('class', 'btn btn-primary btn-sm')
+                            .attr('id', 'save_fishplot_button')
+                            .html('Save Fishplot');
+
+                    //update the save_fishplot_div to move button to the right
+                    d3.select('#save_fishplot_div').style('left', function () {
+                                var button_width = d3.select('#save_fishplot_button').node().offsetWidth;
+                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-left'));
+                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-right'));
+                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('margin'));
+                                var canvas_left = d3.select('#canvas_div').node().offsetLeft;
+                                var canvas_width = d3.select('#canvas_div').node().offsetWidth;
+                                var canvas_right = canvas_left + canvas_width;
+                                var new_div_left = canvas_right - button_width;
+                                return new_div_left + 'px';
+                            })
+                            .style('width', function () {
+                                var button_width = d3.select('#save_fishplot_button').node().offsetWidth;
+                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-left'));
+                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-right'));
+                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('margin'));
+                                return button_width + 'px';
+                            });
+
+                    //Most of the code below pertains to the mini fishplot panels
+
                     //Cog wheel glyph icon
                     svgs.append('svg:image')
                             .attr('x', mini_x_range_max*0.01)
