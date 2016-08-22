@@ -210,7 +210,13 @@
         }
         console.log(will_work);
         if(will_work == true){
-            options.push(chromosome_counts);
+            var CCF = {};
+            for(var i = 0; i < independent_evos.length; i++){
+                var allele = nested_data[independent_evos[i]].key;
+                CCF[allele] = cells_per_evo_array[i];
+            }
+
+            options.push(CCF);
         }
         return;
     }
@@ -2438,27 +2444,19 @@
 
                                                 rows.append('td')
                                                         .html(function(d, i){
-                                                            var alleles = d[tick_labels[0].toString()];
-                                                            alleles = Object.keys(alleles);
+                                                            var alleles = Object.keys(d);
                                                             alleles = alleles.join(' </br> ');
                                                             return alleles;
                                                         });
 
                                                 rows.append('td')
                                                         .html(function (d) {
-                                                            var alleles = d[tick_labels[0].toString()];
-                                                            alleles = Object.keys(alleles);
+                                                            var alleles = Object.keys(d);
                                                             var cell_fraction_array = [];
                                                             for (var i = 0; i < alleles.length; i++) {
                                                                 var current_allele = alleles[i];
-                                                                var allele_array = [];
-                                                                for (var j = 0; j < tick_labels.length; j++) {
-                                                                    var timepoint_string = tick_labels[j].toString() + ": ";
-                                                                    timepoint_string = timepoint_string + d[tick_labels[j].toString()][current_allele];
-                                                                    allele_array.push(timepoint_string);
-                                                                }
-                                                                allele_array = allele_array.join(', ');
-                                                                cell_fraction_array.push(allele_array);
+                                                                var string = d[current_allele] + ' ' + 'cells';
+                                                                cell_fraction_array.push(string);
                                                             }
                                                             cell_fraction_array = cell_fraction_array.join(' </br> ');
                                                             return cell_fraction_array;
