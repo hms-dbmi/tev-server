@@ -2793,7 +2793,10 @@
                     var save_fishplot_button = save_fishplot_div.append('button')
                             .attr('class', 'btn btn-primary btn-sm')
                             .attr('id', 'save_fishplot_button')
-                            .html('Save Fishplot');
+                            .html('Save Fishplot')
+                            .on('click', function(){
+                                $("#save_fishplot_modal").modal('show');
+                            });
 
                     //update the save_fishplot_div to move button to the right
                     d3.select('#save_fishplot_div').style('left', function () {
@@ -2813,6 +2816,14 @@
                                 button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-right'));
                                 button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('margin'));
                                 return button_width + 'px';
+                            });
+
+                    //Function to save the fishplot
+
+                    d3.select('#save_as_fishplot_button')
+                            .on('click', function(){
+                               var name = d3.select('#save_fishplot_as').node().value;
+                                console.log(name);
                             });
 
                     //Most of the code below pertains to the mini fishplot panels
@@ -3041,6 +3052,12 @@
 
     })();
 
+    function pack_nested_data(nested_data, fishplots_used){
+        for(var i = 0; i < fishplots_used.length; i++){
+
+        }
+    }
+
     function update_clonal_information_text(){
         var fishplot_index = d3.select('#cn_input').attr('fishplot_index');
 
@@ -3176,6 +3193,35 @@ overflow: hidden;">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button">Choose</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--
+        Modal to prompt "save as:" for fishplot editor
+        -->
+
+        <div class="modal fade" id="save_fishplot_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="exampleModalLabel">Choose CCF Distribution</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+
+                            <label for="save_fishplot_as" class="form-control-label">Save as: </label>
+                            <input class="form-control" id="save_fishplot_as" type="text"/>
+
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_as_fishplot_button">Save</button>
                     </div>
                 </div>
             </div>
