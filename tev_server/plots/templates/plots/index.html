@@ -561,6 +561,11 @@
             $interpolateProvider.endSymbol('$}');
         });
 
+        tevApp.config(function ($httpProvider) {
+            $httpProvider.defaults.xsrfCookieName = 'csrftoken';
+            $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
+        });
+
         tevApp.factory('alleleify', function(){
             return {
                 alleleify: function(data, gene_data){
@@ -650,6 +655,7 @@
                 // it would keep calling itself
                 $scope.clustered_alleleified_data = [];
                 $scope.alleles = [];
+                $scope.subject_id = '';
 
                 var source_uuid = '{{ source }}';
                 var dendro_data = {{ d3_dendro_data|safe }};
@@ -663,6 +669,7 @@
                     var tevData = results_array[0].data;
                     var gene_data = results_array[1].data;
                     tevData = $filter('filter')(tevData, {'uuid': source_uuid})[0];
+                    $scope.subject_id = tevData.subject_id;
                     $scope.tevData = tevData.Samples;
 
                     var alleleified_data = allelify.alleleify($scope.tevData, gene_data);
@@ -1745,7 +1752,7 @@
 
         });
 
-        tevApp.directive('fishplotEditor', function () {
+        tevApp.directive('fishplotEditor',['$http', function ($http) {
             return {
                 restrict: 'A',
                 scope: {
@@ -2822,8 +2829,21 @@
 
                     d3.select('#save_as_fishplot_button')
                             .on('click', function(){
-                               var name = d3.select('#save_fishplot_as').node().value;
-                                console.log(name);
+                                var name = d3.select('#save_fishplot_as').node().value;
+                                var subject_id = scope.$parent.subject_id;
+                                var params_dict = {
+                                    subject_id: subject_id,
+                                    name: name,
+                                    used_data_indices: fishplot_svgs,
+                                    data: canvas_nested_data
+                                };
+
+                                $http({
+                                    url: '../input/save_fishplot/',
+                                    method: 'POST',
+                                    data: params_dict
+                                })
+
                             });
 
                     //Most of the code below pertains to the mini fishplot panels
@@ -3048,7 +3068,7 @@
 
                 });
             }
-        });
+        }]);
 
     })();
 
