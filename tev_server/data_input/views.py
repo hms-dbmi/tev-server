@@ -1,10 +1,13 @@
 from django.shortcuts import render, HttpResponse, redirect
 from .forms import TevFileForm
 from .models import Source, Sample, Gene, VariantAllele
+from .models import SavedFishplotSubject, Name, CloneMetadata, CloneTimepointData
 from .serializers import SourceSerializer, SampleSerializer, GeneSerializer, VariantAlleleSerializer
+from .serializers import SavedFishplotSubjectSerializer, NameSerializer, CloneMetadataSerializer, CloneTimepointDataSerializer
 from rest_framework import viewsets
 import datetime
 import re
+import json
 
 def index(request):
     tev_file = TevFileForm()
@@ -28,6 +31,22 @@ class VariantAlleleRESTAPI(viewsets.ModelViewSet):
     queryset = VariantAllele.objects.all()
     serializer_class = VariantAlleleSerializer
 
+class SavedFishplotSubject_idViewset(viewsets.ModelViewSet):
+    queryset = SavedFishplotSubject.objects.all()
+    serializer_class = SavedFishplotSubjectSerializer
+
+class SavedAsNameViewset(viewsets.ModelViewSet):
+    queryset = Name.objects.all()
+    serializer_class = NameSerializer
+
+class CloneMetadataViewset(viewsets.ModelViewSet):
+    queryset = CloneMetadata.objects.all()
+    serializer_class = CloneMetadataSerializer
+
+class CloneTimepointDataViewset(viewsets.ModelViewSet):
+    queryset = CloneTimepointData.objects.all()
+    serializer_class = CloneTimepointDataSerializer
+
 
 
 #View that parses the TEV test results
@@ -40,6 +59,16 @@ def data_to_database(request):
         return redirect('data_manager:sources')
 
 
+def correct_timepoints(subject_id):
+    source_uuid = Source.objects.get(subject_id=subject_id).uuid
+    samples = Sample.objects.filter(source=source_uuid)
+    #order by timestamp (the date the sample was taken)
+    earliest_date = Sample.objects.filter(source=source_uuid).order_by('timestamp')[0]
+    for sample in samples:
+        days_elapsed = (sample.timestamp - earliest_date.timestamp).days
+        sample.timepoint = days_elapsed
+        sample.save()
+    return
 
 #########################################################
 #  This depends on future files having same structure  #
@@ -149,13 +178,52 @@ def parse_tev_file(file):
 
         correct_timepoints(patient_id)
 
-def correct_timepoints(subject_id):
-    source_uuid = Source.objects.get(subject_id=subject_id).uuid
-    samples = Sample.objects.filter(source=source_uuid)
-    #order by timestamp (the date the sample was taken)
-    earliest_date = Sample.objects.filter(source=source_uuid).order_by('timestamp')[0]
-    for sample in samples:
-        days_elapsed = (sample.timestamp - earliest_date.timestamp).days
-        sample.timepoint = days_elapsed
-        sample.save()
-    return
+def save_fishplot(request):
+    post_info = request.body
+    post_info = json.loads(post_info)
+
+    subject_id = post_info["subject_id"]
+    name = post_info["name"]
+    used_indices = post_info["used_data_indices"]
+    nested_data = post_info["data"]
+
+    if SavedFishplotSubject.objects.filter(subject_id=subject_id).exists():
+        subject = SavedFishplotSubject.objects.get(subject_id=subject_id)
+    else:
+        subject = SavedFishplotSubject()
+        subject.subject_id = subject_id
+        subject.save()
+
+    saved_as = Name()
+    saved_as.subject_id = subject
+    saved_as.name = name
+    saved_as.save()
+
+    for index in used_indices:
+        current_clone = nested_data[index]
+        clone = CloneMetadata()
+        clone.name = saved_as
+        clone.key = current_clone["key"]
+        clone.parent_index_of_this = current_clone["parent_index_of_this"]
+        clone.index = int(current_clone["index"])
+        if current_clone["parent_index_of_this"] != "plot":
+            clone.parent = CloneMetadata.objects.get(index=int(clone.parent_index_of_this), name=saved_as,
+                                                     key = nested_data[int(clone.parent_index_of_this)]["key"])
+        else:
+            clone.parent = None
+        clone.ploidy = int(current_clone["ploidy"])
+        clone.color = current_clone["color"]
+        clone.save()
+
+        timepoint_data = current_clone["values"]
+        for timepoint in timepoint_data:
+            data = CloneTimepointData()
+            data.clone = clone
+            data.Sample_Barcode = timepoint["Sample_Barcode"]
+            data.alt_count = int(timepoint["alt_count"])
+            data.allele = timepoint["allele"]
+            data.cluster = int(timepoint["cluster"])
+            data.save()
+
+    #leave HttpResponse empty so we stay on page after saving fishplot
+    return HttpResponse()

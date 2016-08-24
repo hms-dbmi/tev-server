@@ -23,6 +23,10 @@ router.register(r'api/v1/sources', data_input_views.SourceRESTAPI)
 router.register(r'api/v1/samples', data_input_views.SampleRESTAPI)
 router.register(r'api/v1/genes', data_input_views.GeneRESTAPI)
 router.register(r'api/v1/allele_variants', data_input_views.VariantAlleleRESTAPI)
+router.register(r'api/v1/saved_fishplot_subject_ids', data_input_views.SavedFishplotSubject_idViewset)
+router.register(r'api/v1/saved_fishplot_names', data_input_views.SavedAsNameViewset)
+router.register(r'api/v1/saved_fishplot_clone_metadata', data_input_views.CloneMetadataViewset)
+router.register(r'api/v1/saved_fishplot_clone_timepoint_data', data_input_views.CloneTimepointDataViewset)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
