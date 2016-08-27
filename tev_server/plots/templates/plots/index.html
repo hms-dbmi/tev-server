@@ -76,9 +76,9 @@
 <script>
 
     //Function to calculate CCF based on ploidy and purity specified
-    function find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array, timepoints, options){
+    function find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_per_evo_array, timepoints, options, timepoint_index){
         //need to update to keep track of how many times we need to recursively call this function
-        var max_cells_of_this_evo = num_of_cancer_cells; //- (num_of_evos-1);
+        var max_cells_of_this_evo = purity; //- (num_of_evos-1);
 
         if((counter == num_of_evos) && (num_of_evos == 1)){
             return;
@@ -91,7 +91,7 @@
             counter =  counter-1;
             for(var i = 0; i < max_cells_of_this_evo+1; i++){
                 cells_per_evo_array.push(i);
-                find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_per_evo_array, timepoints, options);
+                find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_per_evo_array, timepoints, options, timepoint_index);
                 cells_per_evo_array = [];
             }
         }
@@ -107,11 +107,11 @@
                     return a+b;
                 }, 0);
                 //if we've already reached our limit, break out of the loop
-                if(sum > num_of_cancer_cells){
+                if(sum > purity){
                    break;
                 }
                 else {
-                    find_CCFs(independent_evos, counter, nested_data, num_of_cancer_cells, num_of_evos, cells_array, timepoints, options);
+                    find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_array, timepoints, options, timepoint_index);
                 }
             }
         }
@@ -124,13 +124,13 @@
                     sum = cells_array.reduce(function (a, b) {
                         return a + b;
                     }, 0);
-                    if(sum > num_of_cancer_cells){
+                    if(sum > purity){
                         break;
                     }
                     //if we have a good combination, see if it is possible to calculate the cancer cell fraction
-                    if ((sum == num_of_cancer_cells) && (cells_array.length == num_of_evos)) {
+                    if ((sum == purity) && (cells_array.length == num_of_evos)) {
                         //function to see if there is a solution using the given ploidys
-                        calculate_CCF(cells_array, independent_evos, nested_data, num_of_cancer_cells, timepoints, options);
+                        calculate_CCF(cells_array, independent_evos, nested_data, purity, timepoints, options, timepoint_index);
                     }
                     else {
                         continue;
@@ -142,8 +142,8 @@
 
     //Function to see if there is a solution for CCF given the independent clonal expansions and cell ploidys
     //cells_per_evo_array contains proposed cell counts for all independent clonal expansions except the last listed one
-    function calculate_CCF(cells_per_evo_array, independent_evos, nested_data, num_of_cancer_cells, timepoints, options){
-        var normal_cells =  100-num_of_cancer_cells;
+    function calculate_CCF(cells_per_evo_array, independent_evos, nested_data, purity, timepoints, options, timepoint_index){
+        var normal_cells =  100-purity;
         //number of chromosomes coming from normal (impure) cells
         var num_chrs_normal_cells = normal_cells*2;
 
@@ -159,25 +159,24 @@
         //Initialize the chromosome count coming from normal cells
         chromosome_counts.normal = num_chrs_normal_cells;
 
-        for (var t = 0; t < timepoints.length; t++) {
-            chromosome_counts[timepoints[t].toString()] = {};
+
+            chromosome_counts[timepoints.toString()] = {};
             for (var i = 0; i < independent_evos.length; i++) {
                 //calculate number of chromsomes from each specific independent evolution
                 //by multiplying number of cells for that independent evolution by the proposed ploidy of those cells
                 var chrs_for_this_evo = all_evo_cell_counts[i] * nested_data[independent_evos[i]].ploidy;
-                chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key] = chrs_for_this_evo;
+                chromosome_counts[timepoints.toString()][nested_data[independent_evos[i]].key] = chrs_for_this_evo;
             }
-        }
 
-        var chromosomes_affected_of_each = [];
+
         var will_work = true;
 
-        for(var t = 1; t < timepoints.length; t++) {
+            var chromosomes_affected_of_each = [];
             var will_work = true;
 
             for (var i = 0; i < independent_evos.length; i++) {
                 //variant allele frequency
-                var vaf = nested_data[independent_evos[i]].values[t].alt_count;
+                var vaf = nested_data[independent_evos[i]].values[timepoint_index].alt_count;
                 var chromosomes_needed = total_chromosomes * (vaf/100);
                 chromosomes_needed = Math.round(chromosomes_needed);
 
@@ -186,18 +185,18 @@
 
                 //if the number of cells we have for this independent evolution is less than the chromosomes needed for
                 //the VAF at this timepoint, then it wont work
-                if ((chromosomes_needed < all_evo_cell_counts[i]) && (nested_data[independent_evos[i]].values[t].alt_count != 0)) {
+                if ((chromosomes_needed < all_evo_cell_counts[i]) && (nested_data[independent_evos[i]].values[timepoint_index].alt_count != 0)) {
                     will_work = false;
                 }
 
-                if (chromosomes_needed > ((chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]) + nested_data[independent_evos[i]].ploidy-1)) {
+                if (chromosomes_needed > ((chromosome_counts[timepoints.toString()][nested_data[independent_evos[i]].key]) + nested_data[independent_evos[i]].ploidy-1)) {
                     will_work = false;
                 }
 
                 //else, try to find the closest number of chromosomes affected per independent evolution
                 else {
                     var proportions = generate_portions(nested_data[independent_evos[i]].ploidy);
-                    var proportion_affected = chromosomes_needed / chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key];
+                    var proportion_affected = chromosomes_needed / chromosome_counts[timepoints.toString()][nested_data[independent_evos[i]].key];
                     var closest_proportion = find_closest_proportion(proportions, proportion_affected);
                     var num_of_chromosomes_affected = proportions.indexOf(closest_proportion) + 1;
                     chromosomes_affected_of_each.push(num_of_chromosomes_affected);
@@ -209,11 +208,10 @@
                 for (var i = 0; i < independent_evos.length; i++) {
                     var allele = nested_data[independent_evos[i]].key;
                     CCF[allele] = [cells_per_evo_array[i]];
+                    CCF[allele+'_chrs'] = chromosomes_affected_of_each[i];
                 }
-
-                options[timepoints[t].toString()].push(CCF);
+                options[timepoints.toString()].push(CCF);
             }
-        }
 
         return;
     }
@@ -1455,7 +1453,7 @@
 
                     var xScale = d3.scale.linear().rangeRound([40, width-40], 0.5)
                             .domain(d3.extent(xAxisLabels, function(d){return d;}));
-                    var xAxis = d3.svg.axis().scale(xScale).tickValues(sample_timepoints);
+                    var xAxis = d3.svg.axis().scale(xScale).tickValues(sample_timepoints).attr('id', 'canvas_axis');
 
                     var yScale = d3.scale.linear().range([40, height-40], 0.5).domain([101, -1]);
                     var yAxis = d3.svg.axis().scale(yScale).orient('left').ticks(0);
@@ -1897,19 +1895,6 @@
                             .style('position', 'absolute')
                             .attr('id', 'purity_input_div');
 
-                    var purity_input_label = purity_input_div.append('label')
-                            .attr('for', 'purity_input')
-                            .style('padding-right', '5px')
-                            .html(function(){
-                                return 'Purity:     '
-                            });
-
-                    //push the label and input to the left by the length of the label (this will center it)
-                    purity_input_div.style('left', function () {
-                        var current_left = parseFloat(purity_input_div.style('left'));
-                        return (current_left - purity_input_label.node().clientWidth) + 'px';
-                    });
-
                     var CCF_options = {};
 
                     function load_CCF_options(CCF_options, sample_timepoints) {
@@ -1958,258 +1943,195 @@
                             var current_opt = opts[i];
                             for (var j = 0; j < timepoint_data.length; j++) {
                                 var opt_copy = JSON.parse(JSON.stringify(current_opt));
+                                var chrs_check = true;
                                 for (var k = 0; k < alleles.length; k++) {
-                                    opt_copy[alleles[k].toString()] = opt_copy[alleles[k].toString()].concat(timepoint_data[j][alleles[k].toString()])
+                                    //console.log(alleles[k]);
+                                    //console.log(opt_copy[(alleles[k] + '_chrs').toString()], "  ", timepoint_data[j][(alleles[k]+'_chrs').toString()]);
+                                    if(opt_copy[(alleles[k] + '_chrs').toString()] != timepoint_data[j][(alleles[k]+'_chrs').toString()]) {
+                                        chrs_check = false;
+                                    }
+                                    opt_copy[alleles[k].toString()] = opt_copy[alleles[k].toString()].concat(timepoint_data[j][alleles[k].toString()]);
                                 }
-                                updated_opts.push(opt_copy);
+                                if(chrs_check == true) {
+                                    updated_opts.push(opt_copy);
+                                }
                             }
                         }
                         return updated_opts;
                     }
 
-                    function get_parent_alleles(CCF_options, timepoints) {
-                        return Object.keys(CCF_options[timepoints[0]][0]);
+                    function get_parent_alleles(plot_background_children, canvas_nested_data) {
+                        var alleles = [];
+                        for(var i = 0; i < plot_background_children.length; i++){
+                            alleles.push(canvas_nested_data[parseInt(plot_background_children[i])].key);
+                        }
+                        return alleles;
+                    }
+
+                    function get_ploidy(allele, nested_data, plot_background_children) {
+                        for (var i = 0; i < plot_background_children.length; i++) {
+                            console.log(nested_data[plot_background_children[i]]);
+                            if (nested_data[plot_background_children[i]].key == allele) {
+                                return nested_data[plot_background_children[i]].ploidy;
+                            }
+                        }
                     }
 
                     var allele_color_reference = associated_allele_colors(canvas_nested_data);
 
                     load_CCF_options(CCF_options, sample_timepoints);
 
-                    var purity_input = purity_input_div.append('input')
-                            .attr('id', 'purity_input')
-                            .attr('type', 'number')
-                            .attr('name', 'Purity: ')
+                    var edit_purity_button = purity_input_div.append('button')
+                            .attr('class', 'btn btn-primary btn-sm')
+                            .attr('id', 'save_fishplot_button')
+                            .html('Edit Purity')
+                            .on('click', function(){
+                                $("#purityModal").modal('show');
+                            });
+
+                    //move button to the left by the length of its width to center it above canvas
+                    d3.select('#purity_input_div').style('left', function(){
+                        var button_width = edit_purity_button.node().offsetWidth;
+                        var div_left = parseInt(d3.select('#purity_input_div').style('left'));
+                        var new_left = div_left - button_width;
+                        new_left = new_left + 'px';
+                        return new_left;
+                    });
+
+                    var labels = d3.select('#purityForm')
+                            .selectAll('inputs')
+                            .data(tick_labels)
+                            .enter()
+                            .append('label')
+                            .attr('for', function(d, i){
+                                return 'day' + d.toString() + '_input';
+                            })
+                            .attr('class', 'form-control-label')
+                            .html(function(d){
+                                return 'Day ' + d.toString() + ': ';
+                            })
+                            .append('input')
+                            .attr('type','number')
                             .attr('min', '0')
                             .attr('max', '100')
-                            .attr('value', '80')
-                            .on('change', function () {
-                                if (parseInt(purity_input.node().value) > 100) {
-                                    purity_input.node().value = 100;
-                                    if (plot_background.children.length != 0) {
-                                        CCF_options = {};
-                                        load_CCF_options(CCF_options, sample_timepoints);
-                                        var complete_nested_data = canvas_nested_data.slice();
-                                        find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
+                            .attr('class', 'form-control')
+                            .attr('id', function(d, i){
+                                return 'day' + d.toString() + '_input';
+                            })
+                            .attr('value', 90);
 
-                                        d3.select('#modal_table').remove();
+                    d3.select('#save_purity_button')
+                            .on('click', function () {
 
-                                        delete CCF_options[ten_percent_below_zero.toString()];
+                                if (plot_background.children.length > 1) {
 
+                                    var purity_dict = {};
+                                    for (var i = 0; i < tick_labels.length; i++) {
 
-                                        var valid = is_valid(CCF_options, tick_labels);
-
-                                        if (valid == true) {
-                                            var parent_alleles = get_parent_alleles(CCF_options, tick_labels);
-                                            CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
+                                        var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
+                                        if(purity_value > 100){
+                                            purity_value = 100;
                                         }
-                                        else {
-                                            CCF_options = [];
+                                        if(purity_value < 0){
+                                            purity_value = 0;
                                         }
-
-                                        var modal_table = d3.select('#CCF_modal_body').append('table')
-                                                .attr('id', 'modal_table')
-                                                .attr('class', 'table table-hover');
-                                        var thead = modal_table.append('thead').append('tr');
-
-                                        var alleles_column = thead.append('th').html('Parent Alleles');
-                                        var timepoints_column = thead.append('th').html('CCFs at Timepoints');
-
-                                        var table_body = modal_table.append('tbody')
-                                                .style('cursor', 'pointer');
-
-                                        var rows = table_body.selectAll('possible_ccfs')
-                                                .data(CCF_options)
-                                                .enter()
-                                                .append('tr');
-
-                                        rows.append('td')
-                                                .html(function (d) {
-                                                    var alleles = Object.keys(d);
-                                                    for (var i = 0; i < alleles.length; i++) {
-                                                        var allele = alleles[i];
-                                                        var color = allele_color_reference[allele];
-                                                        var string = '<span style="color:' + color + '">'
-                                                                + allele + '</span>';
-                                                        alleles[i] = string;
-                                                    }
-                                                    alleles = alleles.join(' </br> ');
-                                                    return alleles;
-                                                });
-
-                                        rows.append('td')
-                                                .html(function (d) {
-                                                    var alleles = Object.keys(d);
-                                                    var cell_fraction_array = [];
-                                                    for (var i = 0; i < alleles.length; i++) {
-                                                        var current_allele = alleles[i];
-                                                        var allele_string = [];
-                                                        for (j = 0; j < tick_labels.length; j++) {
-                                                            allele_string.push('<span style="color:#0000FF">'
-                                                                    + tick_labels[j] + ': '
-                                                                    + '</span>' + d[current_allele][j]);
-                                                        }
-                                                        var string = allele_string.join(', ');
-                                                        cell_fraction_array.push(string);
-                                                    }
-                                                    cell_fraction_array = cell_fraction_array.join(' </br> ');
-                                                    return cell_fraction_array;
-                                                });
-
-                                        $("#CCF_modal").modal('show');
+                                        purity_dict[tick_labels[i].toString()] = purity_value;
                                     }
-                                }
-                                if (parseInt(purity_input.node().value) < 0) {
-                                    purity_input.node().value = 0;
-                                    if (plot_background.children.length != 0) {
-                                        CCF_options = {};
-                                        load_CCF_options(CCF_options, sample_timepoints);
-                                        complete_nested_data = canvas_nested_data.slice();
+
+                                    d3.select('#modal_table').remove();
+
+                                    CCF_options = {};
+                                    load_CCF_options(CCF_options, sample_timepoints);
+                                    var complete_nested_data = canvas_nested_data.slice();
+
+                                    for (var i = 0; i < tick_labels.length; i++) {
+                                        //actual timepoint index is +1 since first timepoint is the origin
+                                        var timepoint_index = i + 1;
                                         find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
-
-                                        d3.select('#modal_table').remove();
-
-                                        delete CCF_options[ten_percent_below_zero.toString()];
-
-
-                                        var valid = is_valid(CCF_options, tick_labels);
-
-                                        if (valid == true) {
-                                            var parent_alleles = get_parent_alleles(CCF_options, tick_labels);
-                                            CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
-                                        }
-                                        else {
-                                            CCF_options = [];
-                                        }
-
-                                        var modal_table = d3.select('#CCF_modal_body').append('table')
-                                                .attr('id', 'modal_table')
-                                                .attr('class', 'table table-hover');
-                                        var thead = modal_table.append('thead').append('tr');
-
-                                        var alleles_column = thead.append('th').html('Parent Alleles');
-                                        var timepoints_column = thead.append('th').html('CCFs at Timepoints');
-
-                                        var table_body = modal_table.append('tbody')
-                                                .style('cursor', 'pointer');
-
-                                        var rows = table_body.selectAll('possible_ccfs')
-                                                .data(CCF_options)
-                                                .enter()
-                                                .append('tr');
-
-                                        rows.append('td')
-                                                .html(function (d) {
-                                                    var alleles = Object.keys(d);
-                                                    for (var i = 0; i < alleles.length; i++) {
-                                                        var allele = alleles[i];
-                                                        var color = allele_color_reference[allele];
-                                                        var string = '<span style="color:' + color + '">'
-                                                                + allele + '</span>';
-                                                        alleles[i] = string;
-                                                    }
-                                                    alleles = alleles.join(' </br> ');
-                                                    return alleles;
-                                                });
-
-                                        rows.append('td')
-                                                .html(function (d) {
-                                                    var alleles = Object.keys(d);
-                                                    var cell_fraction_array = [];
-                                                    for (var i = 0; i < alleles.length; i++) {
-                                                        var current_allele = alleles[i];
-                                                        var allele_string = [];
-                                                        for (j = 0; j < tick_labels.length; j++) {
-                                                            allele_string.push('<span style="color:#0000FF">'
-                                                                    + tick_labels[j] + ': '
-                                                                    + '</span>' + d[current_allele][j]);
-                                                        }
-                                                        var string = allele_string.join(', ');
-                                                        cell_fraction_array.push(string);
-                                                    }
-                                                    cell_fraction_array = cell_fraction_array.join(' </br> ');
-                                                    return cell_fraction_array;
-                                                });
-
-                                        $("#CCF_modal").modal('show');
+                                                purity_dict[tick_labels[i].toString()], plot_background.children.length, [], tick_labels[i],
+                                                CCF_options, timepoint_index);
                                     }
-                                }
-                                else {
-                                    if (plot_background.children.length != 0) {
-                                        CCF_options = {};
-                                        load_CCF_options(CCF_options, sample_timepoints)
-                                        complete_nested_data = canvas_nested_data.slice();
-                                        find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
 
-                                        d3.select('#modal_table').remove();
+                                    delete CCF_options[ten_percent_below_zero.toString()];
 
-                                        delete CCF_options[ten_percent_below_zero.toString()];
+                                    var valid = is_valid(CCF_options, tick_labels);
 
-
-                                        var valid = is_valid(CCF_options, tick_labels);
-
-                                        if (valid == true) {
-                                            var parent_alleles = get_parent_alleles(CCF_options, tick_labels);
-                                            CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
-                                        }
-                                        else {
-                                            CCF_options = [];
-                                        }
-
-                                        var modal_table = d3.select('#CCF_modal_body').append('table')
-                                                .attr('id', 'modal_table')
-                                                .attr('class', 'table table-hover');
-                                        var thead = modal_table.append('thead').append('tr');
-
-                                        var alleles_column = thead.append('th').html('Parent Alleles');
-                                        var timepoints_column = thead.append('th').html('CCFs at Timepoints');
-
-                                        var table_body = modal_table.append('tbody')
-                                                .style('cursor', 'pointer');
-
-                                        var rows = table_body.selectAll('possible_ccfs')
-                                                .data(CCF_options)
-                                                .enter()
-                                                .append('tr');
-
-                                        rows.append('td')
-                                                .html(function (d) {
-                                                    var alleles = Object.keys(d);
-                                                    for (var i = 0; i < alleles.length; i++) {
-                                                        var allele = alleles[i];
-                                                        var color = allele_color_reference[allele];
-                                                        var string = '<span style="color:' + color + '">'
-                                                                + allele + '</span>';
-                                                        alleles[i] = string;
-                                                    }
-                                                    alleles = alleles.join(' </br> ');
-                                                    return alleles;
-                                                });
-
-                                        rows.append('td')
-                                                .html(function (d) {
-                                                    var alleles = Object.keys(d);
-                                                    var cell_fraction_array = [];
-                                                    for (var i = 0; i < alleles.length; i++) {
-                                                        var current_allele = alleles[i];
-                                                        var allele_string = [];
-                                                        for (j = 0; j < tick_labels.length; j++) {
-                                                            allele_string.push('<span style="color:#0000FF">'
-                                                                    + tick_labels[j] + ': '
-                                                                    + '</span>' + d[current_allele][j]);
-                                                        }
-                                                        var string = allele_string.join(', ');
-                                                        cell_fraction_array.push(string);
-                                                    }
-                                                    cell_fraction_array = cell_fraction_array.join(' </br> ');
-                                                    return cell_fraction_array;
-                                                });
-
-                                        $("#CCF_modal").modal('show');
+                                    if (valid == true) {
+                                        var parent_alleles = get_parent_alleles(plot_background.children, canvas_nested_data);
+                                        CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
                                     }
+                                    else {
+                                        CCF_options = [];
+                                    }
+
+                                    var modal_table = d3.select('#CCF_modal_body')
+                                            .append('table')
+                                            .attr('id', 'modal_table')
+                                            .attr('class', 'table table-hover');
+                                    var thead = modal_table.append('thead').append('tr');
+
+                                    var alleles_column = thead.append('th').html('Parent Alleles');
+                                    var chrs_affected_column = thead.append('th').html('Chrs Affected');
+                                    var timepoints_column = thead.append('th').html('CCFs at Timepoints');
+
+                                    var table_body = modal_table.append('tbody')
+                                            .style('cursor', 'pointer');
+
+                                    var rows = table_body.selectAll('possible_ccfs')
+                                            .data(CCF_options)
+                                            .enter()
+                                            .append('tr');
+
+                                    rows.append('td')
+                                            .html(function (d) {
+                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
+                                                for (var i = 0; i < alleles.length; i++) {
+                                                    var allele = alleles[i];
+                                                    var color = allele_color_reference[allele];
+                                                    var string = '<span style="color:' + color + '">'
+                                                            + allele + '</span>';
+                                                    alleles[i] = string;
+                                                }
+                                                alleles = alleles.join(' </br> ');
+                                                return alleles;
+                                            });
+
+                                    rows.append('td')
+                                            .html(function (d) {
+                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
+                                                var chrs_affected_array = [];
+                                                for (var i = 0; i < alleles.length; i++) {
+                                                    var chrs_key = alleles[i] + '_chrs';
+                                                    var ploidy = get_ploidy(alleles[i], canvas_nested_data, plot_background.children);
+                                                    var string = d[chrs_key] + '/' + ploidy;
+                                                    chrs_affected_array.push(string);
+                                                }
+                                                chrs_affected_array = chrs_affected_array.join(' </br> ');
+                                                return chrs_affected_array;
+                                            });
+
+                                    rows.append('td')
+                                            .html(function (d) {
+                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
+                                                var cell_fraction_array = [];
+                                                for (var i = 0; i < alleles.length; i++) {
+                                                    var current_allele = alleles[i];
+                                                    var allele_string = [];
+                                                    for (j = 0; j < tick_labels.length; j++) {
+                                                        allele_string.push('<span style="color:#0000FF">'
+                                                                + tick_labels[j] + ': '
+                                                                + '</span>' + d[current_allele][j]);
+                                                    }
+                                                    var string = allele_string.join(', ');
+                                                    cell_fraction_array.push(string);
+                                                }
+                                                cell_fraction_array = cell_fraction_array.join(' </br> ');
+                                                return cell_fraction_array;
+                                            });
+
+                                    $("#CCF_modal").modal('show');
                                 }
+
                             });
 
                     //Div wrapper for dragable div
@@ -2690,18 +2612,38 @@
 
                                             if(plot_background.children.length > 1) {
 
+                                                var purity_dict = {};
+                                                for (var i = 0; i < tick_labels.length; i++) {
+
+                                                    var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
+                                                    if (purity_value > 100) {
+                                                        purity_value = 100;
+                                                    }
+                                                    if (purity_value < 0) {
+                                                        purity_value = 0;
+                                                    }
+                                                    purity_dict[tick_labels[i].toString()] = purity_value;
+                                                }
+
                                                 d3.select('#modal_table').remove();
 
-                                                find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                        parseInt(purity_input.node().value), plot_background.children.length, [], sample_timepoints, CCF_options);
+                                                CCF_options = {};
+                                                load_CCF_options(CCF_options, sample_timepoints);
+
+                                                for (var i = 0; i < tick_labels.length; i++) {
+                                                    //actual timepoint index is +1 since first timepoint is the origin
+                                                    var timepoint_index = i + 1;
+                                                    find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
+                                                            purity_dict[tick_labels[i].toString()], plot_background.children.length, [], tick_labels[i],
+                                                            CCF_options, timepoint_index);
+                                                }
 
                                                 delete CCF_options[ten_percent_below_zero.toString()];
-
 
                                                 var valid = is_valid(CCF_options, tick_labels);
 
                                                 if(valid == true) {
-                                                    var parent_alleles = get_parent_alleles(CCF_options, tick_labels);
+                                                    var parent_alleles = get_parent_alleles(plot_background.children, canvas_nested_data);
                                                     CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
                                                 }
                                                 else {
@@ -2714,6 +2656,7 @@
                                                 var thead = modal_table.append('thead').append('tr');
 
                                                 var alleles_column = thead.append('th').html('Parent Alleles');
+                                                var chrs_affected_column = thead.append('th').html('Chrs Affected');
                                                 var timepoints_column = thead.append('th').html('CCFs at Timepoints');
 
                                                 var table_body = modal_table.append('tbody')
@@ -2726,7 +2669,7 @@
 
                                                 rows.append('td')
                                                         .html(function(d){
-                                                            var alleles = Object.keys(d);
+                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
                                                             for(var i = 0; i < alleles.length; i++) {
                                                                 var allele = alleles[i];
                                                                 var color = allele_color_reference[allele];
@@ -2740,7 +2683,21 @@
 
                                                 rows.append('td')
                                                         .html(function (d) {
-                                                            var alleles = Object.keys(d);
+                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
+                                                            var chrs_affected_array = [];
+                                                            for (var i = 0; i < alleles.length; i++) {
+                                                                var chrs_key = alleles[i] + '_chrs';
+                                                                var ploidy = get_ploidy(alleles[i], canvas_nested_data, plot_background.children);
+                                                                var string = d[chrs_key] + '/' + ploidy;
+                                                                chrs_affected_array.push(string);
+                                                            }
+                                                            chrs_affected_array = chrs_affected_array.join(' </br> ');
+                                                            return chrs_affected_array;
+                                                        });
+
+                                                rows.append('td')
+                                                        .html(function (d) {
+                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
                                                             var cell_fraction_array = [];
                                                             for (var i = 0; i < alleles.length; i++) {
                                                                 var current_allele = alleles[i];
@@ -3228,9 +3185,10 @@
                             .attr('class', 'info_lines');
 
                     canvas_svg.append("svg:g")
-                        .attr("class", "axis noselect")
-                        .attr("transform", "translate(0," + canvas_range_max_y + ")")
-                        .call(canvas_x_axis);
+                            .attr("class", "axis noselect")
+                            .attr('id', 'editor_x_axis')
+                            .attr("transform", "translate(0," + canvas_range_max_y + ")")
+                            .call(canvas_x_axis);
 
 
                 });
@@ -3360,11 +3318,41 @@ overflow: hidden;">
         </div>
 
         <!--
+        Modal for editing purity at timepoints
+        -->
+
+        <div class="modal fade" id="purityModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="purityModalHeader">Edit Purity Information</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="purityForm">
+
+                            <!--
+                            Will edit the form in d3 based on the timepoints
+                            -->
+
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_purity_button">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--
         Modal for selecting the CCF
         -->
 
              <div class="modal fade" id="CCF_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-             aria-hidden="true">
+             aria-hidden="true" style="overflow: auto;">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
