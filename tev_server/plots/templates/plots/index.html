@@ -2932,9 +2932,8 @@
                     //update the save_fishplot_div to move button to the right
                     d3.select('#save_fishplot_div').style('left', function () {
                                 var button_width = d3.select('#save_fishplot_button').node().offsetWidth;
-                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-left'));
-                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-right'));
-                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('margin'));
+                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-left')) * 2;
+                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-right')) * 2;
                                 var canvas_left = d3.select('#canvas_div').node().offsetLeft;
                                 var canvas_width = d3.select('#canvas_div').node().offsetWidth;
                                 var canvas_right = canvas_left + canvas_width;
@@ -3127,7 +3126,7 @@
                             })
                             .attr('y', '15px')
                             .text(function(){
-                                return 'CN: ' + 2; //Will put variable for CN eventually
+                                return 'Chrs Affected: ' + 'N/A'; //Will put variable for CN eventually
                             })
                             .attr('font-size', '15px')
                             .attr('text-anchor', 'middle')
