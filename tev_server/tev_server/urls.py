@@ -30,6 +30,7 @@ router.register(r'api/v1/saved_fishplot_clone_timepoint_data', data_input_views.
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^', include('home.urls')),
     url(r'^input/', include('data_input.urls')),
     url(r'^', include(router.urls)),
     url(r'^plots/', include('plots.urls')),
