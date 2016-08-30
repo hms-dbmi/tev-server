@@ -10,7 +10,8 @@ import datetime
 import re
 import json
 
-def sources(request):
+
+def index(request):
     source_table_data = []
     source_data = Source.objects.all()
     for source in source_data:
@@ -29,7 +30,7 @@ def sources(request):
             'alleles': max_allele
         })
     context = {'source_table_data': source_table_data}
-    return render(request, 'data_manager/sources.html', context)
+    return render(request, 'data_manager/index.html', context)
 
 
 def input(request):
@@ -86,7 +87,7 @@ def data_to_database(request):
     # Parse the Tev file
     parse_tev_file(file)
 
-    return redirect('data_manager:sources')
+    return redirect('data_manager:index')
 
 
 def correct_timepoints(subject_id):
