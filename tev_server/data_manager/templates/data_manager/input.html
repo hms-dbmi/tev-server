@@ -6,7 +6,7 @@
 </head>
 <body>
 
-<form method="post" action="data_to_database/" enctype="multipart/form-data">{% csrf_token %}
+<form method="post" action="../data_to_database/" enctype="multipart/form-data">{% csrf_token %}
     {{ tev_file.as_p }}
     <input type="submit" value="Upload"/>
 </form>

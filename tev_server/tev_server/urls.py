@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from data_input import views as data_input_views
+from data_manager import views as data_input_views
 from rest_framework import routers
 
 router = routers.DefaultRouter()
@@ -31,7 +31,6 @@ router.register(r'api/v1/saved_fishplot_clone_timepoint_data', data_input_views.
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^', include('home.urls')),
-    url(r'^input/', include('data_input.urls')),
     url(r'^', include(router.urls)),
     url(r'^plots/', include('plots.urls')),
     url(r'^data/', include('data_manager.urls'))

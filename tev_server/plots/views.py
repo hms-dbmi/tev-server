@@ -2,7 +2,7 @@ from django.shortcuts import render, HttpResponse
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import linkage, to_tree
 import json
-from data_input.models import Source
+from data_manager.models import Source
 
 def index(request):
     if 'source' in request.GET:
