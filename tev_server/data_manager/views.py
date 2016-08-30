@@ -110,22 +110,82 @@ def parse_tev_file(file):
     file = file.split('\n')
     file = [row.split('\t') for row in file]
 
+    #Subject ID is required
     subject_id_index = int(file[0].index("Subject ID"))
-    date_index = int(file[0].index("Date"))
+
+    try:
+        date_index = int(file[0].index("Date"))
+    except:
+        date_index = None
+
+    try:
+        sample_barcode_index = int(file[0].index("Sample_Barcode"))
+    except:
+        sample_barcode_index = None
+
+    #Gene is required
     gene_index = int(file[0].index("Gene"))
-    chromosome_index = int(file[0].index("Chr"))
-    position_index = int(file[0].index("Position"))
+
+    try:
+        chromosome_index = int(file[0].index("Chr"))
+    except:
+        chromosome_index = None
+
+    try:
+        position_index = int(file[0].index("Position"))
+    except:
+        position_index = None
+
+    #AA_change is required
     aa_change_index = int(file[0].index("AA_change"))
-    total_read_index = int(file[0].index("Total Read"))
-    ref_read_index = int(file[0].index("Ref_read"))
-    alt_read_index = int(file[0].index("Var_read"))
-    alternative_index = int(file[0].index("Alt"))
-    reference_index = int(file[0].index("Ref"))
+
+    try:
+        total_read_index = int(file[0].index("Total Read"))
+    except:
+        total_read_index = None
+
+    try:
+        ref_read_index = int(file[0].index("Ref_read"))
+    except:
+        ref_read_index = None
+
+    try:
+        alt_read_index = int(file[0].index("Var_read"))
+    except:
+        alt_read_index = None
+
+    try:
+        alternative_index = int(file[0].index("Alt"))
+    except:
+        alternative_index = None
+
+    try:
+        reference_index = int(file[0].index("Ref"))
+    except:
+        reference_index = None
+
+    #VAF is required
     alt_freq_index = int(file[0].index("VAF"))
-    cDNA_change_index = int(file[0].index("cDNA_change"))
-    variant_type_index = int(file[0].index("VariantType"))
-    assay_index = int(file[0].index("Assay"))
-    ref_seq_index = int(file[0].index("RefSeq"))
+
+    try:
+        cDNA_change_index = int(file[0].index("cDNA_change"))
+    except:
+        cDNA_change_index = None
+
+    try:
+        variant_type_index = int(file[0].index("VariantType"))
+    except:
+        variant_type_index = None
+
+    try:
+        assay_index = int(file[0].index("Assay"))
+    except:
+        assay_index = None
+
+    try:
+        ref_seq_index = int(file[0].index("RefSeq"))
+    except:
+        ref_seq_index = None
 
     number_of_columns = len(file[0])
 
@@ -136,15 +196,21 @@ def parse_tev_file(file):
 
         patient_id = file[i][subject_id_index]
 
-        sample_date = file[i][date_index]
-        sample_date = sample_date.split('/')
-        if (len(sample_date[0]) == 1):
-            sample_date[0] = "0" + sample_date[0]
-        if (len(sample_date[1]) == 1):
-            sample_date[1] = "0" + sample_date[1]
-        sample_date[2] = "20" + sample_date[2]
-        sample_date = sample_date[2] + "-" + sample_date[0] + "-" + sample_date[1]
-        sample_date = datetime.datetime.strptime(sample_date, "%Y-%m-%d").date()
+        if date_index == None:
+            sample_date = None
+        else:
+            try:
+                sample_date = file[i][date_index]
+                sample_date = sample_date.split('/')
+                if (len(sample_date[0]) == 1):
+                    sample_date[0] = "0" + sample_date[0]
+                if (len(sample_date[1]) == 1):
+                    sample_date[1] = "0" + sample_date[1]
+                sample_date[2] = "20" + sample_date[2]
+                sample_date = sample_date[2] + "-" + sample_date[0] + "-" + sample_date[1]
+                sample_date = datetime.datetime.strptime(sample_date, "%Y-%m-%d").date()
+            except:
+                sample_date = None
 
         if (Source.objects.filter(subject_id=patient_id).exists()):
             source = Source.objects.get(subject_id=patient_id)
@@ -158,18 +224,33 @@ def parse_tev_file(file):
         else:
             sample = Sample()
             sample.timepoint = 0
+        try:
+            sample.sample_barcode = str(file[i][sample_barcode_index])
+        except:
+            sample.sample_barcode = None
             sample.timestamp = sample_date
-            sample.assay = file[i][assay_index]
+            try:
+                sample.assay = str(file[i][assay_index])
+            except:
+                sample.assay = None
             sample.source = source
             sample.save()
+
         if Gene.objects.filter(name=file[i][gene_index]).exists():
             gene = Gene.objects.get(name=file[i][gene_index])
         else:
             gene = Gene()
             gene.name = file[i][gene_index]
-            gene.chromosome = file[i][chromosome_index]
-            gene.position = int(file[i][position_index])
+            try:
+                gene.chromosome = file[i][chromosome_index]
+            except:
+                gene.chromosome = None
+            try:
+                gene.position = int(file[i][position_index])
+            except:
+                gene.position = None
             gene.save()
+
         variant_allele = VariantAllele()
         variant_allele.sample = sample
         variant_allele.gene = gene
@@ -193,8 +274,16 @@ def parse_tev_file(file):
             variant_allele.alt_reads = int(file[i][alt_read_index])
         except ValueError:
             variant_allele.alt_reads = None
-        variant_allele.alternative = file[i][alternative_index]
-        variant_allele.reference = file[i][reference_index]
+
+        try:
+            variant_allele.alternative = str(file[i][alternative_index])
+        except:
+            variant_allele.alternative = None
+
+        try:
+            variant_allele.reference = str(file[i][reference_index])
+        except:
+            variant_allele.reference = None
 
         try:
             variant_allele.alternative_freq = round(float(file[i][alt_freq_index]))
@@ -203,9 +292,21 @@ def parse_tev_file(file):
             variant_allele.alternative_freq = None
             variant_allele.reference_freq = None
 
-        variant_allele.cDNA_change = file[i][cDNA_change_index]
-        variant_allele.type = file[i][variant_type_index]
-        variant_allele.ref_seq = file[i][ref_seq_index]
+        try:
+            variant_allele.cDNA_change = str(file[i][cDNA_change_index])
+        except:
+            variant_allele.cDNA_change = None
+
+        try:
+            variant_allele.type = str(file[i][variant_type_index])
+        except:
+            variant_allele.type = None
+
+        try:
+            variant_allele.ref_seq = str(file[i][ref_seq_index])
+        except:
+            variant_allele.ref_seq
+
         variant_allele.save()
 
         correct_timepoints(patient_id)
