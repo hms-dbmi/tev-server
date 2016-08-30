@@ -9,7 +9,6 @@ def index(request):
         source = request.GET['source']
     else:
         source = request.session['source']
-        print(source)
 
     cluster_results = cluster(request, source)
     d3_dendro_data = cluster_results[0]

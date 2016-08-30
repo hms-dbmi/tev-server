@@ -5,6 +5,20 @@
     <title>TEV</title>
 </head>
 <style>
+    body {
+        padding-top: 75px; /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+    }
+
+    /* bootstrap hack: fix content width inside hidden tabs */
+    .tab-content > .tab-pane:not(.active),
+    .pill-content > .pill-pane:not(.active) {
+        display: block;
+        height: 0;
+        overflow-y: hidden;
+    }
+
+    /* bootstrap hack end */
+
     .axis path, .axis line {
         fill: none;
         stroke: #000;
@@ -665,6 +679,9 @@
                     var gene_data = results_array[1].data;
                     tevData = $filter('filter')(tevData, {'uuid': source_uuid})[0];
                     $scope.subject_id = tevData.subject_id;
+                    d3.select('#subject_brand').html(function(){
+                        return $scope.subject_id;
+                    });
                     $scope.tevData = tevData.Samples;
 
                     var alleleified_data = allelify.alleleify($scope.tevData, gene_data);
@@ -1761,6 +1778,7 @@
                 var el = element[0];
                 var width = el.clientWidth;
                 var height = el.clientHeight;
+
 
                 var fill_colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
                     '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928'];
@@ -3222,188 +3240,212 @@
 Dont need to provide alleles to figure 1 because all that's changing is the colors
 -->
 
-<nav class="navbar navbar-default">
-    <div class="container-fluid">
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                    data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <button type="button" class="navbar-toggle" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-1">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="#">TEV</a>
+            <a id="subject_brand" class="navbar-brand" href=""></a>
         </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
-                <li class="active"><a href="">Summary<span class="sr-only">(current)</span></a></li>
-                <li><a href="#figure6">Fishplot Editor</a></li>
+                <li class="active">
+                    <a data-toggle="tab" href="#summary-divs">Variant Allele Summary</a>
+                </li>
+                <li>
+                    <a data-toggle="tab" href="#editor-div">Fishplot Editor</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="../../data/">Return to Data</a>
+                </li>
             </ul>
         </div>
+        <!-- /.navbar-collapse -->
     </div>
+    <!-- /.container -->
 </nav>
-
-<div class="row">
-<div id="figure1" figure1-plot data="clustered_alleleified_data" class="col-md-5"
-     style="height: 650px; float:left;">
-</div>
-
-
-<div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" class="col-md-5"
-     style="height: 650px; float: right;">
-</div>
-</div>
-
-<div class="row">
-<div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]" class="col-md-5"
-     style="height: 600px; float: left;">
-</div>
+<div class="tab-content">
+<div id="summary-divs" class="tab-pane fade in active">
+    <div class="row">
+        <div id="figure1" figure1-plot data="clustered_alleleified_data" class="col-md-5"
+             style="height: 650px; float:left;">
+        </div>
 
 
-<div id="figure4" figure4-plot data="fishbone_data" class="col-md-5"
-     style="height: 600px; float: right;">
-</div>
-</div>
-
-<!--
-<div class="row">
-    <div class="col-lg-12 col-md-12 col-sm-12">
-        <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 100%; height: 600px; float: left;">
+        <div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" class="col-md-5"
+             style="height: 650px; float: right;">
         </div>
     </div>
-</div>
--->
 
-<div class="row">
-    <div class="col-lg-12 col-md-12 col-sm-12">
-        <div id="figure6" fishplot-editor data="alleleified_data" style="width: 100%; height: 600px; float: left;
+    <div class="row">
+        <div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]" class="col-md-5"
+             style="height: 600px; float: left;">
+        </div>
+
+
+        <div id="figure4" figure4-plot data="fishbone_data" class="col-md-5"
+             style="height: 600px; float: right;">
+        </div>
+    </div>
+
+    <!--
+    <div class="row">
+        <div class="col-lg-12 col-md-12 col-sm-12">
+            <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 100%; height: 600px; float: left;">
+            </div>
+        </div>
+    </div>
+    -->
+</div>
+
+<div id="editor-div" class="tab-pane">
+    <div class="row">
+        <div class="col-lg-12 col-md-12 col-sm-12">
+            <div id="figure6" fishplot-editor data="alleleified_data" style="width: 100%; height: 600px; float: left;
 overflow: hidden;">
-        </div>
+            </div>
 
-        <!--
-        Modal for editing ploidy
-        -->
-        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <h4 class="modal-title" id="exampleModalLabel">Edit Clonal Information</h4>
-                    </div>
-                    <div class="modal-body">
-                        <form>
+            <!--
+            Modal for editing ploidy
+            -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title" id="exampleModalLabel">Edit Clonal Information</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form>
 
-                                    <label for="cn_input" class="form-control-label">Copy Number (CN):</label>
-                                    <input class="form-control" id="cn_input" type="number" min="0" max="100"/>
-
-
+                                <label for="cn_input" class="form-control-label">Copy Number (CN):</label>
+                                <input class="form-control" id="cn_input" type="number" min="0" max="100"/>
 
 
-                                    <label for="ploidy_input" class="form-control-label">Ploidy:</label>
-                                    <input class="form-control" id="ploidy_input" type="number" min="0" max="100"/>
+                                <label for="ploidy_input" class="form-control-label">Ploidy:</label>
+                                <input class="form-control" id="ploidy_input" type="number" min="0" max="100"/>
 
 
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button"
-                                onclick="update_clonal_information_text()">Save</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button"
+                                    onclick="update_clonal_information_text()">Save
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!--
-        Modal for editing purity at timepoints
-        -->
+            <!--
+            Modal for editing purity at timepoints
+            -->
 
-        <div class="modal fade" id="purityModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <h4 class="modal-title" id="purityModalHeader">Edit Purity Information</h4>
+            <div class="modal fade" id="purityModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title" id="purityModalHeader">Edit Purity Information</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form id="purityForm">
+
+                                <!--
+                                Will edit the form in d3 based on the timepoints
+                                -->
+
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                                    id="save_purity_button">
+                                Save
+                            </button>
+                        </div>
                     </div>
-                    <div class="modal-body">
-                        <form id="purityForm">
+                </div>
+            </div>
 
+            <!--
+            Modal for selecting the CCF
+            -->
+
+            <div class="modal fade" id="CCF_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true" style="overflow: auto;">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title" id="exampleModalLabel">Choose CCF Distribution</h4>
+                        </div>
+                        <div id="CCF_modal_body" class="modal-body">
                             <!--
-                            Will edit the form in d3 based on the timepoints
+                            Using D3 in the fishplot editor div, a table will be filled in here
                             -->
-
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_purity_button">Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!--
-        Modal for selecting the CCF
-        -->
-
-             <div class="modal fade" id="CCF_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-             aria-hidden="true" style="overflow: auto;">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <h4 class="modal-title" id="exampleModalLabel">Choose CCF Distribution</h4>
-                    </div>
-                    <div id="CCF_modal_body" class="modal-body">
-                        <!--
-                        Using D3 in the fishplot editor div, a table will be filled in here
-                        -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button">Choose</button>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button">Choose
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!--
-        Modal to prompt "save as:" for fishplot editor
-        -->
+            <!--
+            Modal to prompt "save as:" for fishplot editor
+            -->
 
-        <div class="modal fade" id="save_fishplot_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <h4 class="modal-title" id="exampleModalLabel">Choose CCF Distribution</h4>
-                    </div>
-                    <div class="modal-body">
-                        <form>
+            <div class="modal fade" id="save_fishplot_modal" tabindex="-1" role="dialog"
+                 aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title" id="exampleModalLabel">Choose CCF Distribution</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form>
 
-                            <label for="save_fishplot_as" class="form-control-label">Save as: </label>
-                            <input class="form-control" id="save_fishplot_as" type="text"/>
+                                <label for="save_fishplot_as" class="form-control-label">Save as: </label>
+                                <input class="form-control" id="save_fishplot_as" type="text"/>
 
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_as_fishplot_button">Save</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                                    id="save_as_fishplot_button">Save
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+
         </div>
-
-
     </div>
 </div>
+    </div>
 
 </body>
 </html>
