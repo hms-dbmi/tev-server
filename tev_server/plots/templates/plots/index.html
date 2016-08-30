@@ -1470,7 +1470,7 @@
 
                     var xScale = d3.scale.linear().rangeRound([40, width-40], 0.5)
                             .domain(d3.extent(xAxisLabels, function(d){return d;}));
-                    var xAxis = d3.svg.axis().scale(xScale).tickValues(sample_timepoints).attr('id', 'canvas_axis');
+                    var xAxis = d3.svg.axis().scale(xScale).tickValues(sample_timepoints);
 
                     var yScale = d3.scale.linear().range([40, height-40], 0.5).domain([101, -1]);
                     var yAxis = d3.svg.axis().scale(yScale).orient('left').ticks(0);
@@ -3004,9 +3004,6 @@
                                 }
                                 d3.select('#dragable_div').remove();
                                 var ploidy_num = d3.select('#ploidy_text'+i).node().innerHTML.split(' ')[1];
-                                var cn_num = d3.select('#cn_text'+i).node().innerHTML.split(' ')[1];
-
-                                d3.select('#cn_input').attr('value', cn_num).attr('fishplot_index', i);
                                 d3.select('#ploidy_input').attr('value', ploidy_num).attr('fishplot_index', i);
 
                                 $("#exampleModal").modal('show');
@@ -3122,7 +3119,7 @@
                             });
 
 
-                    //Ploidy and CN table configuration
+                    //Ploidy and Chrs Affected table configuration
                     svgs.append('text')
                             .attr('x', function(d, i){
                                 var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
@@ -3144,12 +3141,12 @@
                             })
                             .attr('y', '15px')
                             .text(function(){
-                                return 'Chrs Affected: ' + 'N/A'; //Will put variable for CN eventually
+                                return 'Chrs Affected: ' + 'N/A';
                             })
                             .attr('font-size', '15px')
                             .attr('text-anchor', 'middle')
                             .attr('id', function(d, i){
-                                return 'cn_text'+i;
+                                return 'chrs_aff_text'+i;
                             })
                             .attr('class', 'noselect info_text');
 
@@ -3221,12 +3218,7 @@
     }
 
     function update_clonal_information_text(){
-        var fishplot_index = d3.select('#cn_input').attr('fishplot_index');
-
-        d3.select('#cn_text'+fishplot_index)
-                .text(function(){
-                    return 'CN: ' + d3.select('#cn_input').node().valueAsNumber;
-                });
+        var fishplot_index = d3.select('#ploidy_input').attr('fishplot_index');
 
         d3.select('#ploidy_text'+fishplot_index)
                 .text(function(){
@@ -3297,14 +3289,14 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
         </div>
     </div>
 
-    <!--
+
     <div class="row">
         <div class="col-lg-12 col-md-12 col-sm-12">
             <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 100%; height: 600px; float: left;">
             </div>
         </div>
     </div>
-    -->
+
 </div>
 
 <div id="editor-div" class="tab-pane">
@@ -3317,9 +3309,9 @@ overflow: hidden;">
             <!--
             Modal for editing ploidy
             -->
-            <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+            <div class="modal fade bd-example-modal-sm" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
                  aria-hidden="true">
-                <div class="modal-dialog" role="document">
+                <div class="modal-dialog modal-sm" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -3329,10 +3321,6 @@ overflow: hidden;">
                         </div>
                         <div class="modal-body">
                             <form>
-
-                                <label for="cn_input" class="form-control-label">Copy Number (CN):</label>
-                                <input class="form-control" id="cn_input" type="number" min="0" max="100"/>
-
 
                                 <label for="ploidy_input" class="form-control-label">Ploidy:</label>
                                 <input class="form-control" id="ploidy_input" type="number" min="0" max="100"/>
