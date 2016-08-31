@@ -46,11 +46,9 @@
     div.tooltip {
         position: absolute;
         text-align: center;
-        width: 120px;
-        height: 40px;
         padding: 2px;
         font: 12px sans-serif;
-        background: lightsteelblue;
+        background: #222;
         border: 0px;
         border-radius: 8px;
     }
@@ -728,7 +726,9 @@
                         .attr("width", width);
 
                     var div_tooltip = d3.select(el).append("div")
+                            .attr('id', 'fig1-tooltip')
                             .attr("class", "tooltip")
+                            .style('white-space', 'nowrap')
                             .style("opacity", 0);
 
                     var yScale = d3.scale.linear().range([40, height-40]).domain([1, 0]);
@@ -791,13 +791,50 @@
                                 })
                                 .on("mouseover", function(d){
                                     div_tooltip.style("opacity", 0.9)
-                                    .html('<b>' +d.Sample_Barcode + '</b>'+ '<br/>' + '<br/>'
-                                            + d.allele + ': ' + '<b>' + d.alt_count + '</b>')
-                                            .style("top", (d3.event.pageY-40) + "px")
-                                            .style("left", (d3.event.pageX + 40) + "px");
+                                    .html('<p id="timepoint_p" align="left" style="text-overflow: ellipsis; color: #fff;"> <b>'
+                                            + 'Timepoint: </b> ' + d.Sample_Barcode + '</p>'
+                                            + '<p id="allele_p" align="left" style="text-overflow: ellipsis; color: #fff">'
+                                            + '<b>Allele: </b>' + d.allele + '</p>'
+                                            + '<p id="vaf_p" align="left" style="text-overflow: ellipsis; color: #fff;">'
+                                            + '<b>VAF: </b>' + d.alt_count + '</p>')
+                                            .style("top", (d3.mouse(this)[1] - 40) + "px")
+                                            .style("left", (d3.mouse(this)[0] + 40) + "px");
+
+                                    var timepoint_p_height = d3.select('#timepoint_p').node().clientHeight + (parseInt(d3.select('#timepoint_p').style('margin-bottom')));
+                                    var allele_p_height = d3.select('#allele_p').node().clientHeight + (parseInt(d3.select('#allele_p').style('margin-bottom')));
+                                    var vaf_p_height = d3.select('#vaf_p').node().clientHeight + (parseInt(d3.select('#vaf_p').style('margin-bottom')));
+                                    var height = timepoint_p_height + allele_p_height + vaf_p_height;
+                                    height = height + parseInt(d3.select('#allele_p').style('margin-bottom')); //extra cushion on bottom of tooltip
+
+                                    var widths = [];
+                                    widths.push(parseInt(d3.select('#timepoint_p').node().offsetWidth));
+                                    widths.push(parseInt(d3.select('#allele_p').node().offsetWidth));
+                                    widths.push(parseInt(d3.select('#vaf_p').node().offsetWidth));
+
+                                    var width = Math.max.apply(null, widths);
+
+                                    d3.select('#fig1-tooltip').style('height', function () {
+                                                return height + 'px';
+                                            })
+                                            .style('width', function(){
+                                                var width_padding  = 10;
+                                                return (width + width_padding) + 'px';
+                                            })
+                                            .style('padding-top', function () {
+                                                return parseInt(d3.select('#timepoint_p').style('margin-bottom')) + 'px';
+                                            })
+                                            .style('padding-bottom', function(){
+                                                return parseInt(d3.select('#vaf_p').style('margin-bottom')) + 'px';
+                                            })
+
                                 })
                                 .on("mouseout", function(){
-                                    div_tooltip.style('opacity', 0);
+                                    div_tooltip.remove();
+                                    div_tooltip = d3.select(el).append("div")
+                                            .attr('id', 'fig1-tooltip')
+                                            .attr("class", "tooltip")
+                                            .style('white-space', 'nowrap')
+                                            .style("opacity", 0);
                                 });
 
                     });
@@ -868,8 +905,10 @@
                             .text(function(d){return d;});
 
                     var div_tooltip = d3.select(el).append("div")
-                            .attr("class", "tooltip")
-                            .style("opacity", 0);
+                                            .attr('id', 'fig2-tooltip')
+                                            .attr("class", "tooltip")
+                                            .style('white-space', 'nowrap')
+                                            .style("opacity", 0);
 
                     var axisLabels = uniqueAxisLabels(data, 'cluster');
                     axisLabels.sort(function(a, b){
@@ -903,8 +942,14 @@
                                 alleles.push(d.values[j].allele);
                             }
                         }
-                        alleles = alleles.join('<br/>')
-                        alleles = '<b> alleles </b><br/>' + alleles;
+
+                        alleles = alleles.join('<br>');
+                        alleles = ('<p align="left" ' +
+                        'style="text-overflow: ellipsis; padding: 0em; margin-top: 0em; margin-bottom: 0em; border: 0em; color: #fff;">'
+                        + alleles + '<\p>');
+                        alleles = '<p align="center" ' +
+                                'style="text-overflow: ellipsis; padding: 0em; margin-top: 0em; margin-bottom: 3px; border: 0em; color: #fff;">'
+                                + '<b><u> alleles </u></b></p>' + alleles;
                         quartileData.sort(function(a,b) { return a - b;});
 
                         boxData[i] = {
@@ -962,7 +1007,14 @@
                                         .style("top", (d3.mouse(this)[1] - 40) + "px")
                                         .style("left", (d3.mouse(this)[0] + 40) + "px");
                             })
-                            .on('mouseout', function(d){
+                            .on('mouseout', function(){
+                                div_tooltip.remove();
+                                div_tooltip = d3.select(el).append("div")
+                                            .attr('id', 'fig2-tooltip')
+                                            .attr("class", "tooltip")
+                                            .style('white-space', 'nowrap')
+                                            .style("opacity", 0);
+
                                 d3.selectAll('.box_info').remove();
 
                                 div_tooltip.style('opacity', 0);
@@ -1451,6 +1503,12 @@
                         .attr('width', width)
                         .attr('height', height);
 
+                    var div_tooltip = d3.select(el).append("div")
+                            .attr('id', 'fig5-tooltip')
+                            .attr("class", "tooltip")
+                            .style('white-space', 'nowrap')
+                            .style("opacity", 0);
+
                     var xAxisLabels = uniqueAxisLabels(data, 'Sample_Barcode');
                     xAxisLabels = xAxisLabels.sort(function(a, b){
                        return a - b;
@@ -1729,21 +1787,34 @@
                                 .attr('opacity', 0.75)
                                 .attr('d', areaBetweenLines)
                                 .on('mouseover', function(d){
-                                    var text = d[0].allele;
+                                    var alleles = d[0].allele;
+                                    alleles = alleles.split('\n');
+                                    alleles = alleles.join('<br>');
+                                    alleles = ('<p align="left" ' +
+                                    'style="text-overflow: ellipsis; padding: 0em; margin-top: 0em; margin-bottom: 0em; border: 0em; color: #fff;">'
+                                    + alleles + '</p>');
+                                    alleles = '<p align="center" ' +
+                                            'style="text-overflow: ellipsis; padding: 0em; margin-top: 0em; margin-bottom: 3px; border: 0em; color: #fff;">'
+                                            + '<b><u> alleles </u></b></p>' + alleles;
 
-                                   canvas.append('text')
-                                           .attr('x', d3.mouse(this)[0]+10)
-                                           .attr('y', d3.mouse(this)[1]-10)
-                                           .attr('id', 'fishplot_text')
-                                           .text(text);
+                                    div_tooltip.style("opacity", 0.9)
+                                            .html(alleles)
+                                            .style("top", (d3.mouse(this)[1] - 40) + "px")
+                                            .style("left", (d3.mouse(this)[0] + 40) + "px");
+
+
                                 })
                                 .on('mousemove', function(){
-                                    d3.select('#fishplot_text')
-                                            .attr('x', d3.mouse(this)[0]+10)
-                                            .attr('y', d3.mouse(this)[1]-10);
+
                                 })
-                                .on('mouseout', function(){
-                                   d3.select('#fishplot_text').remove();
+                                .on('mouseleave', function () {
+                                    div_tooltip.remove();
+
+                                    div_tooltip = d3.select(el).append("div")
+                                            .attr('id', 'fig5-tooltip')
+                                            .attr("class", "tooltip")
+                                            .style('white-space', 'nowrap')
+                                            .style("opacity", 0);
                                 });
                     });
 
