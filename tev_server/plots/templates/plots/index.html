@@ -896,7 +896,7 @@
                             .data(information)
                             .enter()
                             .append('text')
-                            .attr('x', 520)
+                            .attr('x', (width*0.82))
                             .attr('y', function(d, i){
                                 return 60 + (25*i);
                             })
@@ -918,13 +918,13 @@
                     var yScale = d3.scale.linear().range([40, height-40]).domain([1, 0]);
                     var yAxis = d3.svg.axis().scale(yScale).orient("left");
 
-                    var xScale = d3.scale.ordinal().rangePoints([40, width-40], 0.5).domain(axisLabels);
+                    var xScale = d3.scale.ordinal().rangePoints([40, (width*0.8)], 0.5).domain(axisLabels);
                     var xAxis = d3.svg.axis().scale(xScale);
 
                     if(alleles.length == axisLabels.length){
                         axisLabels = uniqueAxisLabels(data, 'allele');
                         var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
-                        xScale = d3.scale.ordinal().rangePoints([40, width-40], 0.5).domain(axisLabels);
+                        xScale = d3.scale.ordinal().rangePoints([40, (width*0.8)], 0.5).domain(axisLabels);
                         xAxis = d3.svg.axis().scale(xScale);
                     }
                     else{
@@ -991,7 +991,7 @@
                                         .data(box_information)
                                         .enter()
                                         .append('text')
-                                        .attr('x', 520+50)
+                                        .attr('x', (width*0.82) + 50)
                                         .attr('y', function(d, i){
                                             return 60 + (25*i);
                                         })
@@ -1154,17 +1154,37 @@
                             });
 
                     canvas.append("svg:g")
-                        .attr("class", "axis")
-                        .attr("transform", "translate(0," + (height-40) + ")")
-                        .call(xAxis)
+                            .attr("class", "axis")
+                            .attr('id', 'fig2-x-axis')
+                            .attr("transform", "translate(0," + (height-40) + ")")
+                            .call(xAxis)
                             .selectAll("text")
                             .style('text-anchor', 'end')
                             .attr('transform', 'rotate(-65)');
 
                     canvas.append("svg:g")
-                        .attr("class", "axis")
-                        .attr("transform", "translate(" + 4 + "0)")
-                        .call(yAxis);
+                            .attr("class", "axis")
+                            .attr("transform", "translate(" + 4 + "0)")
+                            .call(yAxis);
+
+                    var x_axis_svgs = d3.select('#fig2-x-axis').selectAll('text')[0];
+                    var extend_height_by = [];
+                    for(var i = 0; i < x_axis_svgs.length; i++){
+                        extend_height_by.push(x_axis_svgs[i].clientWidth);
+                    }
+                    extend_height_by = Math.max.apply(null, extend_height_by);
+
+                    d3.select(el).style('height', function(){
+                        var height = parseInt(d3.select(el).style('height'));
+                        height = height + extend_height_by;
+                        return height + 'px';
+                    });
+
+                    canvas.attr('height', function(){
+                       var height = parseInt(d3.select(el).style('height'));
+                        return height;
+                    });
+
                 }, true);
             }
         });
@@ -3338,14 +3358,17 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 </nav>
 <div class="tab-content">
 <div id="summary-divs" class="tab-pane fade in active">
-    <div class="row">
-        <div id="figure1" figure1-plot data="clustered_alleleified_data" class="col-md-5"
+    <div class="row col-lg-12">
+        <div class="col-lg-6">
+        <div id="figure1" figure1-plot data="clustered_alleleified_data" class="col-lg-11"
              style="height: 650px; float:left;">
         </div>
+        </div>
 
-
-        <div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" class="col-md-5"
+        <div class="col-lg-6">
+        <div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" class="col-lg-11"
              style="height: 650px; float: right;">
+        </div>
         </div>
     </div>
 
