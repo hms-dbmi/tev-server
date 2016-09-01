@@ -2080,7 +2080,6 @@
 
                     function get_ploidy(allele, nested_data, plot_background_children) {
                         for (var i = 0; i < plot_background_children.length; i++) {
-                            console.log(nested_data[plot_background_children[i]]);
                             if (nested_data[plot_background_children[i]].key == allele) {
                                 return nested_data[plot_background_children[i]].ploidy;
                             }
@@ -2190,7 +2189,44 @@
                                     var rows = table_body.selectAll('possible_ccfs')
                                             .data(CCF_options)
                                             .enter()
-                                            .append('tr');
+                                            .append('tr')
+                                            .attr('is-clicked', 0)
+                                            .on('mouseover', function () {
+                                                if (d3.select(this).attr('is-clicked') != 1) {
+                                                    d3.select(this).style('background-color', '#f5f5f5');
+                                                }
+                                            })
+                                            .on('mouseout', function () {
+                                                if (d3.select(this).attr('is-clicked') != 1) {
+                                                    d3.select(this).style('background-color', '#ffffff');
+                                                }
+                                            })
+                                            .on('mouseenter', function () {
+                                                if (d3.select(this).attr('is-clicked') != 1) {
+                                                    d3.select(this).style('background-color', '#f5f5f5');
+                                                }
+                                            })
+                                            .on('click', function(d){
+                                                //unselect previously selected tr
+                                                if(d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr'){
+                                                    d3.select('#selected-tr').attr('id', '')
+                                                            .attr('is-clicked', 0)
+                                                            .style('background-color', '#ffffff');
+                                                }
+
+                                                d3.select(this).attr('id', 'selected-tr');
+
+                                                var is_clicked = d3.select(this).attr('is-clicked');
+                                                if(is_clicked == 0){
+                                                    d3.select(this).attr('class', 'is-clicked');
+                                                    d3.select(this).attr('is-clicked', 1);
+                                                    d3.select(this).style('background-color', '#DCDCDC');
+                                                }
+                                                else if(is_clicked == 1) {
+                                                    d3.select(this).attr('is-clicked', 0);
+                                                    d3.select(this).style('background-color', '#f5f5f5');
+                                                }
+                                            });
 
                                     rows.append('td')
                                             .html(function (d) {
@@ -2793,7 +2829,7 @@
 
                                                 var valid = is_valid(CCF_options, tick_labels);
 
-                                                if(valid == true) {
+                                                if (valid == true) {
                                                     var parent_alleles = get_parent_alleles(plot_background.children, canvas_nested_data);
                                                     CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
                                                 }
@@ -2816,7 +2852,44 @@
                                                 var rows = table_body.selectAll('possible_ccfs')
                                                         .data(CCF_options)
                                                         .enter()
-                                                        .append('tr');
+                                                        .append('tr')
+                                                        .attr('is-clicked', 0)
+                                                        .on('mouseover', function () {
+                                                            if (d3.select(this).attr('is-clicked') != 1) {
+                                                                d3.select(this).style('background-color', '#f5f5f5');
+                                                            }
+                                                        })
+                                                        .on('mouseout', function () {
+                                                            if (d3.select(this).attr('is-clicked') != 1) {
+                                                                d3.select(this).style('background-color', '#ffffff');
+                                                            }
+                                                        })
+                                                        .on('mouseenter', function () {
+                                                            if (d3.select(this).attr('is-clicked') != 1) {
+                                                                d3.select(this).style('background-color', '#f5f5f5');
+                                                            }
+                                                        })
+                                                        .on('click', function (d) {
+                                                            //unselect previously selected tr
+                                                            if (d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr') {
+                                                                d3.select('#selected-tr').attr('id', '')
+                                                                        .attr('is-clicked', 0)
+                                                                        .style('background-color', '#ffffff');
+                                                            }
+
+                                                            d3.select(this).attr('id', 'selected-tr');
+
+                                                            var is_clicked = d3.select(this).attr('is-clicked');
+                                                            if (is_clicked == 0) {
+                                                                d3.select(this).attr('class', 'is-clicked');
+                                                                d3.select(this).attr('is-clicked', 1);
+                                                                d3.select(this).style('background-color', '#DCDCDC');
+                                                            }
+                                                            else if (is_clicked == 1) {
+                                                                d3.select(this).attr('is-clicked', 0);
+                                                                d3.select(this).style('background-color', '#f5f5f5');
+                                                            }
+                                                        });
 
                                                 rows.append('td')
                                                         .html(function(d){
@@ -3427,9 +3500,6 @@
                             var child_index = plot_background.children.indexOf(index);
                             if(child_index > -1) {
                                 plot_background.children.splice(child_index, 1);
-                                plot_background.children.sort(function (a, b) {
-                                    return nested_data[a].start_point - nested_data[b].start_point;
-                                });
                             }
                         }
 
@@ -3611,7 +3681,44 @@
                             var rows = table_body.selectAll('possible_ccfs')
                                     .data(CCF_options)
                                     .enter()
-                                    .append('tr');
+                                    .append('tr')
+                                    .attr('is-clicked', 0)
+                                    .on('mouseover', function () {
+                                        if (d3.select(this).attr('is-clicked') != 1) {
+                                            d3.select(this).style('background-color', '#f5f5f5');
+                                        }
+                                    })
+                                    .on('mouseout', function () {
+                                        if (d3.select(this).attr('is-clicked') != 1) {
+                                            d3.select(this).style('background-color', '#ffffff');
+                                        }
+                                    })
+                                    .on('mouseenter', function () {
+                                        if (d3.select(this).attr('is-clicked') != 1) {
+                                            d3.select(this).style('background-color', '#f5f5f5');
+                                        }
+                                    })
+                                    .on('click', function (d) {
+                                        //unselect previously selected tr
+                                        if (d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr') {
+                                            d3.select('#selected-tr').attr('id', '')
+                                                    .attr('is-clicked', 0)
+                                                    .style('background-color', '#ffffff');
+                                        }
+
+                                        d3.select(this).attr('id', 'selected-tr');
+
+                                        var is_clicked = d3.select(this).attr('is-clicked');
+                                        if (is_clicked == 0) {
+                                            d3.select(this).attr('class', 'is-clicked');
+                                            d3.select(this).attr('is-clicked', 1);
+                                            d3.select(this).style('background-color', '#DCDCDC');
+                                        }
+                                        else if (is_clicked == 1) {
+                                            d3.select(this).attr('is-clicked', 0);
+                                            d3.select(this).style('background-color', '#f5f5f5');
+                                        }
+                                    });
 
                             rows.append('td')
                                     .html(function (d) {
@@ -3662,7 +3769,52 @@
 
                             $("#CCF_modal").modal('show');
                         }
+
                     });
+
+                    function alleles_in_CCF_options(keys) {
+                        var alleles = [];
+                        for (var i = 0; i < keys.length; i++) {
+                            if (keys[i].includes('_chrs')) {
+                                continue;
+                            }
+                            else {
+                                alleles.push(keys[i]);
+                            }
+                        }
+                        return alleles;
+                    }
+
+                    function alleles_in_nested_data(canvas_nested_data){
+                        var alleles = [];
+                        for(var i = 0; i < canvas_nested_data.length; i++){
+                            alleles.push(canvas_nested_data[i].key);
+                        }
+                        return alleles;
+                    }
+
+                    function update_chrs_affected(data, alleles, canvas_nested_data){
+                        var all_alleles = alleles_in_nested_data(canvas_nested_data);
+                        for(var i = 0; i < alleles.length; i++){
+                            var index = all_alleles.indexOf(alleles[i]);
+                            var chrs_aff = data[alleles[i]+'_chrs'].toString() +'/' + canvas_nested_data[index].ploidy.toString();
+                            var string = d3.select('#chrs_aff_text'+index.toString()).node().innerHTML.split(':')[0];
+                            string = string + ': ' + chrs_aff;
+                            d3.select('#chrs_aff_text'+index.toString()).text(function(){
+                                return string;
+                            });
+                        }
+                    }
+
+                    d3.select('#save-CCF-button')
+                            .on('click', function () {
+                                if (d3.select('#selected-tr').node() != null) {
+                                    var data = d3.select('#selected-tr').node()['__data__'];
+                                    var keys = Object.keys(data);
+                                    var alleles = alleles_in_CCF_options(keys);
+                                    update_chrs_affected(data, alleles, canvas_nested_data);
+                                }
+                            });
 
                     canvas_svg.append("svg:g")
                             .attr("class", "axis noselect")
@@ -3874,7 +4026,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                             -->
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal" id="save_button">Choose
+                            <button type="button" class="btn btn-default" data-dismiss="modal" id="save-CCF-button">Choose
                             </button>
                         </div>
                     </div>
