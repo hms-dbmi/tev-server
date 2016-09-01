@@ -3461,11 +3461,6 @@
                     function remove_fishplot_relationships(current_fish, fishplot_svgs, canvas_nested_data) {
                         var children = current_fish.children;
                         var index = current_fish.index;
-                        d3.select('#mini_fishplot_div' + index).style('opacity', 1);
-                        var index_in_fishplot_svgs = fishplot_svgs.indexOf(index);
-                        if (index_in_fishplot_svgs > -1) {
-                            fishplot_svgs.splice(index_in_fishplot_svgs, 1);
-                        }
 
                         if (current_fish.parent_index_of_this != 'plot') {
                             var parent_index = current_fish.parent_index_of_this;
@@ -3481,11 +3476,17 @@
                         }
                         if (children.length > 0) {
                             for (var i = 0; i < children.length; i++) {
-                                remove_fishplot_relationships(canvas_nested_data[children[i]], fishplot_svgs, canvas_nested_data);
+                                console.log(i);
+                                index = canvas_nested_data[children[i]].index;
+                                d3.select('#mini_fishplot_div' + index).style('opacity', 1);
+                                var index_in_fishplot_svgs = fishplot_svgs.indexOf(index);
+                                if (index_in_fishplot_svgs > -1) {
+                                    fishplot_svgs.splice(index_in_fishplot_svgs, 1);
+                                }
+                                if(canvas_nested_data[children[i]].children.length > 0) {
+                                    remove_fishplot_relationships(canvas_nested_data[children[i]], fishplot_svgs, canvas_nested_data);
+                                }
                             }
-                        }
-                        if (children.length == 0) {
-                            return;
                         }
                     }
 
@@ -3508,6 +3509,12 @@
                             if(child_index > -1) {
                                 plot_background.children.splice(child_index, 1);
                             }
+                        }
+
+                        d3.select('#mini_fishplot_div' + index).style('opacity', 1);
+                        var index_in_fishplot_svgs = fishplot_svgs.indexOf(index);
+                        if (index_in_fishplot_svgs > -1) {
+                            fishplot_svgs.splice(index_in_fishplot_svgs, 1);
                         }
 
                         remove_fishplot_relationships(current_fish, fishplot_svgs, canvas_nested_data);
