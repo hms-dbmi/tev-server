@@ -2969,6 +2969,13 @@
                                         data.group = parent.group;
                                         data.values[0].start_point = start;
                                         data.parent_index_of_this = parseInt(parent_of_this);
+                                        data.ploidy = parent.ploidy;
+
+                                        d3.select('#ploidy_text'+data_index).text(function(){
+                                           return 'Ploidy: ' + data.ploidy;
+                                        });
+
+
 
                                         //If it can git, make it a child of the current fishplot
                                         //And re-adjust everything that has already been plotted
