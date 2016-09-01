@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ng-app = "tevApp">
+<html lang="en" ng-app="tevApp">
 <head>
     <meta charset="UTF-8">
     <title>TEV</title>
@@ -39,7 +39,7 @@
         stroke-width: 1.5px;
     }
 
-    .info_rects,.median_line:hover {
+    .info_rects, .median_line:hover {
         cursor: pointer;
     }
 
@@ -49,7 +49,8 @@
         padding: 2px;
         font: 12px sans-serif;
         background: #222;
-        border: 0px;
+        border: 2px;
+        border-color: #222222;
         border-radius: 8px;
     }
 
@@ -1420,7 +1421,7 @@
                     var fishbone_data = {};
                     fishbone_data.name = data[0].key;
                     fishbone_data.children = [];
-                    fishbone_data.cluster = data[0].values[0].cluster
+                    fishbone_data.cluster = data[0].values[0].cluster;
 
                     for(var i = 0; i < data[0].children.length; i++){
                         var child = data[0].children[i];
@@ -2091,7 +2092,7 @@
                     load_CCF_options(CCF_options, sample_timepoints);
 
                     var edit_purity_button = purity_input_div.append('button')
-                            .attr('class', 'btn btn-primary btn-sm')
+                            .attr('class', 'btn btn-default btn-sm')
                             .attr('id', 'save_fishplot_button')
                             .html('Edit Purity')
                             .on('click', function(){
@@ -2535,6 +2536,11 @@
                     //Indices of used fishplots where the one being dragged wont be able to fit
                     var cant_fit = [];
 
+                    //Variables for dealing with context menu to remove fishplots/edit ploidy
+                    var contextMenuShowing = false;
+                    var contextMenuFor = '';
+                    var contextMenuForPrevious = '';
+
                     //Make all mini fishplots opacity 1 on mouse-up of primary div
                     //Precaution for if user drags mouse too fast
                     d3.select(el).on('mousemove', function () {
@@ -2703,7 +2709,7 @@
                                                         .datum(current_data.values)
                                                         .attr('fill', fill_colors[current_data.values[0].cluster - 1])
                                                         .attr('opacity', 1)
-                                                        .attr('class', 'big_fish')
+                                                        .attr('class', 'big_fish dropdown-toggle')
                                                         .attr('d', canvas_area_between_lines)
                                                         .attr('index', current_data.index)
                                                         .attr('id', 'big_fish'+current_data.index)
@@ -2713,6 +2719,42 @@
                                                         })
                                                         .on('mouseleave', function () {
                                                             d3.select(this).attr('opacity', 1);
+                                                        })
+                                                        .on('contextmenu', function () {
+                                                            contextMenuFor = parseInt(d3.select(this).attr('index'));
+
+                                                            //give the button an attribute to reference the fishplots they're dealing with
+                                                            //now we can invoke a function on click
+                                                            d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
+                                                            d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
+
+                                                            if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                                                                contextMenuShowing = false;
+                                                            }
+                                                            if (contextMenuShowing == false) {
+                                                                contextMenuForPrevious = contextMenuFor;
+                                                                d3.event.preventDefault();
+                                                                d3.select('#context-div').attr('cm-showing', 'true');
+                                                                contextMenuShowing = true;
+                                                                d3.select('#context-div').style('left', function () {
+                                                                            var left = d3.event.pageX - d3.select(el).node().offsetLeft;
+                                                                            return left + 'px';
+                                                                        })
+                                                                        .style('top', function () {
+                                                                            //-75 pixels because of navbar padding
+                                                                            var top = d3.event.pageY - d3.select(el).node().offsetTop - 75;
+                                                                            return top + 'px';
+                                                                        })
+                                                                        .style('z-index', 10)
+                                                                        .style('opacity', 1);
+                                                            }
+                                                            else {
+                                                                d3.event.preventDefault();
+                                                                contextMenuShowing = false;
+                                                                d3.select('#context-div').attr('cm-showing', 'false');
+                                                                d3.select('#context-div').style('opacity', 0)
+                                                                        .style('z-index', -1);
+                                                            }
                                                         });
                                             }
 
@@ -2941,7 +2983,7 @@
                                                         .datum(current_data.values)
                                                         .attr('fill', fill_colors[current_data.values[0].cluster - 1])
                                                         .attr('opacity', 1)
-                                                        .attr('class', 'big_fish')
+                                                        .attr('class', 'big_fish dropdown-toggle')
                                                         .attr('d', canvas_area_between_lines)
                                                         .attr('index', current_data.index)
                                                         .attr('id', 'big_fish'+current_data.index)
@@ -2951,6 +2993,42 @@
                                                         })
                                                         .on('mouseleave', function () {
                                                             d3.select(this).attr('opacity', 1);
+                                                        })
+                                                        .on('contextmenu', function () {
+                                                            contextMenuFor = parseInt(d3.select(this).attr('index'));
+
+                                                            //give the button an attribute to reference the fishplots they're dealing with
+                                                            //now we can invoke a function on click
+                                                            d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
+                                                            d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
+
+                                                            if(contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false'){
+                                                                contextMenuShowing = false;
+                                                            }
+                                                            if (contextMenuShowing == false) {
+                                                                contextMenuForPrevious = contextMenuFor;
+                                                                d3.event.preventDefault();
+                                                                contextMenuShowing = true;
+                                                                d3.select('#context-div').attr('cm-showing', 'true');
+                                                                d3.select('#context-div').style('left', function () {
+                                                                            var left = d3.event.pageX - d3.select(el).node().offsetLeft;
+                                                                            return left + 'px';
+                                                                        })
+                                                                        .style('top', function () {
+                                                                            //-75 pixels because of navbar padding
+                                                                            var top = d3.event.pageY - d3.select(el).node().offsetTop - 75;
+                                                                            return top + 'px';
+                                                                        })
+                                                                        .style('z-index', 10)
+                                                                        .style('opacity', 1);
+                                                            }
+                                                            else {
+                                                                d3.event.preventDefault();
+                                                                contextMenuShowing = false;
+                                                                d3.select('#context-div').attr('cm-showing', 'false');
+                                                                d3.select('#context-div').style('opacity', 0)
+                                                                        .style('z-index', -1);
+                                                            }
                                                         });
                                             }
                                         }
@@ -2996,6 +3074,13 @@
                                     d3.selectAll('.fishplot_areas').attr('opacity', 1);
                                 }, 500);
                             });
+
+                    d3.select(el).on('click', function(){
+                        contextMenuShowing = false;
+                        d3.select('#context-div').attr('cm-showing', 'false');
+                        d3.select('#context-div').style('opacity', 0)
+                                .style('z-index', -1);
+                    });
 
                     //Save the current configuration of the fishplots
                     var save_fishplot_div_height = 30;
@@ -3094,8 +3179,9 @@
                                     return;
                                 }
                                 d3.select('#dragable_div').remove();
-                                var ploidy_num = d3.select('#ploidy_text'+i).node().innerHTML.split(' ')[1];
-                                d3.select('#ploidy_input').attr('value', ploidy_num).attr('fishplot_index', i);
+                                var ploidy_num = d3.select('#ploidy_text' + i).node().innerHTML.split(' ')[1];
+                                d3.select('#ploidy_input').node().value = ploidy_num;
+                                d3.select('#ploidy_input').attr('fishplot_index', i);
 
                                 $("#exampleModal").modal('show');
 
@@ -3317,6 +3403,16 @@
                 });
     }
 
+    function fetch_ploidy() {
+        d3.select('#context-div').style('opacity', 0).attr('cm-showing', 'false');
+        var index = parseInt(d3.select('#edit-ploidy-btn').attr('fish-index'));
+        var ploidy_num = d3.select('#ploidy_text' + index).node().innerHTML.split(' ')[1];
+        d3.select('#ploidy_input').node().value = ploidy_num;
+        d3.select('#ploidy_input').attr('fishplot_index', index);
+
+        $("#exampleModal").modal('show');
+    }
+
 </script>
 <body ng-controller = "tevDataController" style="margin-left: 2.5%; margin-right: 2.5%; margin-bottom: 2.5%">
 <!--
@@ -3395,9 +3491,14 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 
 <div id="editor-div" class="tab-pane">
     <div class="row">
-        <div class="col-lg-12 col-md-12 col-sm-12">
-            <div id="figure6" fishplot-editor data="alleleified_data" style="width: 100%; height: 600px; float: left;
-overflow: hidden;">
+        <div id="editor-wrapper" class="col-lg-12 col-md-12 col-sm-12">
+            <div id="figure6" fishplot-editor data="alleleified_data"
+                 style="width: 100%; height: 600px; float: left; overflow: hidden;">
+            </div>
+
+            <div id="context-div" cm-showing="false" class="btn-group-vertical" style="z-index: -1; opacity: 0; position: absolute;">
+                <button id="rmv-fishplot-btn" type="button" class="btn btn-default">Remove fishplot(s)</button>
+                <button id="edit-ploidy-btn" type="button" class="btn btn-default" onclick="fetch_ploidy()">Edit ploidy</button>
             </div>
 
             <!--
@@ -3423,7 +3524,7 @@ overflow: hidden;">
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button"
+                            <button type="button" class="btn btn-default" data-dismiss="modal" id="save_button"
                                     onclick="update_clonal_information_text()">Save
                             </button>
                         </div>
@@ -3455,7 +3556,7 @@ overflow: hidden;">
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                            <button type="button" class="btn btn-default" data-dismiss="modal"
                                     id="save_purity_button">
                                 Save
                             </button>
@@ -3468,7 +3569,7 @@ overflow: hidden;">
             Modal for selecting the CCF
             -->
 
-            <div class="modal fade" id="CCF_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+            <div class="modal fade" id="CCF_modal" tabindex="10" role="dialog" aria-labelledby="exampleModalLabel"
                  aria-hidden="true" style="overflow: auto;">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
@@ -3484,7 +3585,7 @@ overflow: hidden;">
                             -->
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal" id="save_button">Choose
+                            <button type="button" class="btn btn-default" data-dismiss="modal" id="save_button">Choose
                             </button>
                         </div>
                     </div>
@@ -3515,7 +3616,7 @@ overflow: hidden;">
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                            <button type="button" class="btn btn-default" data-dismiss="modal"
                                     id="save_as_fishplot_button">Save
                             </button>
                         </div>
