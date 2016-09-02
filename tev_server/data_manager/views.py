@@ -6,6 +6,8 @@ from .serializers import SourceSerializer, SampleSerializer, GeneSerializer, Var
 from .serializers import SavedFishplotSubjectSerializer, NameSerializer, CloneMetadataSerializer, \
     CloneTimepointDataSerializer
 from rest_framework import viewsets
+from rest_framework.decorators import list_route
+from rest_framework.response import Response
 import datetime
 import re
 import json
@@ -63,6 +65,7 @@ class VariantAlleleRESTAPI(viewsets.ModelViewSet):
 class SavedFishplotSubject_idViewset(viewsets.ModelViewSet):
     queryset = SavedFishplotSubject.objects.all()
     serializer_class = SavedFishplotSubjectSerializer
+
 
 
 class SavedAsNameViewset(viewsets.ModelViewSet):
@@ -314,7 +317,7 @@ def parse_tev_file(file):
 
 def save_fishplot(request):
     post_info = request.body
-    post_info = json.loads(post_info)
+    post_info = json.loads(post_info.decode('utf-8'))
 
     subject_id = post_info["subject_id"]
     name = post_info["name"]

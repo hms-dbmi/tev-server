@@ -26,12 +26,18 @@ class GeneSerializer(serializers.ModelSerializer):
         model = Gene
         fields = ('name', 'uuid', 'VariantAlleles')
 
+# class RecursiveSerializer(serializers.Serializer):
+#     def to_representation(self, value):
+#         serializer = self.parent.parent.__class__(value, context=self.context)
+#         return serializer.data
+
 class CloneTimepointDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = CloneTimepointData
         fields = '__all__'
 
 class CloneMetadataSerializer(serializers.ModelSerializer):
+#    children = RecursiveSerializer(many=True)
     timepoint_data = CloneTimepointDataSerializer(many=True)
     class Meta:
         model = CloneMetadata
@@ -44,7 +50,7 @@ class NameSerializer(serializers.ModelSerializer):
         fields = ('subject_id', 'name', 'uuid', 'data')
 
 class SavedFishplotSubjectSerializer(serializers.ModelSerializer):
-    name = NameSerializer(many=True)
+    saved_as = NameSerializer(many=True)
     class Meta:
         model = SavedFishplotSubject
-        fields = ('subject_id', 'uuid', 'name')
+        fields = ('subject_id', 'uuid', 'saved_as')

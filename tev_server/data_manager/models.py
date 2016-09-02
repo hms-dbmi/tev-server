@@ -63,7 +63,7 @@ class SavedFishplotSubject(models.Model):
         return self.subject_id
 
 class Name(models.Model):
-    subject_id = models.ForeignKey(SavedFishplotSubject, on_delete=models.CASCADE, related_name='name')
+    subject_id = models.ForeignKey(SavedFishplotSubject, on_delete=models.CASCADE, related_name='saved_as')
     name = models.CharField(max_length=250)
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -72,8 +72,8 @@ class Name(models.Model):
 
 class CloneMetadata(models.Model):
     name = models.ForeignKey(Name, on_delete=models.CASCADE, related_name='data')
-    key = models.CharField(max_length=250)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='children', null=True)
+    key = models.CharField(max_length=250)
     parent_index_of_this = models.CharField(max_length=10) #keep as char because it could be "plot"
     index = models.IntegerField()
     ploidy = models.IntegerField()
