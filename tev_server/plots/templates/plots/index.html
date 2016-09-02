@@ -670,8 +670,8 @@
                 var dendro_y_data = {{ dendro_y_data }};
 
                 //Get the data from the API
-                var source_request = $http.get('http://127.0.0.1:8000/api/v1/sources/');
-                var gene_request = $http.get('http://127.0.0.1:8000/api/v1/genes/');
+                var source_request = $http.get('../api/v1/sources/');
+                var gene_request = $http.get('../api/v1/genes/');
 
                 $q.all([source_request, gene_request]).then(function(results_array){
                     var tevData = results_array[0].data;
@@ -1856,7 +1856,7 @@
 
         });
 
-        tevApp.directive('fishplotEditor',['$http', function ($http) {
+        tevApp.directive('fishplotEditor',['$http', '$filter', function ($http, $filter) {
             return {
                 restrict: 'A',
                 scope: {
@@ -3196,7 +3196,7 @@
                             .style('float', 'left');
 
                     var save_fishplot_button = save_fishplot_div.append('button')
-                            .attr('class', 'btn btn-primary btn-sm')
+                            .attr('class', 'btn btn-default btn-sm')
                             .attr('id', 'save_fishplot_button')
                             .html('Save Fishplot')
                             .on('click', function(){
@@ -3236,7 +3236,7 @@
                                 };
 
                                 $http({
-                                    url: '../input/save_fishplot/',
+                                    url: '../data/save_fishplot/',
                                     method: 'POST',
                                     data: params_dict
                                 })
@@ -3476,7 +3476,6 @@
                         }
                         if (children.length > 0) {
                             for (var i = 0; i < children.length; i++) {
-                                console.log(i);
                                 index = canvas_nested_data[children[i]].index;
                                 d3.select('#mini_fishplot_div' + index).style('opacity', 1);
                                 var index_in_fishplot_svgs = fishplot_svgs.indexOf(index);
@@ -3830,6 +3829,82 @@
                                 }
                             });
 
+                    var load_fishplot_div = d3.select('#save_fishplot_div_wrapper').append('div')
+                            .attr('id', 'load_fishplot_div')
+                            .style('top', '0px')
+                            .style('height', '100%')
+                            .style('position', 'relative')
+                            .style('float', 'left');
+
+                    load_fishplot_div.append('button')
+                            .attr('id', 'load_fishplot_button')
+                            .attr('class', 'btn btn-default btn-sm')
+                            .html('Load fishplot')
+                            .on('click', function(){
+                                var subject_id = scope.$parent.subject_id;
+
+                                d3.select('#get-fishplot-modal-body').html('');
+
+                                $http.get('../api/v1/saved_fishplot_subject_ids/').success(function(data){
+                                    data = $filter('filter')(data, {'subject_id': subject_id})[0].saved_as;
+
+                                    //save data to figure6 scope, so we can access it once the user chooses it
+                                    scope.loaded_data = data;
+
+                                    d3.select('#get-fishplot-modal-body').html('');
+
+                                    //get all of the options (names they were saved as), and put in a select dropdown
+                                    var select = d3.select('#get-fishplot-modal-body').append('select')
+                                            .attr('id', 'select-list')
+                                            .attr('class', 'form-control');
+
+                                    var placeholder = select.append('option')
+                                            .append('attr', 'selected')
+                                            .append('attr', 'disabled')
+                                            .html('Select a fishplot');
+
+                                    var options = select.selectAll('saved_names')
+                                            .data(data)
+                                            .enter()
+                                            .append('option')
+                                            .html(function(d){
+                                                return d.name;
+                                            });
+
+                                    $('#get_fishplot_modal').modal('show');
+                                });
+                            });
+
+
+                            d3.select('#get_fishplot_button')
+                            .on('click', function(){
+                                var name = $('#select-list').val();
+                                var subject_fishplots = scope.loaded_data;
+                            });
+
+                    //update the save_fishplot_div to move button to the right
+                    d3.select('#load_fishplot_div').style('left', function () {
+                                var button_width = d3.select('#load_fishplot_button').node().offsetWidth;
+                                button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('padding-left')) * 2;
+                                button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('padding-right')) * 2;
+                                var canvas_left = d3.select('#canvas_div').node().offsetLeft;
+                                var canvas_width = d3.select('#canvas_div').node().offsetWidth;
+                                var canvas_right = canvas_left + canvas_width;
+                                var new_div_left = canvas_right - button_width;
+                        var save_fishplot_div_width = parseInt(d3.select('#save_fishplot_div').style('width'));
+                        new_div_left = new_div_left - save_fishplot_div_width - 100;
+                                return new_div_left + 'px';
+                            })
+                            .style('width', function () {
+                                var button_width = d3.select('#load_fishplot_button').node().offsetWidth;
+                                button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('padding-left'));
+                                button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('padding-right'));
+                                button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('margin'));
+                                return button_width + 'px';
+                            });
+
+
+
                     canvas_svg.append("svg:g")
                             .attr("class", "axis noselect")
                             .attr('id', 'editor_x_axis')
@@ -4073,6 +4148,33 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                         <div class="modal-footer">
                             <button type="button" class="btn btn-default" data-dismiss="modal"
                                     id="save_as_fishplot_button">Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="modal fade" id="get_fishplot_modal" tabindex="-1" role="dialog"
+                 aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title" id="exampleModalLabel">Select Saved Fishplot</h4>
+                        </div>
+                        <div id="get-fishplot-modal-body" class="modal-body">
+
+                            <!--
+                            Where the saved fishplot selection dropdown will be added via D3
+                            -->
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal"
+                                    id="get_fishplot_button">Choose
                             </button>
                         </div>
                     </div>
