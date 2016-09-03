@@ -343,11 +343,17 @@ def save_fishplot(request):
         clone.key = current_clone["key"]
         clone.parent_index_of_this = current_clone["parent_index_of_this"]
         clone.index = int(current_clone["index"])
+        clone.group = int(current_clone["group"])
+        clone.start_point = float(current_clone["start_point"])
+        clone.chrs_affected = current_clone["chrs_affected"]
+
+
         if current_clone["parent_index_of_this"] != "plot":
             clone.parent = CloneMetadata.objects.get(index=int(clone.parent_index_of_this), name=saved_as,
                                                      key=nested_data[int(clone.parent_index_of_this)]["key"])
         else:
             clone.parent = None
+
         clone.ploidy = int(current_clone["ploidy"])
         clone.color = current_clone["color"]
         clone.save()

@@ -41,7 +41,8 @@ class CloneMetadataSerializer(serializers.ModelSerializer):
     timepoint_data = CloneTimepointDataSerializer(many=True)
     class Meta:
         model = CloneMetadata
-        fields = ('name', 'key', 'parent', 'parent_index_of_this', 'index', 'ploidy', 'color', 'uuid', 'timepoint_data')
+        fields = ('name', 'key', 'parent', 'parent_index_of_this', 'index', 'group', 'start_point',
+                  'ploidy', 'chrs_affected', 'color', 'uuid', 'timepoint_data')
 
 class NameSerializer(serializers.ModelSerializer):
     data = CloneMetadataSerializer(many=True)

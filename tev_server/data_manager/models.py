@@ -76,7 +76,10 @@ class CloneMetadata(models.Model):
     key = models.CharField(max_length=250)
     parent_index_of_this = models.CharField(max_length=10) #keep as char because it could be "plot"
     index = models.IntegerField()
+    group = models.IntegerField()
+    start_point = models.FloatField()
     ploidy = models.IntegerField()
+    chrs_affected = models.CharField(max_length=10)
     color = models.CharField(max_length=20)
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
