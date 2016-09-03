@@ -398,7 +398,7 @@
                     if (children.length != 0) {
                         for (var j = 0; j < children.length; j++) {
                             var child = nestedData[children[j]];
-                            for (k = 0; k < child.values.length; k++) {
+                            for (var k = 0; k < child.values.length; k++) {
                                 var start_point_space = parent.values[k].alt_count / children.length;
                                 var start_point_base = start_point_space / 2;
                                 child.start_point = start_point_base + (start_point_space * j) + parent.values[k].bottom;
@@ -416,6 +416,7 @@
                                     child.values[k].bottom = (child.start_point - child.values[k].alt_count / 2);
                                 }
                             }
+                            child.start_point = child.values[0].bottom;
                         }
                         for (var j = 0; j < num_of_timepoints + 1; j++) {
                             nestedData = collision_detection(nestedData, children, j, parent.values[j].bottom, parent.values[j].top);
@@ -1971,6 +1972,7 @@
                         canvas_nested_data[i].parent_index_of_this = 'none';
                         canvas_nested_data[i].index = i;
                         canvas_nested_data[i].ploidy = 2;
+                        canvas_nested_data[i].chrs_affected = 'N/A';
                         canvas_nested_data[i].color = fill_colors[canvas_nested_data[i].values[0].cluster-1];
 
                         mini_nested_data[i].ploidy = 2;
@@ -2569,6 +2571,15 @@
                         return new_data;
                     }
 
+                    //Update the start points as we see them on plot, so fishes are relative to where they are dropped
+                    function set_new_start_point(canvas_nested_data, nested_data, fishplot_svgs, children) {
+                        for (var i = 0; i < children.length; i++) {
+                            var index = nested_data[children[i]].index;
+                            canvas_nested_data[index].start_point = nested_data[children[i]].start_point;
+                            canvas_nested_data[index] = JSON.parse(JSON.stringify(canvas_nested_data[index]));
+                        }
+                    }
+
                     //Indices of used fishplots where the one being dragged wont be able to fit
                     var cant_fit = [];
 
@@ -2989,12 +3000,6 @@
                                             d3.select('#mini_fishplot_div' + svg_index).style('opacity', 0.35);
                                             d3.select('#dragable_div').remove();
 
-                                            //Add the current fish as a subclone
-                                            parent.children.push(parseInt(data.index));
-                                            parent.children.sort(function(a, b){
-                                               return canvas_nested_data[a].values[0].start_point
-                                                       - canvas_nested_data[b].values[0].start_point;
-                                            });
                                             fishplot_svgs.push(parseInt(data_index));
 
                                             //Re-do top and bottom based on start position of parent
@@ -3002,6 +3007,13 @@
                                                 data.values[i].top = data.start_point + (data.values[i].alt_count / 2);
                                                 data.values[i].bottom = data.start_point - (data.values[i].alt_count / 2);
                                             }
+
+                                            //Add the current fish as a subclone
+                                            parent.children.push(parseInt(data.index));
+                                            parent.children.sort(function(a, b){
+                                                    return canvas_nested_data[a].start_point
+                                                            - canvas_nested_data[b].start_point;
+                                            });
 
                                             canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
 
@@ -3022,6 +3034,7 @@
                                             //collision detection for children after adjusting the independent evolution positions
                                             nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
 
+                                            set_new_start_point(canvas_nested_data, nested_data, fishplot_svgs, parent.children);
 
                                             for (var i = 0; i < nested_data.length; i++) {
                                                 current_allele = nested_data[i];
@@ -3470,8 +3483,8 @@
                                 parent.children.splice(child_index, 1);
                             }
                             parent.children.sort(function (a, b) {
-                                return canvas_nested_data[a].values[0].start_point
-                                        - canvas_nested_data[b].values[0].start_point;
+                                return canvas_nested_data[a].start_point
+                                        - canvas_nested_data[b].start_point;
                             });
                         }
                         if (children.length > 0) {
@@ -3487,6 +3500,7 @@
                                 }
                             }
                         }
+                        current_fish.children = [];
                     }
 
                     var rmv_fishplot_btn = d3.select('#rmv-fishplot-btn').on('click', function(){
@@ -3520,7 +3534,6 @@
 
 
                         var nested_data = canvas_nested_data.slice(0);
-
 
                         //Create shallow copy for values of each fishplot used
                         //Prevents find_origin function from permanently trimming allele values
@@ -3880,6 +3893,171 @@
                             .on('click', function(){
                                 var name = $('#select-list').val();
                                 var subject_fishplots = scope.loaded_data;
+                                var fishplot_data = null;
+                                for(var i = 0; i < subject_fishplots.length; i++){
+                                    if(subject_fishplots[i].name == name){
+                                        fishplot_data = subject_fishplots[i];
+                                        break;
+                                    }
+                                }
+                                if(fishplot_data == null){
+                                    return;
+                                }
+                                fishplot_svgs = [];
+                                groups = [];
+                                plot_background.groups = {};
+                                plot_background.children = [];
+                                d3.selectAll('.mini_fishplot_divs').style('opacity', 1);
+
+                                for(var i = 0; i < fishplot_data.data.length; i++){
+                                    fishplot_svgs.unshift(parseInt(fishplot_data.data[i].index));
+                                    d3.select('#mini_fishplot_div' + fishplot_data.data[i].index).style('opacity', 0.35);
+                                    var current_fish = canvas_nested_data[fishplot_data.data[i].index];
+                                    current_fish.children = [];
+                                    current_fish.group = fishplot_data.data[i].group;
+                                    current_fish.ploidy = fishplot_data.data[i].ploidy;
+                                    current_fish.start_point = fishplot_data.data[i].start_point;
+                                    current_fish.chrs_affected = fishplot_data.data[i].chrs_affected;
+
+                                    //Re-do top and bottom based on start position from mousedown
+                                    for (var j = 0; j < current_fish.values.length; j++) {
+                                        current_fish.values[j].top = current_fish.start_point + (current_fish.values[j].alt_count / 2);
+                                        current_fish.values[j].bottom = current_fish.start_point - (current_fish.values[j].alt_count / 2);
+                                    }
+                                    if(fishplot_data.data[i].parent_index_of_this != 'plot'){
+                                        current_fish.parent_index_of_this = parseInt(fishplot_data.data[i].parent_index_of_this);
+                                        canvas_nested_data[parseInt(fishplot_data.data[i].parent_index_of_this)].children.push(fishplot_data.data[i].index);
+                                    }
+                                    if(fishplot_data.data[i].parent_index_of_this == 'plot' || fishplot_data.data[i].parent_index_of_this == 'none'){
+                                        groups.push(fishplot_data.data[i].group);
+                                        plot_background.groups[fishplot_data.data[i].group.toString()] = fishplot_data.data[i].index;
+                                        plot_background.children.push(fishplot_data.data[i].index);
+                                        current_fish.parent_index_of_this = "plot";
+                                    }
+                                    canvas_nested_data[fishplot_data.data[i].index] = JSON.parse(JSON.stringify(current_fish));
+
+                                }
+                                fishplot_svgs.reverse();
+
+                                var nested_data = canvas_nested_data.slice(0);
+
+                                plot_background.children.sort(function (a, b) {
+                                    return nested_data[a].start_point - nested_data[b].start_point;
+                                });
+
+                                //Create shallow copy for values of each fishplot used
+                                //Prevents find_origin function from permanently trimming allele values
+                                update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
+
+                                for (var i = 0; i < plot_background.children.length; i++) {
+                                    var parent = nested_data[plot_background.children[i]];
+                                    var start_point = parent.start_point;
+                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                                }
+
+                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
+
+                                //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
+                                //determining CCF solutions
+                                var complete_nested_data = canvas_nested_data.slice(0);
+
+                                nested_data = reconstruct_data(nested_data, fishplot_svgs);
+
+                                //collision detection for children after adjusting the independent evolution positions
+                                nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
+
+                                //load pinches
+                                //Have to use fishplot svgs to select specific indices of nested_data
+                                //Otherwise, we prematurely clip off the origin of fishplots starting after
+                                //The first timepoint (i.e. Pretreatment in example file)
+                                for (var i = 0; i < fishplot_svgs.length; i++) {
+                                    var current_allele = nested_data[i];
+                                    for (var j = 0; j < current_allele.values.length; j++) {
+                                        //Initialize all pinches to false
+                                        //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
+                                        current_allele.values[j].pinch = false;
+                                    }
+                                    current_allele.values = find_origin(current_allele);
+                                }
+
+                                d3.selectAll('.big_fish').remove();
+
+
+                                for (var i = 0; i < nested_data.length; i++) {
+                                    var current_data = nested_data[i];
+
+                                    canvas_svg.append('path')
+                                            .attr('fill', 'none')
+                                            .attr('stroke-width', 5)
+                                            .attr("stroke", "transparent")
+                                            .attr('class', 'big_fish')
+                                            .style("stroke-linejoin", "round")
+                                            .attr('d', function () {
+                                                return canvas_top_line_gen(current_data.values);
+                                            });
+
+                                    canvas_svg.append('path')
+                                            .attr('fill', 'none')
+                                            .attr("stroke", "transparent")
+                                            .style("stroke-linejoin", "round")
+                                            .attr('class', 'big_fish')
+                                            .attr('stroke-width', 8)
+                                            .attr('d', function () {
+                                                return canvas_bottom_line_gen(current_data.values);
+                                            });
+
+                                    canvas_svg.append('path')
+                                            .datum(current_data.values)
+                                            .attr('fill', fill_colors[current_data.values[0].cluster - 1])
+                                            .attr('opacity', 1)
+                                            .attr('class', 'big_fish dropdown-toggle')
+                                            .attr('d', canvas_area_between_lines)
+                                            .attr('index', current_data.index)
+                                            .attr('id', 'big_fish' + current_data.index)
+                                            .on('mouseenter', function (d) {
+                                                d3.select(this).attr('opacity', 0.75);
+                                                moused_over = parseInt(d3.select(this).attr('index'));
+                                            })
+                                            .on('mouseleave', function () {
+                                                d3.select(this).attr('opacity', 1);
+                                            })
+                                            .on('contextmenu', function () {
+                                                contextMenuFor = parseInt(d3.select(this).attr('index'));
+
+                                                //give the button an attribute to reference the fishplots they're dealing with
+                                                //now we can invoke a function on click
+                                                d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
+                                                d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
+
+                                                if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                                                    contextMenuShowing = false;
+                                                }
+                                                if (contextMenuShowing == false) {
+                                                    contextMenuForPrevious = contextMenuFor;
+                                                    d3.event.preventDefault();
+                                                    d3.select('#context-div').attr('cm-showing', 'true');
+                                                    contextMenuShowing = true;
+                                                    d3.select('#context-div').style('left', function () {
+                                                                var left = d3.event.pageX - d3.select(el).node().offsetLeft;
+                                                                return left + 'px';
+                                                            })
+                                                            .style('top', function () {
+                                                                //-75 pixels because of navbar padding
+                                                                var top = d3.event.pageY - d3.select(el).node().offsetTop - 75;
+                                                                return top + 'px';
+                                                            })
+                                                            .style('z-index', 10)
+                                                            .style('opacity', 1);
+                                                }
+                                                else {
+                                                    d3.event.preventDefault();
+                                                    contextMenuShowing = false;
+                                                    d3.select('#context-div').attr('cm-showing', 'false');
+                                                    d3.select('#context-div').style('opacity', 0)
+                                                            .style('z-index', -1);
+                                                }
+                                            });
+                                }
                             });
 
                     //update the save_fishplot_div to move button to the right
