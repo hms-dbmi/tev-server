@@ -3957,6 +3957,8 @@
 
                                 adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
 
+                                set_new_start_point(canvas_nested_data, nested_data, fishplot_svgs, parent.children);
+
                                 //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
                                 //determining CCF solutions
                                 var complete_nested_data = canvas_nested_data.slice(0);
