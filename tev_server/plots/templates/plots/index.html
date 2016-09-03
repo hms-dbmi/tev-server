@@ -3238,7 +3238,7 @@
                     //Function to save the fishplot
 
                     d3.select('#save_as_fishplot_button')
-                            .on('click', function(){
+                            .on('click', function () {
                                 var name = d3.select('#save_fishplot_as').node().value;
                                 var subject_id = scope.$parent.subject_id;
                                 var params_dict = {
@@ -3252,7 +3252,35 @@
                                     url: '../data/save_fishplot/',
                                     method: 'POST',
                                     data: params_dict
-                                })
+                                }).success(function () {
+                                            d3.select('#dialog-header')
+                                                    .style('#ffffff');
+                                            d3.select('#dialog-header').html('Save successful');
+
+                                            d3.select('#dialog-body').html('');
+                                            d3.select('#dialog-body')
+                                                    .append('p')
+                                                    .html(function () {
+                                                        return 'The fishplot <b>' + name + '</b> was saved successfully.';
+                                                    });
+
+                                            $('#saved-fishplot-dialog-box').modal('show');
+                                        })
+                                        .error(function () {
+                                            d3.select('#dialog-header').innerHtml = '';
+                                            d3.select('#dialog-header')
+                                                    .style('color', 'red');
+                                            d3.select('#dialog-header').innerHtml = 'Error!';
+
+                                            d3.select('#dialog-body').html('');
+                                            d3.select('#dialog-body')
+                                                    .append('p')
+                                                    .html(function () {
+                                                        'The fishplot <b>', +name + '</b> did not save.';
+                                                    });
+
+                                            $('#saved-fishplot-dialog-box').modal('show');
+                                        });
 
                             });
 
@@ -4315,7 +4343,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
-                            <h4 class="modal-title" id="exampleModalLabel">Choose CCF Distribution</h4>
+                            <h4 class="modal-title" id="exampleModalLabel">Name your fishplot</h4>
                         </div>
                         <div class="modal-body">
                             <form>
@@ -4334,6 +4362,9 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                 </div>
             </div>
 
+            <!--
+            Modal to select and load saved fishplots
+            -->
 
             <div class="modal fade" id="get_fishplot_modal" tabindex="-1" role="dialog"
                  aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -4356,6 +4387,31 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                             <button type="button" class="btn btn-default" data-dismiss="modal"
                                     id="get_fishplot_button">Choose
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!--
+            Modal to notify the user wheither or not the fishplot was saved successfully
+            -->
+
+            <div class="modal fade" id="saved-fishplot-dialog-box" role="dialog">
+                <div class="modal-dialog modal-md">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: #222222; color: #ffffff;">
+                            <button type="button" class="close" data-dismiss="modal" style="color: #ffffff;">&times;</button>
+                            <h4 id="dialog-header" class="modal-title" style="color: #ffffff;"></h4>
+                        </div>
+                        <div id="dialog-body" class="modal-body">
+
+                            <!--
+                            Will fill this in with a custom message pertaining to the name the user saved the fishplot under
+                            -->
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">OK</button>
                         </div>
                     </div>
                 </div>
