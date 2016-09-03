@@ -3332,6 +3332,9 @@
                                                             return 'The fishplot <b>' + name + '</b> was saved successfully.';
                                                         });
 
+                                                //update parent scope that holds the array of already used names
+                                                scope.$parent.saved_fishplot_names.push(name);
+
                                                 $('#saved-fishplot-dialog-box').modal('show');
                                             })
                                             .error(function () {
