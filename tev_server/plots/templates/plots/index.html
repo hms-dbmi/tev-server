@@ -3255,7 +3255,7 @@
                                 }).success(function () {
                                             d3.select('#dialog-header')
                                                     .style('#ffffff');
-                                            d3.select('#dialog-header').html('Save successful');
+                                            d3.select('#dialog-header').html('Save Successful');
 
                                             d3.select('#dialog-body').html('');
                                             d3.select('#dialog-body')
@@ -3267,10 +3267,9 @@
                                             $('#saved-fishplot-dialog-box').modal('show');
                                         })
                                         .error(function () {
-                                            d3.select('#dialog-header').innerHtml = '';
                                             d3.select('#dialog-header')
                                                     .style('color', 'red');
-                                            d3.select('#dialog-header').innerHtml = 'Error!';
+                                            d3.select('#dialog-header').html('Error!');
 
                                             d3.select('#dialog-body').html('');
                                             d3.select('#dialog-body')
@@ -4343,7 +4342,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
-                            <h4 class="modal-title" id="exampleModalLabel">Name your fishplot</h4>
+                            <h4 class="modal-title" id="exampleModalLabel">Save Your Fishplot</h4>
                         </div>
                         <div class="modal-body">
                             <form>
