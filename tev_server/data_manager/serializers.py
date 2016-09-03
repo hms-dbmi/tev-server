@@ -50,6 +50,18 @@ class NameSerializer(serializers.ModelSerializer):
         model = Name
         fields = ('subject_id', 'name', 'uuid', 'data')
 
+class JustNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Name
+        fields = ('name', 'uuid')
+
+class SavedFishplotSubjectWithJustNameSerializer(serializers.ModelSerializer):
+    saved_as = JustNameSerializer(many=True)
+    class Meta:
+        model = SavedFishplotSubject
+        fields = ('subject_id', 'uuid', 'saved_as')
+
+
 class SavedFishplotSubjectSerializer(serializers.ModelSerializer):
     saved_as = NameSerializer(many=True)
     class Meta:

@@ -4,7 +4,7 @@ from .models import Source, Sample, Gene, VariantAllele
 from .models import SavedFishplotSubject, Name, CloneMetadata, CloneTimepointData
 from .serializers import SourceSerializer, SampleSerializer, GeneSerializer, VariantAlleleSerializer
 from .serializers import SavedFishplotSubjectSerializer, NameSerializer, CloneMetadataSerializer, \
-    CloneTimepointDataSerializer
+    CloneTimepointDataSerializer, SavedFishplotSubjectWithJustNameSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import list_route
 from rest_framework.response import Response
@@ -66,7 +66,9 @@ class SavedFishplotSubject_idViewset(viewsets.ModelViewSet):
     queryset = SavedFishplotSubject.objects.all()
     serializer_class = SavedFishplotSubjectSerializer
 
-
+class SavedFishplotSubjectWithJustNamesViewset(viewsets.ModelViewSet):
+    queryset = SavedFishplotSubject.objects.all()
+    serializer_class = SavedFishplotSubjectWithJustNameSerializer
 
 class SavedAsNameViewset(viewsets.ModelViewSet):
     queryset = Name.objects.all()

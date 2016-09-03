@@ -649,10 +649,24 @@
             };
         });
 
+        tevApp.factory('saved_fishplots', function(){
+           return {
+              get_names: function (name_data){
+                  var names_array = [];
+                  name_data =  name_data.saved_as;
+
+                  for(var i = 0; i < name_data.length; i++){
+                      names_array.push(name_data[i].name);
+                  }
+                  return names_array;
+              }
+           } ;
+        });
+
         //Controller name: TevDataController
         //Services: scope, http
-        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q',
-            function($scope, $http, $filter, allelify, $q){
+        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q', 'saved_fishplots',
+            function($scope, $http, $filter, allelify, $q, saved_fishplots){
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
                 $scope.tevData = [];
                 $scope.alleleified_data = [];
@@ -665,6 +679,7 @@
                 $scope.clustered_alleleified_data = [];
                 $scope.alleles = [];
                 $scope.subject_id = '';
+                $scope.saved_fishplot_names = [];
 
                 var source_uuid = '{{ source }}';
                 var dendro_data = {{ d3_dendro_data|safe }};
@@ -673,12 +688,21 @@
                 //Get the data from the API
                 var source_request = $http.get('../api/v1/sources/');
                 var gene_request = $http.get('../api/v1/genes/');
+                var saved_fishplot_names_request = $http.get('../api/v1/saved_fishplots_just_names/');
 
-                $q.all([source_request, gene_request]).then(function(results_array){
+                $q.all([source_request, gene_request, saved_fishplot_names_request]).then(function(results_array){
                     var tevData = results_array[0].data;
                     var gene_data = results_array[1].data;
+                    var saved_fishplot_names = results_array[2].data;
                     tevData = $filter('filter')(tevData, {'uuid': source_uuid})[0];
                     $scope.subject_id = tevData.subject_id;
+                    saved_fishplot_names = $filter('filter')(saved_fishplot_names, {'subject_id': tevData.subject_id})[0];
+                    if(saved_fishplot_names != undefined){
+                        saved_fishplot_names = saved_fishplots.get_names(saved_fishplot_names);
+                        $scope.saved_fishplot_names = saved_fishplot_names;
+                    }
+
+                    console.log(saved_fishplot_names);
                     d3.select('#subject_brand').html(function(){
                         return $scope.subject_id;
                     });
@@ -3235,8 +3259,16 @@
                                 return button_width + 'px';
                             });
 
-                    //Function to save the fishplot
+                    function name_exists(name, names_array){
+                        if(names_array.indexOf(name) == -1){
+                            return false
+                        }
+                        else {
+                            return true;
+                        }
+                    }
 
+                    //Function to save the fishplot
                     d3.select('#save_as_fishplot_button')
                             .on('click', function () {
                                 var name = d3.select('#save_fishplot_as').node().value;
@@ -3248,38 +3280,75 @@
                                     data: canvas_nested_data
                                 };
 
-                                $http({
-                                    url: '../data/save_fishplot/',
-                                    method: 'POST',
-                                    data: params_dict
-                                }).success(function () {
-                                            d3.select('#dialog-header')
-                                                    .style('#ffffff');
-                                            d3.select('#dialog-header').html('Save Successful');
+                                if(fishplot_svgs.length < 1){
+                                    d3.select('#dialog-header')
+                                            .style('color', 'red');
+                                    d3.select('#dialog-header').html('Error!');
 
-                                            d3.select('#dialog-body').html('');
-                                            d3.select('#dialog-body')
-                                                    .append('p')
-                                                    .html(function () {
-                                                        return 'The fishplot <b>' + name + '</b> was saved successfully.';
-                                                    });
+                                    d3.select('#dialog-body').html('');
+                                    d3.select('#dialog-body')
+                                            .append('p')
+                                            .html(function () {
+                                                return 'The fishplot <b>' + name + '</b> did not save. Nothing has been plotted.';
+                                            });
 
-                                            $('#saved-fishplot-dialog-box').modal('show');
-                                        })
-                                        .error(function () {
-                                            d3.select('#dialog-header')
-                                                    .style('color', 'red');
-                                            d3.select('#dialog-header').html('Error!');
+                                    $('#saved-fishplot-dialog-box').modal('show');
+                                    return;
+                                }
 
-                                            d3.select('#dialog-body').html('');
-                                            d3.select('#dialog-body')
-                                                    .append('p')
-                                                    .html(function () {
-                                                        'The fishplot <b>', +name + '</b> did not save.';
-                                                    });
+                                var exists = name_exists(name, scope.$parent.saved_fishplot_names);
 
-                                            $('#saved-fishplot-dialog-box').modal('show');
-                                        });
+                                if(exists == true){
+                                    d3.select('#dialog-header')
+                                            .style('color', 'red');
+                                    d3.select('#dialog-header').html('Error!');
+
+                                    d3.select('#dialog-body').html('');
+                                    d3.select('#dialog-body')
+                                            .append('p')
+                                            .html(function () {
+                                                return 'The fishplot <b>' + name + '</b> already exists. Please try another name.';
+                                            });
+
+                                    $('#saved-fishplot-dialog-box').modal('show');
+                                    return;
+                                }
+
+
+                                if(fishplot_svgs.length > 0 && exists == false) {
+                                    $http({
+                                        url: '../data/save_fishplot/',
+                                        method: 'POST',
+                                        data: params_dict
+                                    }).success(function () {
+                                                d3.select('#dialog-header')
+                                                        .style('#ffffff');
+                                                d3.select('#dialog-header').html('Save Successful');
+
+                                                d3.select('#dialog-body').html('');
+                                                d3.select('#dialog-body')
+                                                        .append('p')
+                                                        .html(function () {
+                                                            return 'The fishplot <b>' + name + '</b> was saved successfully.';
+                                                        });
+
+                                                $('#saved-fishplot-dialog-box').modal('show');
+                                            })
+                                            .error(function () {
+                                                d3.select('#dialog-header')
+                                                        .style('color', 'red');
+                                                d3.select('#dialog-header').html('Error!');
+
+                                                d3.select('#dialog-body').html('');
+                                                d3.select('#dialog-body')
+                                                        .append('p')
+                                                        .html(function () {
+                                                            return 'The fishplot <b>', +name + '</b> did not save.';
+                                                        });
+
+                                                $('#saved-fishplot-dialog-box').modal('show');
+                                            });
+                                }
 
                             });
 
