@@ -898,6 +898,7 @@
                 var height = el.clientHeight;
                 var fillColors = ['#a6cee3','#1f78b4','#b2df8a','#33a02c', '#fb9a99', '#e31a1c',
                                     '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99','#b15928'];
+                var current_extension = d3.select(el).attr('ext', 0);
 
 
                 scope.$watch('data', function(updatedData){
@@ -1195,19 +1196,26 @@
 
                     var x_axis_svgs = d3.select('#fig2-x-axis').selectAll('text')[0];
                     var extend_height_by = [];
+
                     for(var i = 0; i < x_axis_svgs.length; i++){
                         extend_height_by.push(x_axis_svgs[i].clientWidth);
                     }
+
                     extend_height_by = Math.max.apply(null, extend_height_by);
+                    if(extend_height_by > parseInt(d3.select(el).attr('ext'))){
+                        d3.select(el).attr('ext', extend_height_by);
+                    }
+                    else {
+                        extend_height_by = parseInt(d3.select(el).attr('ext'));
+                    }
 
                     d3.select(el).style('height', function(){
-                        var height = parseInt(d3.select(el).style('height'));
-                        height = height + extend_height_by;
-                        return height + 'px';
+                        var new_height = height + extend_height_by;
+                        return new_height + 'px';
                     });
 
                     canvas.attr('height', function(){
-                       var height = parseInt(d3.select(el).style('height'));
+                        var height = parseInt(d3.select(el).style('height'));
                         return height;
                     });
 
