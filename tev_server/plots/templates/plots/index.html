@@ -702,7 +702,6 @@
                         $scope.saved_fishplot_names = saved_fishplot_names;
                     }
 
-                    console.log(saved_fishplot_names);
                     d3.select('#subject_brand').html(function(){
                         return $scope.subject_id;
                     });
@@ -1442,81 +1441,111 @@
                 var cluster = d3.layout.cluster()
                         .size([420, 420]);
 
+                //padding between independent fishplot backbones
+                var fishbone_padding = 10;
+
                 scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
 
                     data = updatedData;
+                    var y_translate = 75;
 
                     if(data.length == 0){
                         return;
                     }
 
-                    var fishbone_data = {};
-                    fishbone_data.name = data[0].key;
-                    fishbone_data.children = [];
-                    fishbone_data.cluster = data[0].values[0].cluster;
-
-                    for(var i = 0; i < data[0].children.length; i++){
-                        var child = data[0].children[i];
-                        child = data[child];
-                        add_children(child, fishbone_data, data);
+                    function get_parent_clones(data){
+                        var parent_indices = [];
+                        for(var i = 0; i < data.length; i++){
+                            if(data[i].parent_index_of_this == 'plot'){
+                                parent_indices.push(i);
+                            }
+                        }
+                        return parent_indices;
                     }
+                    console.log(data);
 
-                    var cluster = d3.layout.cluster()
-                            .size([375, 375]);
-
-                    var diagonal = d3.svg.diagonal()
-                           .projection(function(d) { return [d.y, d.x]; });
+                    var independent_clonal_evos = get_parent_clones(data);
 
                     var svg = d3.select(el).append("svg")
+                            .attr('id', 'fishbone_svg')
                             .attr("height", height)
-                            .attr("width", width)
-                            .append("g")
-                            .attr("transform", "translate(100,75)");
+                            .attr("width", width);
 
-                    var nodes = cluster.nodes(fishbone_data),
-                            links = cluster.links(nodes);
+                    for(var p = 0; p < independent_clonal_evos.length; p++) {
 
-                    var link = svg.selectAll(".link")
-                            .data(links)
-                            .enter().append("path")
-                            .attr("class", "link")
-                            .attr("d", diagonal);
+                        var fishbone_data = {};
+                        fishbone_data.name = data[independent_clonal_evos[p]].key;
+                        fishbone_data.children = [];
+                        fishbone_data.cluster = data[independent_clonal_evos[p]].values[0].cluster;
 
-                    var node = svg.selectAll(".node")
-                            .data(nodes)
-                            .enter().append("g")
-                            .attr("class", "node")
-                            .attr("transform", function (d) {
-                                return "translate(" + d.y + "," + d.x + ")";
-                            });
-
-                    node.append("circle")
-                            .attr("r", 4.5)
-                            .attr('fill', function(d, i){
-                                return fill_colors[d.cluster-1];
-                            });
-
-                    nodes.forEach(function(d){
-                        var names = d.name.split('\n');
-                        for(var i = 0; i < names.length; i++) {
-                            var name = names[i];
-                            svg.append('text')
-                                    .attr('class', 'node_text')
-                                    .attr("transform","translate(" + d.y + "," + d.x + ")")
-                                    .attr('dx', function(){
-                                        return d.children ? -8 : 8;
-                                    })
-                                    .attr('dy', function(){
-                                        return ((i+1)*10);
-                                    })
-                                    .style("text-anchor", function(){
-                                        return d.children ? "end" : "start";
-                                    })
-                                    .text(name);
+                        for (var i = 0; i < data[independent_clonal_evos[p]].children.length; i++) {
+                            var child = data[independent_clonal_evos[p]].children[i];
+                            child = data[child];
+                            add_children(child, fishbone_data, data);
                         }
-                    });
 
+                        var cluster = d3.layout.cluster()
+                                .size([100, 400]);
+
+                        var diagonal = d3.svg.diagonal()
+                                .projection(function (d) {
+                                    return [d.y, d.x];
+                                });
+
+                        var fishbone = svg.append('svg')
+                                .attr('height', 100)
+                                .attr('width', width)
+                                .attr('x', 0)
+                                .attr('y', 100*p)
+                                .append("g")
+                                .attr('id', 'fishbone'+p)
+                                .attr("transform", "translate(100," + 20 + ")");
+
+                        var nodes = cluster.nodes(fishbone_data),
+                                links = cluster.links(nodes);
+
+                        var link = fishbone.selectAll(".link")
+                                .data(links)
+                                .enter().append("path")
+                                .attr("class", "link")
+                                .attr("d", diagonal);
+
+                        var node = fishbone.selectAll(".node")
+                                .data(nodes)
+                                .enter().append("g")
+                                .attr("class", "node")
+                                .attr("transform", function (d) {
+                                    return "translate(" + d.y + "," + d.x + ")";
+                                });
+
+                        node.append("circle")
+                                .attr("r", 4.5)
+                                .attr('fill', function (d) {
+                                    return fill_colors[d.cluster - 1];
+                                });
+
+                        nodes.forEach(function (d) {
+                            var names = d.name.split('\n');
+                            for (var i = 0; i < names.length; i++) {
+                                var name = names[i];
+                                fishbone.append('text')
+                                        .attr('class', 'node_text')
+                                        .attr("transform", "translate(" + d.y + "," + d.x + ")")
+                                        .attr('dx', function () {
+                                            return d.children ? -8 : 8;
+                                        })
+                                        .attr('dy', function () {
+                                            return ((i + 1) * 10);
+                                        })
+                                        .style("text-anchor", function () {
+                                            return d.children ? "end" : "start";
+                                        })
+                                        .text(name);
+                            }
+                        });
+
+                    }
                 });
 
             }
@@ -4285,14 +4314,17 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
         </div>
     </div>
 
-    <div class="row">
-        <div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]" class="col-md-5"
+    <div class="row col-lg-12">
+        <div class="col-lg-6">
+        <div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]" class="col-lg-11"
              style="height: 600px; float: left;">
         </div>
+        </div>
 
-
-        <div id="figure4" figure4-plot data="fishbone_data" class="col-md-5"
-             style="height: 600px; float: right;">
+        <div class="col-lg-6">
+        <div id="figure4" figure4-plot data="fishbone_data" class="col-lg-12"
+             style="height: 600px; float: right; padding: 0px;">
+        </div>
         </div>
     </div>
 
