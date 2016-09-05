@@ -1442,13 +1442,13 @@
                         .size([420, 420]);
 
                 //padding between independent fishplot backbones
-                var fishbone_padding = 10;
+                var fishbone_padding = 50;
 
                 scope.$watch('data', function(updatedData){
                     d3.select(el).select('svg').remove();
 
                     data = updatedData;
-                    var y_translate = 75;
+                    var additive_y = 50;
 
                     if(data.length == 0){
                         return;
@@ -1493,10 +1493,9 @@
                                 });
 
                         var fishbone = svg.append('svg')
-                                .attr('height', 100)
                                 .attr('width', width)
                                 .attr('x', 0)
-                                .attr('y', 100*p)
+                                .attr('y', additive_y)
                                 .append("g")
                                 .attr('id', 'fishbone'+p)
                                 .attr("transform", "translate(100," + 20 + ")");
@@ -1544,6 +1543,10 @@
                             }
                         });
 
+                        additive_y = additive_y + d3.select('#fishbone'+p).node().getBBox().height + fishbone_padding;
+                        if(additive_y > parseInt(d3.select(el).style('height'))){
+                            d3.select(el).style('height', additive_y+'px');
+                        }
                     }
                 });
 
