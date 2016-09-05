@@ -1463,7 +1463,6 @@
                         }
                         return parent_indices;
                     }
-                    console.log(data);
 
                     var independent_clonal_evos = get_parent_clones(data);
 
@@ -1780,6 +1779,7 @@
                                     done = 1;
                                 }
                                 if(check_if_fits == 0 && parent_allele.key == "plot"){
+                                    current_allele_data.parent_index_of_this = 'none';
                                     //Doesn't fit... done=1 to move on
                                     unused.push(current_allele_data.key);
                                     done = 1;
