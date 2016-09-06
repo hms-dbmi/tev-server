@@ -17,6 +17,11 @@
         overflow-y: hidden;
     }
 
+    .title-text {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: large;
+    }
+
     /* bootstrap hack end */
 
     .axis path, .axis line {
@@ -663,6 +668,7 @@
            } ;
         });
 
+
         //Controller name: TevDataController
         //Services: scope, http
         tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q', 'saved_fishplots',
@@ -749,6 +755,15 @@
                     var canvas = d3.select(el).append("svg")
                         .attr("height", height)
                         .attr("width", width);
+
+                    var title = canvas.append('text')
+                            .attr('class', 'title-text')
+                            .attr('x', width/2)
+                            .attr('y', 20)
+                            .style('text-anchor', 'middle')
+                            .text(function(){
+                                return 'VAF Over Time for Each Allele';
+                            });
 
                     var div_tooltip = d3.select(el).append("div")
                             .attr('id', 'fig1-tooltip')
@@ -914,6 +929,15 @@
                     var canvas = d3.select(el).append("svg")
                         .attr("height", height)
                         .attr("width", width);
+
+                    var title = canvas.append('text')
+                            .attr('class', 'title-text')
+                            .attr('x', width/2)
+                            .attr('y', 20)
+                            .style('text-anchor', 'middle')
+                            .text(function(){
+                                return 'Distribution of VAF Over Time';
+                            });
 
                     var information = ['90th:', 'Q3:', 'median:', 'Q1:', '10th:'];
                     var informationSvg = canvas.append("g");
@@ -1264,6 +1288,15 @@
                             .attr('height', height)
                             .attr('width', width);
 
+                    var title = canvas.append('text')
+                            .attr('class', 'title-text')
+                            .attr('x', width/2)
+                            .attr('y', 20)
+                            .style('text-anchor', 'middle')
+                            .text(function(){
+                                return 'Clustering of Alleles by VAF';
+                            });
+
                     var sliderSvg = canvas.append('g');
 
                     canvas = canvas.append('g')
@@ -1471,6 +1504,15 @@
                             .attr("height", height)
                             .attr("width", width);
 
+                    var title = svg.append('text')
+                            .attr('class', 'title-text')
+                            .attr('x', width/2)
+                            .attr('y', 20)
+                            .style('text-anchor', 'middle')
+                            .text(function(){
+                                return 'Fishbone of Suggested Fishplot';
+                            });
+
                     for(var p = 0; p < independent_clonal_evos.length; p++) {
 
                         var fishbone_data = {};
@@ -1587,6 +1629,15 @@
                     var canvas = d3.select(el).append('svg')
                         .attr('width', width)
                         .attr('height', height);
+
+                    var title = canvas.append('text')
+                            .attr('class', 'title-text')
+                            .attr('x', width/2)
+                            .attr('y', 20)
+                            .style('text-anchor', 'middle')
+                            .text(function(){
+                                return 'A Fishplot Suggesting One Option of Clonal Expansion';
+                            });
 
                     var div_tooltip = d3.select(el).append("div")
                             .attr('id', 'fig5-tooltip')
@@ -3395,7 +3446,7 @@
 
                             });
 
-                    //Most of the code below pertains to the mini fishplot panels
+                    //Most of the code below pertains to the mini fishplot div information
 
                     //Cog wheel glyph icon
                     svgs.append('svg:image')
@@ -4302,44 +4353,55 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
     <!-- /.container -->
 </nav>
 <div class="tab-content">
-<div id="summary-divs" class="tab-pane fade in active">
-    <div class="row col-lg-12">
-        <div class="col-lg-6">
-        <div id="figure1" figure1-plot data="clustered_alleleified_data" class="col-lg-11"
-             style="height: 650px; float:left;">
-        </div>
-        </div>
+    <div id="summary-divs" class="tab-pane fade in active">
+        <div class="panel panel-primary">
+            <div id="summary-stats-panel-heading" class="panel-heading" style="background: #222222; display: block; border-color: #222222;">
+                <h4 style="text-align: center; margin: 0px;">Summary Statistics</h4>
+            </div>
+            <div class="panel-body" style="padding: 0px;">
+                <div class="row col-lg-12">
+                    <div class="col-lg-6">
+                        <div id="figure1" figure1-plot data="clustered_alleleified_data" class="col-lg-11"
+                             style="height: 650px; float:left;">
+                        </div>
+                    </div>
 
-        <div class="col-lg-6">
-        <div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" class="col-lg-11"
-             style="height: 650px; float: right;">
-        </div>
-        </div>
-    </div>
-
-    <div class="row col-lg-12">
-        <div class="col-lg-6">
-        <div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]" class="col-lg-11"
-             style="height: 600px; float: left;">
-        </div>
-        </div>
-
-        <div class="col-lg-6">
-        <div id="figure4" figure4-plot data="fishbone_data" class="col-lg-12"
-             style="height: 600px; float: right; padding: 0px;">
-        </div>
-        </div>
-    </div>
+                    <div class="col-lg-6" style="float: right;">
+                        <div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]"
+                             class="col-lg-11"
+                             style="height: 650px; float: right;">
+                        </div>
+                    </div>
+                </div>
 
 
-    <div class="row">
-        <div class="col-lg-12 col-md-12 col-sm-12">
-            <div id="figure5" figure5-plot data="linked_alleleified_data" style="width: 100%; height: 600px; float: left;">
+                <div class="row col-lg-12">
+                    <div class="col-lg-6">
+                        <div id="figure3" figure3-plot data="[dendro_data, dendro_y_data, alleleified_data]"
+                             class="col-lg-11"
+                             style="height: 600px; float: left;">
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div id="figure4" figure4-plot data="fishbone_data" class="col-lg-12"
+                             style="height: 600px; float: right; padding: 0px;">
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <div id="figure5" figure5-plot data="linked_alleleified_data"
+                             style="width: 100%; height: 600px; float: left;">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-</div>
+    </div>
 
 <div id="editor-div" class="tab-pane">
     <div class="row">
