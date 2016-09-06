@@ -1962,6 +1962,9 @@
                                 .attr('stroke-width', 8)
                                 .attr('d', bottomLineGen(d.values));
 
+                        var old_x = 0;
+                        var old_y = 0;
+
                         canvas.append('path')
                                 .datum(d.values)
                                 .attr('fill', function(d){
@@ -1969,6 +1972,7 @@
                                 })
                                 .attr('opacity', 0.75)
                                 .attr('d', areaBetweenLines)
+                                .style('cursor', 'pointer')
                                 .on('mouseover', function(d){
                                     var alleles = d[0].allele;
                                     alleles = alleles.split('\n');
@@ -1985,10 +1989,28 @@
                                             .style("top", (d3.mouse(this)[1] - 40) + "px")
                                             .style("left", (d3.mouse(this)[0] + 40) + "px");
 
-
+                                    old_x = d3.event.x;
+                                    old_y = d3.event.y;
                                 })
                                 .on('mousemove', function(){
+                                    var new_x = d3.event.x;
+                                    var new_y = d3.event.y;
+                                    var x_difference = new_x - old_x;
+                                    var y_difference = new_y - old_y;
 
+                                    old_x = new_x;
+                                    old_y = new_y;
+
+                                    div_tooltip.style('top', function () {
+                                                var top = parseInt(div_tooltip.style('top'));
+                                                top = top + y_difference;
+                                                return top + 'px';
+                                            })
+                                            .style('left', function () {
+                                                var left = parseInt(div_tooltip.style('left'));
+                                                left = left + x_difference;
+                                                return left + 'px';
+                                            });
                                 })
                                 .on('mouseleave', function () {
                                     div_tooltip.remove();
