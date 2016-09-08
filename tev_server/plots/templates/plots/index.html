@@ -4491,11 +4491,9 @@
                         }
                         else {
                             var temp_svg = d3.select('#mini_fishplot_svg'+index);
-                            temp_svg.html('');
+                            d3.selectAll('#fishplot_area' + index).remove();
                             var temp_nested_data = mini_nested_data[index];
                             generate_mini_fishplot_top_and_bottom([temp_nested_data], y_max);
-                            console.log(temp_nested_data);
-
 
                             temp_svg.append('path')
                                     .attr('id', 'fishplot_area' + index)
