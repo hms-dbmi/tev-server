@@ -4373,22 +4373,73 @@
                 var width = el.clientWidth;
                 var data = scope.data;
 
+                var fill_colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
+                    '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928'];
+
                 scope.$watch('data', function(updated_data){
                     d3.selectAll('table').remove();
                     d3.selectAll('h2').remove();
                     data = updated_data;
-                    var nested_data =  d3.nest().key(function(d){
+                    var nested_data = d3.nest().key(function (d) {
                         return d.allele;
                     }).entries(data);
+
+                    nested_data = sort_nested_alleles(nested_data);
 
                     var timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
                     timepoints = timepoints.sort(function(a, b){
                        return a-b;
                     });
 
+                    var num_of_timepoints = timepoints.length;
+
+                    var fishplot_data = [];
+
+                    nested_data.forEach(function (d, i) {
+                        var allele_data = {};
+                        allele_data['allele'] = d.key;
+                        allele_data['freqs'] = [];
+                        var freqs = d.values;
+                        for (var j = 0; j < freqs.length; j++) {
+                            allele_data['freqs'].push(freqs[j].alt_count);
+                        }
+                        fishplot_data.push(allele_data);
+                    });
+
+                    //Sorting data by what can fit in what
+                    var sort_array = [];
+                    for (var i = 0; i < fishplot_data.length; i++) {
+                        //Have to rank when ordering, because a subclone that develops later
+                        //cannot be parent of clone that derived earlier, even if it has a higher variant allele freq
+                        var ranking_adjustment = Math.pow(10, num_of_timepoints);
+                        var allele_freqs = fishplot_data[i].freqs;
+                        for (var j = 1; j < allele_freqs.length; j++) {
+                            if (allele_freqs[j] != 0) {
+                                var rank = ranking_adjustment * allele_freqs[j];
+                                sort_array.push({
+                                    allele: fishplot_data[i].allele,
+                                    rank: rank
+                                });
+                                break;
+                            }
+                            ranking_adjustment = ranking_adjustment / 10;
+                        }
+                    }
+
+                    sort_array.sort(function (a, b) {
+                        return b.rank - a.rank;
+                    });
+
+                    nested_data = order_by_rank(nested_data, sort_array);
+
+                    //Any initial attributes on alleles will be applied within this for loop
+                    for (var i = 0; i < nested_data.length; i++) {
+                        nested_data[i].color = fill_colors[nested_data[i].values[0].cluster - 1];
+                    }
+
                     d3.select(el).append('h2').style('text-align', 'center').html('VAF of Alleles at Each Timepoint');
 
-                    var table = d3.select(el).append('table').attr('class', 'table-bordered')
+                    var table = d3.select(el).append('table').attr('class', 'table table-bordered')
                             .style('table-layout', 'fixed');
 
                     var header1 = table.append('thead').append('tr');
@@ -4410,7 +4461,10 @@
 
                     for(var i = 0; i < nested_data.length; i++){
                         var table_data = d3.select('#tbody-editor-table').append('tr').attr('id', 'tr'+i);
-                        d3.select('#tr'+i).append('td').style('text-align', 'center').html(nested_data[i].key);
+                        d3.select('#tr'+i).append('td')
+                                .attr('bgcolor', nested_data[i].color)
+                                .style('text-align', 'center')
+                                .html(nested_data[i].key);
                         for(var j = 0; j < timepoints.length; j++){
                             d3.select('#tr'+i).append('td')
                                     .style('text-align', 'center')
