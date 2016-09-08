@@ -736,6 +736,7 @@
                 $scope.alleles = [];
                 $scope.subject_id = '';
                 $scope.saved_fishplot_names = [];
+                $scope.updated_editor_info = [];
 
                 var source_uuid = '{{ source }}';
                 var dendro_data = {{ d3_dendro_data|safe }};
@@ -2048,7 +2049,8 @@
             return {
                 restrict: 'A',
                 scope: {
-                    data: '='
+                    data: '=',
+                    values: '='
                 },
                 link: link
             };
@@ -4345,6 +4347,34 @@
                                 return button_width + 'px';
                             });
 
+                    scope.$watch('values', function(new_values){
+                        var allele = new_values[0];
+                        var timepoint = new_values[1];
+                        if(!isNaN(parseInt(timepoint))){
+                            timepoint = parseInt(timepoint);
+                        }
+                        var vaf = new_values[2];
+                        from_table_update_nested_data(canvas_nested_data, mini_nested_data, allele, timepoint, vaf);
+                        console.log(canvas_nested_data);
+
+                    });
+
+                    function from_table_update_nested_data(canvas_nested_data, mini_nested_data, allele, timepoint, vaf) {
+                        for(var i = 0; i < canvas_nested_data.length; i++){
+                            if(canvas_nested_data[i].key == allele){
+                                var canvas_data = canvas_nested_data[i];
+                                var mini_data = mini_nested_data[i];
+                                for(var j = 0; j < canvas_data.values.length; j++){
+                                    if(canvas_data.values[j].Sample_Barcode == timepoint){
+                                        canvas_data.values[j].alt_count = vaf;
+                                        mini_data.values[j].alt_count = vaf;
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
 
 
                     canvas_svg.append("svg:g")
@@ -4372,6 +4402,7 @@
                 var height = el.clientHeight;
                 var width = el.clientWidth;
                 var data = scope.data;
+                var info = scope.values;
 
                 var fill_colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
                     '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928'];
@@ -4468,11 +4499,44 @@
                         for(var j = 0; j < timepoints.length; j++){
                             d3.select('#tr'+i).append('td')
                                     .style('text-align', 'center')
-                                    .html(nested_data[i].values[j].alt_count + '%');
+                                    .attr('value', nested_data[i].values[j].alt_count)
+                                    .attr('timepoint', timepoints[j])
+                                    .attr('allele', nested_data[i].key)
+                                    .html(nested_data[i].values[j].alt_count + '%')
+                                    .on('dblclick', function(){
+                                        var alt_count = d3.select(this).attr('value');
+                                        var current_td = d3.select(this);
+                                        current_td.html(' ');
+                                        var form = current_td.append('form');
+                                                form.append('input')
+                                                .attr('type', 'number')
+                                                .attr('min', '0')
+                                                .attr('max', '100')
+                                                .attr('value', alt_count)
+                                                .on('keydown', function(){
+                                                    if(d3.event.keyCode == 13) {
+                                                        d3.event.preventDefault();
+                                                        if(!isNaN(parseInt(d3.select(this).node().value))){
+                                                            var new_vaf = parseInt(d3.select(this).node().value);
+                                                            current_td.innerHTML = '';
+                                                            current_td.attr('value', new_vaf).html(new_vaf + '%');
+                                                            var updated_info = [current_td.attr('allele'),
+                                                                    current_td.attr('timepoint'),
+                                                                    new_vaf];
+                                                            //update with parent scope with info on the allele, timepoint,
+                                                            //and new VAF
+                                                            //updated_editor_info will be used to communicate between the table
+                                                            //and the fishplo editor
+                                                            scope.$apply(function() {
+                                                                scope.$parent.updated_editor_info = updated_info;
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                        form.append('label').html('%');
+                                    });
                         }
                     }
-
-
 
                 });
 
@@ -4609,7 +4673,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                 </div>
             </div>
             <div class="row">
-                <div id="figure6" fishplot-editor data="alleleified_data"
+                <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info"
                      style="width: 100%; height: 600px; float: left; overflow: hidden;">
                 </div>
             </div>
