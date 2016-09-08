@@ -22,6 +22,10 @@
         font-size: large;
     }
 
+    tr [colspan="2"] {
+        text-align: center;
+    }
+
     /* bootstrap hack end */
 
     .axis path, .axis line {
@@ -4354,6 +4358,73 @@
             }
         }]);
 
+        tevApp.directive('editorTable', function () {
+            return {
+                restrict: 'A',
+                scope: {
+                    data: '='
+                },
+                link: link
+            };
+
+            function link(scope, element) {
+                var el = element[0];
+                var height = el.clientHeight;
+                var width = el.clientWidth;
+                var data = scope.data;
+
+                scope.$watch('data', function(updated_data){
+                    d3.selectAll('table').remove();
+                    d3.selectAll('h2').remove();
+                    data = updated_data;
+                    var nested_data =  d3.nest().key(function(d){
+                        return d.allele;
+                    }).entries(data);
+
+                    var timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
+                    timepoints = timepoints.sort(function(a, b){
+                       return a-b;
+                    });
+
+                    d3.select(el).append('h2').style('text-align', 'center').html('VAF of Alleles at Each Timepoint');
+
+                    var table = d3.select(el).append('table').attr('class', 'table-bordered')
+                            .style('table-layout', 'fixed');
+
+                    var header1 = table.append('thead').append('tr');
+                    header1.append('th').html(' ');
+                    header1.append('th').style('align', 'center').attr('colspan', timepoints.length).html('Timepoints');
+
+                    var tbody = table.append('tbody').attr('id', 'tbody-editor-table').append('tr');
+                    tbody.append('td').attr('align', 'center').html('<b> Alleles </b>');
+
+                    for(var i = 0; i < timepoints.length; i++){
+                        if(Number.isInteger(timepoints[i]) == true){
+                            var timepoint = 'Day ' + timepoints[i];
+                        }
+                        else{
+                            timepoint = timepoints[i];
+                        }
+                        tbody.append('td').attr('align', 'center').html('<b>' + timepoint + '</b>');
+                    }
+
+                    for(var i = 0; i < nested_data.length; i++){
+                        var table_data = d3.select('#tbody-editor-table').append('tr').attr('id', 'tr'+i);
+                        d3.select('#tr'+i).append('td').style('text-align', 'center').html(nested_data[i].key);
+                        for(var j = 0; j < timepoints.length; j++){
+                            d3.select('#tr'+i).append('td')
+                                    .style('text-align', 'center')
+                                    .html(nested_data[i].values[j].alt_count + '%');
+                        }
+                    }
+
+
+
+                });
+
+            }
+        })
+
     })();
 
     function pack_nested_data(nested_data, fishplots_used){
@@ -4474,8 +4545,19 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 <div id="editor-div" class="tab-pane">
     <div class="row">
         <div id="editor-wrapper" class="col-lg-12 col-md-12 col-sm-12">
-            <div id="figure6" fishplot-editor data="alleleified_data"
-                 style="width: 100%; height: 600px; float: left; overflow: hidden;">
+            <div class="row">
+                <div id="figure1" figure1-plot data="clustered_alleleified_data"
+                     style="height: 600px; width: 100%; float:left;">
+                </div>
+            </div>
+            <div class="row">
+                <div id="figure7" editor-table data="alleleified_data" style="width: 100%; float: left;">
+                </div>
+            </div>
+            <div class="row">
+                <div id="figure6" fishplot-editor data="alleleified_data"
+                     style="width: 100%; height: 600px; float: left; overflow: hidden;">
+                </div>
             </div>
 
             <div id="context-div" cm-showing="false" class="btn-group-vertical" style="z-index: -1; opacity: 0; position: absolute;">
