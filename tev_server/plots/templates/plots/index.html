@@ -2144,7 +2144,8 @@
                 restrict: 'A',
                 scope: {
                     data: '=',
-                    values: '='
+                    values: '=',
+                    colors: '='
                 },
                 link: link
             };
@@ -2154,10 +2155,12 @@
                 var el = element[0];
                 var width = el.clientWidth;
                 var height = el.clientHeight;
+                var color_ref = scope.colors;
 
 
-                var fill_colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
-                    '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928'];
+                scope.$watch('colors', function(new_colors){
+                    color_ref = new_colors;
+                });
 
                 scope.$watch('data', function (updated_data) {
                     d3.select(el).selectAll('svg').remove();
@@ -2256,10 +2259,10 @@
                         canvas_nested_data[i].index = i;
                         canvas_nested_data[i].ploidy = 2;
                         canvas_nested_data[i].chrs_affected = 'N/A';
-                        canvas_nested_data[i].color = fill_colors[canvas_nested_data[i].values[0].cluster-1];
+                        canvas_nested_data[i].color = color_ref[canvas_nested_data[i].values[0].parent_allele];
 
                         mini_nested_data[i].ploidy = 2;
-                        mini_nested_data[i].color = fill_colors[mini_nested_data[i].values[0].cluster-1];
+                        mini_nested_data[i].color = color_ref[mini_nested_data[i].values[0].parent_allele];
                     }
 
                     //Add input for purity atop the canvas
@@ -3037,7 +3040,7 @@
 
                                                 canvas_svg.append('path')
                                                         .datum(current_data.values)
-                                                        .attr('fill', fill_colors[current_data.values[0].cluster - 1])
+                                                        .attr('fill', color_ref[current_data.values[0].parent_allele])
                                                         .attr('opacity', 1)
                                                         .attr('class', 'big_fish dropdown-toggle')
                                                         .attr('d', canvas_area_between_lines)
@@ -3357,7 +3360,7 @@
 
                                                 canvas_svg.append('path')
                                                         .datum(current_data.values)
-                                                        .attr('fill', fill_colors[current_data.values[0].cluster - 1])
+                                                        .attr('fill', color_ref[current_data.values[0].parent_allele])
                                                         .attr('opacity', 1)
                                                         .attr('class', 'big_fish dropdown-toggle')
                                                         .attr('d', canvas_area_between_lines)
@@ -3962,7 +3965,7 @@
 
                             canvas_svg.append('path')
                                     .datum(current_data.values)
-                                    .attr('fill', fill_colors[current_data.values[0].cluster - 1])
+                                    .attr('fill', color_ref[current_data.values[0].parent_allele])
                                     .attr('opacity', 1)
                                     .attr('class', 'big_fish dropdown-toggle')
                                     .attr('d', canvas_area_between_lines)
@@ -4374,7 +4377,7 @@
 
                                     canvas_svg.append('path')
                                             .datum(current_data.values)
-                                            .attr('fill', fill_colors[current_data.values[0].cluster - 1])
+                                            .attr('fill', color_ref[current_data.values[0].parent_allele])
                                             .attr('opacity', 1)
                                             .attr('class', 'big_fish dropdown-toggle')
                                             .attr('d', canvas_area_between_lines)
@@ -4738,7 +4741,8 @@
             return {
                 restrict: 'A',
                 scope: {
-                    data: '='
+                    data: '=',
+                    colors: '='
                 },
                 link: link
             };
@@ -4750,8 +4754,11 @@
                 var data = scope.data;
                 var info = scope.values;
 
-                var fill_colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
-                    '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928'];
+                var color_ref = scope.colors;
+
+                scope.$watch('colors', function(new_colors){
+                    color_ref = new_colors;
+                });
 
                 scope.$watch('data', function(updated_data){
                     d3.selectAll('table').remove();
@@ -4811,7 +4818,7 @@
 
                     //Any initial attributes on alleles will be applied within this for loop
                     for (var i = 0; i < nested_data.length; i++) {
-                        nested_data[i].color = fill_colors[nested_data[i].values[0].cluster - 1];
+                        nested_data[i].color = color_ref[nested_data[i].values[0].parent_allele];
                     }
 
                     d3.select(el).append('h2').style('text-align', 'center').html('VAF of Alleles at Each Timepoint');
@@ -5016,16 +5023,16 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
     <div class="row">
         <div id="editor-wrapper" class="col-lg-12 col-md-12 col-sm-12">
             <div class="row">
-                <div id="figure1" figure1-plot data="clustered_alleleified_data"
+                <div id="figure1" figure1-plot data="clustered_alleleified_data" colors="color_ref"
                      style="height: 600px; width: 100%; float:left;">
                 </div>
             </div>
             <div class="row">
-                <div id="figure7" editor-table data="alleleified_data" style="width: 100%; float: left;">
+                <div id="figure7" editor-table data="alleleified_data" colors="color_ref" style="width: 100%; float: left;">
                 </div>
             </div>
             <div class="row">
-                <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info"
+                <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info" colors="color_ref"
                      style="width: 100%; height: 600px; float: left; overflow: hidden;">
                 </div>
             </div>
