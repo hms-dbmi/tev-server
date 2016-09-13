@@ -3070,12 +3070,12 @@
                                                                 d3.select('#context-div').attr('cm-showing', 'true');
                                                                 contextMenuShowing = true;
                                                                 d3.select('#context-div').style('left', function () {
-                                                                            var left = d3.event.pageX - d3.select(el).node().offsetLeft;
+                                                                            var left = d3.event.pageX;
                                                                             return left + 'px';
                                                                         })
                                                                         .style('top', function () {
                                                                             //-75 pixels because of navbar padding
-                                                                            var top = d3.event.pageY - d3.select(el).node().offsetTop - 75;
+                                                                            var top = d3.event.pageY - 75;
                                                                             return top + 'px';
                                                                         })
                                                                         .style('z-index', 10)
@@ -3390,12 +3390,12 @@
                                                                 contextMenuShowing = true;
                                                                 d3.select('#context-div').attr('cm-showing', 'true');
                                                                 d3.select('#context-div').style('left', function () {
-                                                                            var left = d3.event.pageX - d3.select(el).node().offsetLeft;
+                                                                            var left = d3.event.pageX;
                                                                             return left + 'px';
                                                                         })
                                                                         .style('top', function () {
                                                                             //-75 pixels because of navbar padding
-                                                                            var top = d3.event.pageY - d3.select(el).node().offsetTop - 75;
+                                                                            var top = d3.event.pageY - 75;
                                                                             return top + 'px';
                                                                         })
                                                                         .style('z-index', 10)
@@ -3995,12 +3995,12 @@
                                             d3.select('#context-div').attr('cm-showing', 'true');
                                             contextMenuShowing = true;
                                             d3.select('#context-div').style('left', function () {
-                                                        var left = d3.event.pageX - d3.select(el).node().offsetLeft;
+                                                        var left = d3.event.pageX;
                                                         return left + 'px';
                                                     })
                                                     .style('top', function () {
                                                         //-75 pixels because of navbar padding
-                                                        var top = d3.event.pageY - d3.select(el).node().offsetTop - 75;
+                                                        var top = d3.event.pageY - 75;
                                                         return top + 'px';
                                                     })
                                                     .style('z-index', 10)
@@ -4407,12 +4407,12 @@
                                                     d3.select('#context-div').attr('cm-showing', 'true');
                                                     contextMenuShowing = true;
                                                     d3.select('#context-div').style('left', function () {
-                                                                var left = d3.event.pageX - d3.select(el).node().offsetLeft;
+                                                                var left = d3.event.pageX;
                                                                 return left + 'px';
                                                             })
                                                             .style('top', function () {
                                                                 //-75 pixels because of navbar padding
-                                                                var top = d3.event.pageY - d3.select(el).node().offsetTop - 75;
+                                                                var top = d3.event.pageY - 75;
                                                                 return top + 'px';
                                                             })
                                                             .style('z-index', 10)
