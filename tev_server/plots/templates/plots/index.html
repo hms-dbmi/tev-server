@@ -2947,8 +2947,8 @@
                                         if (fit) {
 
                                             svg_index = mini_fishplot.attr('index');
-                                            d3.select('#fishplot_area'+ svg_index).attr('opacity', 1);
 
+                                            d3.selectAll('.fishplot_areas').attr('opacity', 1);
                                             d3.select('#mini_fishplot_div' + svg_index).style('opacity', 0.35);
                                             d3.select('#dragable_div').remove();
 
@@ -3281,7 +3281,7 @@
                                         if (fit) {
 
                                             svg_index = mini_fishplot.attr('index');
-                                            d3.select('#fishplot_area'+ svg_index).attr('opacity', 1);
+                                            d3.selectAll('.fishplot_areas').attr('opacity', 1);
 
                                             d3.select('#mini_fishplot_div' + svg_index).style('opacity', 0.35);
                                             d3.select('#dragable_div').remove();
@@ -3671,20 +3671,20 @@
 
 
                     svgs.append('path')
+                            .attr('id', function(d, i){
+                                return 'fishplot_area'+i;
+                            })
+                            .attr('opacity', 1)
                             .attr('fill', function (d) {
                                 return d.color;
                             })
                             .datum(function (d) {
                                 return d.values;
                             })
-                            .attr('opacity', 1)
                             .attr('d', area_between_lines)
-                            .attr('id', function(d, i){
-                                return 'fishplot_area'+i
-                            })
                             .attr('class', 'fishplot_areas')
                             .on('mousedown', function (d, i) {
-                                d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                d3.selectAll('.fishplot_areas').attr('opacity', 1);
                                 var div_id = '#mini_fishplot_div' + i;
                                 var svg_id = '#mini_fishplot_svg' + i;
                                 var mini_fishplot = d3.select(svg_id);
@@ -3743,8 +3743,7 @@
                                 old_y_pos = d3.event.y;
 
                                 dragging = true;
-
-                                d3.select('#fishplot_area'+i).attr('opacity', 0);
+                                d3.select(this).attr('opacity', 0);
 
                                 d3.select('#dragable_div').style('pointer-events', 'none')
                                         //give mouseup remove functionality
@@ -4501,20 +4500,20 @@
 
 
                             svgs.append('path')
+                                    .attr('id', function (d, i) {
+                                        return 'fishplot_area' + i
+                                    })
+                                    .attr('opacity', 1)
                                     .attr('fill', function (d) {
                                         return d.color;
                                     })
                                     .datum(function (d) {
                                         return d.values;
                                     })
-                                    .attr('opacity', 1)
                                     .attr('d', area_between_lines)
-                                    .attr('id', function (d, i) {
-                                        return 'fishplot_area' + i
-                                    })
                                     .attr('class', 'fishplot_areas')
                                     .on('mousedown', function (d, i) {
-                                        d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                        d3.selectAll('.fishplot_areas').attr('opacity', 1);
                                         var div_id = '#mini_fishplot_div' + i;
                                         var svg_id = '#mini_fishplot_svg' + i;
                                         var mini_fishplot = d3.select(svg_id);
@@ -4573,8 +4572,7 @@
                                         old_y_pos = d3.event.y;
 
                                         dragging = true;
-
-                                        d3.select('#fishplot_area' + i).attr('opacity', 0);
+                                        d3.select(this).attr('opacity', 0);
 
                                         d3.select('#dragable_div').style('pointer-events', 'none')
                                                 //give mouseup remove functionality
@@ -4615,17 +4613,17 @@
 
 
                             temp_svg.append('path')
+                                    .attr('id', 'fishplot_area' + index)
+                                    .attr('opacity', 1)
                                     .attr('fill', temp_nested_data.color)
                                     .datum(function () {
                                         return temp_nested_data.values;
                                     })
-                                    .attr('opacity', 1)
                                     .attr('d', area_between_lines)
-                                    .attr('id', 'fishplot_area' + index)
                                     .attr('class', 'fishplot_areas')
                                     .on('mousedown', function () {
                                         var i = index;
-                                        d3.selectAll('.mini_fishplots').attr('opacity', 1);
+                                        d3.selectAll('.fishplot_areas').attr('opacity', 1);
                                         var div_id = '#mini_fishplot_div' + i;
                                         var svg_id = '#mini_fishplot_svg' + i;
                                         var mini_fishplot = d3.select(svg_id);
@@ -4684,8 +4682,7 @@
                                         old_y_pos = d3.event.y;
 
                                         dragging = true;
-
-                                        d3.select('#fishplot_area' + i).attr('opacity', 0);
+                                        d3.select(this).attr('opacity', 0);
 
                                         d3.select('#dragable_div').style('pointer-events', 'none')
                                                 //give mouseup remove functionality
