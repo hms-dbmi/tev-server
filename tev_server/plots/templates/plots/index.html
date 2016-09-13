@@ -20,6 +20,7 @@
     .title-text {
         font-family: Arial, Helvetica, sans-serif;
         font-size: large;
+        text-decoration: underline;
     }
 
     tr [colspan="2"] {
@@ -3046,8 +3047,8 @@
                                                         .attr('d', canvas_area_between_lines)
                                                         .attr('index', current_data.index)
                                                         .attr('id', 'big_fish'+current_data.index)
+                                                        .style('cursor', 'pointer')
                                                         .on('mouseenter', function (d) {
-                                                            d3.select(this).attr('opacity', 0.75);
                                                             moused_over = parseInt(d3.select(this).attr('index'));
                                                         })
                                                         .on('mouseleave', function () {
@@ -3366,8 +3367,8 @@
                                                         .attr('d', canvas_area_between_lines)
                                                         .attr('index', current_data.index)
                                                         .attr('id', 'big_fish'+current_data.index)
+                                                        .style('cursor', 'pointer')
                                                         .on('mouseenter', function (d) {
-                                                            d3.select(this).attr('opacity', 0.75);
                                                             moused_over = parseInt(d3.select(this).attr('index'));
                                                         })
                                                         .on('mouseleave', function () {
@@ -3970,8 +3971,8 @@
                                     .attr('d', canvas_area_between_lines)
                                     .attr('index', current_data.index)
                                     .attr('id', 'big_fish' + current_data.index)
+                                    .style('cursor', 'pointer')
                                     .on('mouseenter', function (d) {
-                                        d3.select(this).attr('opacity', 0.75);
                                         moused_over = parseInt(d3.select(this).attr('index'));
                                     })
                                     .on('mouseleave', function () {
@@ -4382,8 +4383,8 @@
                                             .attr('d', canvas_area_between_lines)
                                             .attr('index', current_data.index)
                                             .attr('id', 'big_fish' + current_data.index)
+                                            .style('cursor', 'pointer')
                                             .on('mouseenter', function (d) {
-                                                d3.select(this).attr('opacity', 0.75);
                                                 moused_over = parseInt(d3.select(this).attr('index'));
                                             })
                                             .on('mouseleave', function () {
