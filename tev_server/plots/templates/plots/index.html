@@ -4226,32 +4226,44 @@
                                 d3.select('#get-fishplot-modal-body').html('');
 
                                 $http.get('../api/v1/saved_fishplot_subject_ids/').success(function(data){
-                                    data = $filter('filter')(data, {'subject_id': subject_id})[0].saved_as;
-
-                                    //save data to figure6 scope, so we can access it once the user chooses it
-                                    scope.loaded_data = data;
+                                    data = $filter('filter')(data, {'subject_id': subject_id})[0];
 
                                     d3.select('#get-fishplot-modal-body').html('');
+                                    d3.select('#get_fishplot_button').html('Choose');
 
-                                    //get all of the options (names they were saved as), and put in a select dropdown
-                                    var select = d3.select('#get-fishplot-modal-body').append('select')
-                                            .attr('id', 'select-list')
-                                            .attr('class', 'form-control');
+                                    if(data != undefined) {
+                                        //save data to figure6 scope, so we can access it once the user chooses it
+                                        data = data.saved_as;
+                                        scope.loaded_data = data;
 
-                                    var placeholder = select.append('option')
-                                            .append('attr', 'selected')
-                                            .append('attr', 'disabled')
-                                            .html('Select a fishplot');
+                                        //get all of the options (names they were saved as), and put in a select dropdown
+                                        var select = d3.select('#get-fishplot-modal-body').append('select')
+                                                .attr('id', 'select-list')
+                                                .attr('class', 'form-control');
 
-                                    var options = select.selectAll('saved_names')
-                                            .data(data)
-                                            .enter()
-                                            .append('option')
-                                            .html(function(d){
-                                                return d.name;
-                                            });
+                                        var placeholder = select.append('option')
+                                                .append('attr', 'selected')
+                                                .append('attr', 'disabled')
+                                                .html('Select a fishplot');
 
-                                    $('#get_fishplot_modal').modal('show');
+                                        var options = select.selectAll('saved_names')
+                                                .data(data)
+                                                .enter()
+                                                .append('option')
+                                                .html(function (d) {
+                                                    return d.name;
+                                                });
+
+                                        $('#get_fishplot_modal').modal('show');
+                                    }
+                                    else{
+                                        d3.select('#get_fishplot_button').html('Okay');
+                                        d3.select('#get-fishplot-modal-body')
+                                                .append('p')
+                                                .html('There are no recorded fishplots for this patient.');
+
+                                        $('#get_fishplot_modal').modal('show');
+                                    }
                                 });
                             });
 
