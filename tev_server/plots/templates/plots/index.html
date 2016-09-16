@@ -64,6 +64,16 @@
         border-radius: 8px;
     }
 
+    /* Hide arrows in number inputs */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        margin: 0;
+    }
+
+    /* When mini fishplot is being dragged (mousedown -> mousemove), prevent any other mouse operations */
     .noselect {
         -webkit-touch-callout: none;
         -webkit-user-select: none;
