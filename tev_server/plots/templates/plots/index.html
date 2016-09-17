@@ -420,19 +420,19 @@
     }
 
     //Is one < 0 or > 100?
-    function parent_border_collision_detection(parent, start_point, min, max) {
+    function parent_border_collision_detection(parent, start_point, min, max, measure) {
         for (var j = 0; j < parent.values.length; j++) {
-            if ((start_point - parent.values[j].alt_count / 2) < min) {
+            if ((start_point - parent.values[j][measure] / 2) < min) {
                 parent.values[j].bottom = min;
-                parent.values[j].top = parent.values[j].alt_count;
+                parent.values[j].top = parent.values[j][measure];
             }
-            else if ((start_point + parent.values[j].alt_count / 2) > max) {
+            else if ((start_point + parent.values[j][measure] / 2) > max) {
                 parent.values[j].top = max;
-                parent.values[j].bottom = max - parent.values[j].alt_count;
+                parent.values[j].bottom = max - parent.values[j][measure];
             }
             else {
-                parent.values[j].top = (start_point + parent.values[j].alt_count / 2);
-                parent.values[j].bottom = (start_point - parent.values[j].alt_count / 2);
+                parent.values[j].top = (start_point + parent.values[j][measure] / 2);
+                parent.values[j].bottom = (start_point - parent.values[j][measure] / 2);
             }
         }
         return parent;
@@ -440,12 +440,12 @@
 
 
     //pass in nestedData, and the index representing the timepoint
-    function collision_detection(data, children, timepoint_index, min, max) {
+    function collision_detection(data, children, timepoint_index, min, max, measure) {
         var range = max - min;
         var total_alt_counts = 0;
         for (var i = 0; i < children.length; i++) {
             //loop through children, and see where we can move the tops and bottoms
-            total_alt_counts = data[children[i]].values[timepoint_index].alt_count + total_alt_counts;
+            total_alt_counts = data[children[i]].values[timepoint_index][measure] + total_alt_counts;
         }
         var space = (range - total_alt_counts);
         space = space / (children.length + 1);
@@ -454,7 +454,7 @@
 
         for (var i = 0; i < children.length; i++) {
             data[children[i]].values[timepoint_index].bottom = new_bottom;
-            data[children[i]].values[timepoint_index].top = new_bottom + data[children[i]].values[timepoint_index].alt_count;
+            data[children[i]].values[timepoint_index].top = new_bottom + data[children[i]].values[timepoint_index][measure];
             data[children[i]].values[timepoint_index].pinch_point = (data[children[i]].values[timepoint_index].top
                     + data[children[i]].values[timepoint_index].bottom) / 2;
             new_bottom = data[children[i]].values[timepoint_index].top + space;
@@ -465,13 +465,13 @@
 
     //Find if there are any conflicts with the adjusted borders for the independent evolutions
     //And adjust the borders if there are any conflicts
-    function adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints) {
+    function adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints, measure) {
         for (var i = 0; i < num_of_timepoints + 1; i++) {
             for (var j = 1; j < plot_background.children.length; j++) {
                 var last_top = nestedData[plot_background.children[j - 1]].values[i].top;
                 var current_bottom = nestedData[plot_background.children[j]].values[i].bottom;
                 if (current_bottom < last_top) {
-                    nestedData = collision_detection(nestedData, plot_background.children, i, 0, 100);
+                    nestedData = collision_detection(nestedData, plot_background.children, i, 0, 100, measure);
                     break;
                 }
             }
@@ -480,7 +480,7 @@
 
 
     //Adjust children top and bottom based on parents
-    function adjust_children_positioning(nestedData, num_of_timepoints) {
+    function adjust_children_positioning(nestedData, num_of_timepoints, measure) {
         for (var i = 0; i < nestedData.length; i++) {
             var parent_index = nestedData[i].parent_index_of_this;
             //Added || != 'none' to satisfy fishplot editor (Had to add separate if statement for some reason??)
@@ -497,27 +497,27 @@
                         for (var j = 0; j < children.length; j++) {
                             var child = nestedData[children[j]];
                             for (var k = 0; k < child.values.length; k++) {
-                                var start_point_space = parent.values[k].alt_count / children.length;
+                                var start_point_space = parent.values[k][measure] / children.length;
                                 var start_point_base = start_point_space / 2;
                                 child.start_point = start_point_base + (start_point_space * j) + parent.values[k].bottom;
                                 child.values[k].start_point = child.start_point;
-                                if ((child.start_point - child.values[k].alt_count / 2) < parent.values[k].bottom) {
+                                if ((child.start_point - child.values[k][measure] / 2) < parent.values[k].bottom) {
                                     child.values[k].bottom = parent.values[k].bottom;
-                                    child.values[k].top = child.values[k].bottom + child.values[k].alt_count;
+                                    child.values[k].top = child.values[k].bottom + child.values[k][measure];
                                 }
-                                else if (( child.start_point + child.values[k].alt_count / 2) > parent.values[k].top) {
+                                else if (( child.start_point + child.values[k][measure] / 2) > parent.values[k].top) {
                                     child.values[k].top = parent.values[k].top;
-                                    child.values[k].bottom = child.values[k].top - child.values[k].alt_count;
+                                    child.values[k].bottom = child.values[k].top - child.values[k][measure];
                                 }
                                 else {
-                                    child.values[k].top = (child.start_point + child.values[k].alt_count / 2);
-                                    child.values[k].bottom = (child.start_point - child.values[k].alt_count / 2);
+                                    child.values[k].top = (child.start_point + child.values[k][measure] / 2);
+                                    child.values[k].bottom = (child.start_point - child.values[k][measure] / 2);
                                 }
                             }
                             child.start_point = child.values[0].bottom;
                         }
                         for (var j = 0; j < num_of_timepoints + 1; j++) {
-                            nestedData = collision_detection(nestedData, children, j, parent.values[j].bottom, parent.values[j].top);
+                            nestedData = collision_detection(nestedData, children, j, parent.values[j].bottom, parent.values[j].top, measure);
                         }
                     }
                 }
@@ -2115,12 +2115,12 @@
                     for(var i = 0; i < plot_background.children.length; i++) {
                         var parent = nestedData[plot_background.children[i]];
                         var start_point = parent.start_point;
-                        nestedData[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                        nestedData[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
                     }
 
-                    adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints);
+                    adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints, 'alt_count');
 
-                    nestedData = adjust_children_positioning(nestedData, num_of_timepoints);
+                    nestedData = adjust_children_positioning(nestedData, num_of_timepoints, 'alt_count');
 
                     //load pinches
                     for(var i = 0; i < nestedData.length; i++){
@@ -3117,10 +3117,10 @@
                                             for (var i = 0; i < plot_background.children.length; i++) {
                                                 var parent = nested_data[plot_background.children[i]];
                                                 var start_point = parent.start_point;
-                                                nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                                                nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
                                             }
 
-                                            adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
+                                            adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
 
                                             //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
                                             //determining CCF solutions
@@ -3129,7 +3129,7 @@
                                             nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
                                             //collision detection for children after adjusting the independent evolution positions
-                                            nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
+                                            nested_data = adjust_children_positioning(nested_data, num_of_timepoints, 'alt_count');
 
                                             //load pinches
                                             //Have to use fishplot svgs to select specific indices of nested_data
@@ -3455,10 +3455,10 @@
                                             for (var i = 0; i < plot_background.children.length; i++) {
                                                 parent = nested_data[plot_background.children[i]];
                                                 start_point = parent.start_point;
-                                                nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                                                nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
                                             }
 
-                                            adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
+                                            adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
 
                                             //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
                                             //determining CCF solutions
@@ -3467,7 +3467,7 @@
                                             nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
                                             //collision detection for children after adjusting the independent evolution positions
-                                            nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
+                                            nested_data = adjust_children_positioning(nested_data, num_of_timepoints, 'alt_count');
 
                                             set_new_start_point(canvas_nested_data, nested_data, fishplot_svgs, parent.children);
 
@@ -4250,10 +4250,10 @@
                         for (var i = 0; i < plot_background.children.length; i++) {
                             var parent = nested_data[plot_background.children[i]];
                             var start_point = parent.start_point;
-                            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
                         }
 
-                        adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
+                        adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
 
                         //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
                         //determining CCF solutions
@@ -4262,7 +4262,7 @@
                         nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
                         //collision detection for children after adjusting the independent evolution positions
-                        nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
+                        nested_data = adjust_children_positioning(nested_data, num_of_timepoints, 'alt_count');
 
                         //load pinches
                         //Have to use fishplot svgs to select specific indices of nested_data
@@ -4695,10 +4695,10 @@
                                 for (var i = 0; i < plot_background.children.length; i++) {
                                     var parent = nested_data[plot_background.children[i]];
                                     var start_point = parent.start_point;
-                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100);
+                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
                                 }
 
-                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints);
+                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
 
                                 set_new_start_point(canvas_nested_data, nested_data, fishplot_svgs, parent.children);
 
@@ -4709,7 +4709,7 @@
                                 nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
                                 //collision detection for children after adjusting the independent evolution positions
-                                nested_data = adjust_children_positioning(nested_data, num_of_timepoints);
+                                nested_data = adjust_children_positioning(nested_data, num_of_timepoints, 'alt_count');
 
                                 //load pinches
                                 //Have to use fishplot svgs to select specific indices of nested_data
@@ -4831,11 +4831,145 @@
                             .style('position', 'relative')
                             .style('float', 'left');
 
+                    function set_up_ccf_boundries(canvas_nested_data, fishplot_svgs) {
+                        for (var i = 0; i < fishplot_svgs.length; i++) {
+                            var current_allele = canvas_nested_data[fishplot_svgs[i]];
+                            var start_point = current_allele.start_point;
+                            for (var j = 0; j < current_allele.values.length; j++) {
+                                var half_ccf = current_allele.values[j].ccf / 2;
+                                current_allele.values[j].top = start_point + half_ccf;
+                                current_allele.values[j].bottom = start_point - half_ccf;
+                            }
+                        }
+                    }
+
                     var convert_to_ccf_button = convert_to_ccf_div.append('button')
                             .attr('id', 'convert_to_ccf_button')
                             .attr('class', 'btn btn-default btn-sm')
                             .html('Convert to CCF')
-                            .on('click', function(){
+                            .on('click', function () {
+                                var can_plot = can_plot_CCF(canvas_nested_data, fishplot_svgs);
+                                if (can_plot == false) {
+                                    //modal
+                                }
+                                if (can_plot) {
+                                    canvas_svg.html('');
+                                    var purity = get_purity_dict(tick_labels);
+                                    set_up_ccf_boundries(canvas_nested_data, fishplot_svgs);
+
+                                    var nested_data = canvas_nested_data.slice(0);
+
+                                    //Create shallow copy for values of each fishplot used
+                                    //Prevents find_origin function from permanently trimming allele values
+                                    update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
+
+                                    for (var i = 0; i < plot_background.children.length; i++) {
+                                        var parent = nested_data[plot_background.children[i]];
+                                        var start_point = parent.start_point;
+                                        nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'ccf');
+                                    }
+
+                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'ccf');
+
+                                    nested_data = reconstruct_data(nested_data, fishplot_svgs);
+
+                                    //collision detection for children after adjusting the independent evolution positions
+                                    nested_data = adjust_children_positioning(nested_data, num_of_timepoints, 'ccf');
+
+                                    //load pinches
+                                    //Have to use fishplot svgs to select specific indices of nested_data
+                                    //Otherwise, we prematurely clip off the origin of fishplots starting after
+                                    //The first timepoint (i.e. Pretreatment in example file)
+                                    for (var i = 0; i < fishplot_svgs.length; i++) {
+                                        var current_allele = nested_data[i];
+                                        for (var j = 0; j < current_allele.values.length; j++) {
+                                            //Initialize all pinches to false
+                                            //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
+                                            current_allele.values[j].pinch = false;
+                                        }
+                                        current_allele.values = find_origin(current_allele);
+                                    }
+
+                                    d3.selectAll('.big_fish').remove();
+
+
+                                    for (var i = 0; i < nested_data.length; i++) {
+                                        var current_data = nested_data[i];
+
+                                        canvas_svg.append('path')
+                                                .attr('fill', 'none')
+                                                .attr('stroke-width', 5)
+                                                .attr("stroke", "transparent")
+                                                .attr('class', 'big_fish')
+                                                .style("stroke-linejoin", "round")
+                                                .attr('d', function () {
+                                                    return canvas_top_line_gen(current_data.values);
+                                                });
+
+                                        canvas_svg.append('path')
+                                                .attr('fill', 'none')
+                                                .attr("stroke", "transparent")
+                                                .style("stroke-linejoin", "round")
+                                                .attr('class', 'big_fish')
+                                                .attr('stroke-width', 8)
+                                                .attr('d', function () {
+                                                    return canvas_bottom_line_gen(current_data.values);
+                                                });
+
+                                        canvas_svg.append('path')
+                                                .datum(current_data.values)
+                                                .attr('fill', color_ref[current_data.values[0].parent_allele])
+                                                .attr('opacity', 1)
+                                                .attr('class', 'big_fish dropdown-toggle')
+                                                .attr('d', canvas_area_between_lines)
+                                                .attr('index', current_data.index)
+                                                .attr('id', 'big_fish' + current_data.index)
+                                                .style('cursor', 'pointer')
+                                                .on('mouseenter', function (d) {
+                                                    moused_over = parseInt(d3.select(this).attr('index'));
+                                                })
+                                                .on('mouseleave', function () {
+                                                    d3.select(this).attr('opacity', 1);
+                                                })
+                                                .on('contextmenu', function () {
+                                                    contextMenuFor = parseInt(d3.select(this).attr('index'));
+
+                                                    //give the button an attribute to reference the fishplots they're dealing with
+                                                    //now we can invoke a function on click
+                                                    d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
+                                                    d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
+
+                                                    if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                                                        contextMenuShowing = false;
+                                                    }
+                                                    if (contextMenuShowing == false) {
+                                                        contextMenuForPrevious = contextMenuFor;
+                                                        d3.event.preventDefault();
+                                                        d3.select('#context-div').attr('cm-showing', 'true');
+                                                        contextMenuShowing = true;
+                                                        d3.select('#context-div').style('left', function () {
+                                                                    var left = d3.event.pageX;
+                                                                    return left + 'px';
+                                                                })
+                                                                .style('top', function () {
+                                                                    //-75 pixels because of navbar padding
+                                                                    var top = d3.event.pageY - 75;
+                                                                    return top + 'px';
+                                                                })
+                                                                .style('z-index', 10)
+                                                                .style('opacity', 1);
+                                                    }
+                                                    else {
+                                                        d3.event.preventDefault();
+                                                        contextMenuShowing = false;
+                                                        d3.select('#context-div').attr('cm-showing', 'false');
+                                                        d3.select('#context-div').style('opacity', 0)
+                                                                .style('z-index', -1);
+                                                    }
+                                                });
+                                    }
+
+                                }
 
                             });
 
