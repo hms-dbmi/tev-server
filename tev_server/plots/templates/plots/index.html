@@ -950,6 +950,9 @@
                 $scope.updated_editor_info = [];
                 $scope.color_ref = {};
 
+                //Check if an allele has already been plotted. For editor table... dont allow change if plotted
+                $scope.plotted = [];
+
                 var source_uuid = '{{ source }}';
                 var dendro_data = {{ d3_dendro_data|safe }};
                 var dendro_y_data = {{ dendro_y_data }};
@@ -3126,6 +3129,9 @@
                                             });
 
                                             fishplot_svgs.push(parseInt(data_index));
+                                            scope.$apply(function() {
+                                                scope.$parent.plotted = fishplot_svgs;
+                                            });
 
                                             canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
 
@@ -3451,6 +3457,9 @@
                                             d3.select('#dragable_div').remove();
 
                                             fishplot_svgs.push(parseInt(data_index));
+                                            scope.$apply(function() {
+                                                scope.$parent.plotted = fishplot_svgs;
+                                            });
 
                                             //Re-do top and bottom based on start position of parent
                                             for (var i = 0; i < num_of_timepoints; i++) {
@@ -4236,7 +4245,9 @@
                         }
 
                         remove_fishplot_relationships(current_fish, fishplot_svgs, canvas_nested_data);
-
+                        scope.$apply(function () {
+                            scope.$parent.plotted = fishplot_svgs;
+                        });
 
                         var nested_data = canvas_nested_data.slice(0);
 
@@ -4739,6 +4750,9 @@
 
                                 }
                                 fishplot_svgs.reverse();
+                                scope.$apply(function() {
+                                                scope.$parent.plotted = fishplot_svgs;
+                                            });
 
                                 var nested_data = canvas_nested_data.slice(0);
 
@@ -5340,7 +5354,8 @@
                 restrict: 'A',
                 scope: {
                     data: '=',
-                    colors: '='
+                    colors: '=',
+                    plotted: '='
                 },
                 link: link
             };
@@ -5353,9 +5368,14 @@
                 var info = scope.values;
 
                 var color_ref = scope.colors;
+                var plotted = scope.plotted;
 
                 scope.$watch('colors', function(new_colors){
                     color_ref = new_colors;
+                });
+
+                scope.$watch('plotted', function(updated_data){
+                    plotted = updated_data;
                 });
 
                 scope.$watch('data', function(updated_data){
@@ -5447,44 +5467,57 @@
                                 .attr('bgcolor', nested_data[i].color)
                                 .style('text-align', 'center')
                                 .html(nested_data[i].key);
-                        for(var j = 0; j < timepoints.length; j++){
-                            d3.select('#tr'+i).append('td')
+                        for (var j = 0; j < timepoints.length; j++) {
+                            d3.select('#tr' + i).append('td')
                                     .style('text-align', 'center')
                                     .attr('value', nested_data[i].values[j].alt_count)
                                     .attr('timepoint', timepoints[j])
                                     .attr('allele', nested_data[i].key)
+                                    .attr('index', i)
+                                    .attr('data-toggle', 'popover')
+                                    .attr('title', function(){
+                                        var allele = d3.select(this).attr('allele');
+                                        return allele + 'is already plotted';
+                                    })
+                                    .attr('data-content', "Please remove the allele from the plot to change it's VAF.")
                                     .html(nested_data[i].values[j].alt_count + '%')
-                                    .on('dblclick', function(){
+                                    .on('dblclick', function () {
+                                        var index = parseInt(d3.select(this).attr('index'));
+                                        if(plotted.indexOf(index) != -1){
+                                            
+                                            return;
+                                        }
+
                                         var alt_count = d3.select(this).attr('value');
                                         var current_td = d3.select(this);
                                         current_td.html(' ');
                                         var form = current_td.append('form');
-                                                form.append('input')
+                                        form.append('input')
                                                 .attr('type', 'number')
                                                 .attr('min', '0')
                                                 .attr('max', '100')
                                                 .attr('value', alt_count)
-                                                .on('keydown', function(){
-                                                    if(d3.event.keyCode == 13) {
+                                                .on('keydown', function () {
+                                                    if (d3.event.keyCode == 13) {
                                                         d3.event.preventDefault();
-                                                        if(!isNaN(parseInt(d3.select(this).node().value))){
+                                                        if (!isNaN(parseInt(d3.select(this).node().value))) {
                                                             var new_vaf = parseInt(d3.select(this).node().value);
-                                                            if(new_vaf > 100){
+                                                            if (new_vaf > 100) {
                                                                 new_vaf = 100;
                                                             }
-                                                            if(new_vaf < 0){
+                                                            if (new_vaf < 0) {
                                                                 new_vaf = 0;
                                                             }
                                                             current_td.innerHTML = '';
                                                             current_td.attr('value', new_vaf).html(new_vaf + '%');
                                                             var updated_info = [current_td.attr('allele'),
-                                                                    current_td.attr('timepoint'),
-                                                                    new_vaf];
+                                                                current_td.attr('timepoint'),
+                                                                new_vaf];
                                                             //update with parent scope with info on the allele, timepoint,
                                                             //and new VAF
                                                             //updated_editor_info will be used to communicate between the table
-                                                            //and the fishplo editor
-                                                            scope.$apply(function() {
+                                                            //and the fishplot editor
+                                                            scope.$apply(function () {
                                                                 scope.$parent.updated_editor_info = updated_info;
                                                             });
                                                         }
@@ -5502,8 +5535,8 @@
 
     })();
 
-    function pack_nested_data(nested_data, fishplots_used){
-        for(var i = 0; i < fishplots_used.length; i++){
+    function pack_nested_data(nested_data, fishplots_used) {
+        for (var i = 0; i < fishplots_used.length; i++) {
 
         }
     }
@@ -5626,7 +5659,8 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                 </div>
             </div>
             <div class="row">
-                <div id="figure7" editor-table data="alleleified_data" colors="color_ref" style="width: 100%; float: left;">
+                <div id="figure7" editor-table data="alleleified_data" colors="color_ref" plotted="plotted"
+                     style="width: 100%; float: left;">
                 </div>
             </div>
             <div class="row">
