@@ -114,139 +114,144 @@
         //need to update to keep track of how many times we need to recursively call this function
         var max_cells_of_this_evo = purity; //- (num_of_evos-1);
 
-        if(num_of_evos == 1 && is_child == true){
-            for(var i = 0; i < max_cells_of_this_evo+1; i++) {
-                cells_per_evo_array.push(i);
-                calculate_child_CCF(cells_per_evo_array, independent_evos, nested_data, purity, timepoints, options,
+        if(is_child == true){
+                calculate_child_CCF(independent_evos, nested_data, purity, timepoints, options,
                         timepoint_index, pre_determined_total_chrs);
-                cells_per_evo_array = [];
-            }
         }
 
         if((counter == num_of_evos) && (num_of_evos == 1)){
             return;
         }
 
-        //The following lines of this function are for generating all possible combinations of cell counts per
-        //independent clonal expansion based on the purity (or percentage of cells assigned to parent)
-        //initialize cells_per_evo_array
-        if((counter == num_of_evos) && (counter > 1)){
-            counter =  counter-1;
-            for(var i = 0; i < max_cells_of_this_evo+1; i++){
-                cells_per_evo_array.push(i);
-                find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_per_evo_array, timepoints,
-                        options, timepoint_index, is_child, null);
-                cells_per_evo_array = [];
-            }
-        }
+        if(is_child == false) {
 
-        //if this is not the last independent evolution, continue with the process
-        //generate additional combinations if the below is true
-        if((counter > 1) && (counter < num_of_evos)) {
-            counter = counter - 1;
-            for (var i = 0; i < max_cells_of_this_evo + 1; i++) {
-                var cells_array  = cells_per_evo_array.slice();
-                cells_array.push(i);
-                var sum = cells_array.reduce(function(a, b){
-                    return a+b;
-                }, 0);
-                //if we've already reached our limit, break out of the loop
-                if(sum > purity){
-                   break;
-                }
-                else {
-                    find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_array, timepoints,
+            //The following lines of this function are for generating all possible combinations of cell counts per
+            //independent clonal expansion based on the purity (or percentage of cells assigned to parent)
+            //initialize cells_per_evo_array
+            if ((counter == num_of_evos) && (counter > 1)) {
+                counter = counter - 1;
+                for (var i = 0; i < max_cells_of_this_evo + 1; i++) {
+                    cells_per_evo_array.push(i);
+                    find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_per_evo_array, timepoints,
                             options, timepoint_index, is_child, null);
+                    cells_per_evo_array = [];
                 }
             }
-        }
-        //else if we are on the last one, start checking the combinations
-        if((counter == 1) && (counter != num_of_evos)){
-            if(cells_per_evo_array.length != 0) {
-                for (var i = 0; i < max_cells_of_this_evo+1; i++) {
-                    var cells_array  = cells_per_evo_array.slice();
+
+            //if this is not the last independent evolution, continue with the process
+            //generate additional combinations if the below is true
+            if ((counter > 1) && (counter < num_of_evos)) {
+                counter = counter - 1;
+                for (var i = 0; i < max_cells_of_this_evo + 1; i++) {
+                    var cells_array = cells_per_evo_array.slice();
                     cells_array.push(i);
-                    sum = cells_array.reduce(function (a, b) {
+                    var sum = cells_array.reduce(function (a, b) {
                         return a + b;
                     }, 0);
-                    if(sum > purity){
+                    //if we've already reached our limit, break out of the loop
+                    if (sum > purity) {
                         break;
                     }
-                    //if we have a good combination, see if it is possible to calculate the cancer cell fraction
-                    if ((sum == purity) && (cells_array.length == num_of_evos)) {
-                        //function to see if there is a solution using the given ploidys
-                        calculate_CCF(cells_array, independent_evos, nested_data, purity, timepoints, options, timepoint_index);
-                    }
                     else {
-                        continue;
+                        find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_array, timepoints,
+                                options, timepoint_index, is_child, null);
+                    }
+                }
+            }
+            //else if we are on the last one, start checking the combinations
+            if ((counter == 1) && (counter != num_of_evos)) {
+                if (cells_per_evo_array.length != 0) {
+                    for (var i = 0; i < max_cells_of_this_evo + 1; i++) {
+                        var cells_array = cells_per_evo_array.slice();
+                        cells_array.push(i);
+                        sum = cells_array.reduce(function (a, b) {
+                            return a + b;
+                        }, 0);
+                        if (sum > purity) {
+                            break;
+                        }
+                        //if we have a good combination, see if it is possible to calculate the cancer cell fraction
+                        if ((sum <= purity) && (cells_array.length == num_of_evos)) {
+                            if (nested_data[independent_evos[0]].parent_index_of_this == 'plot' && sum != purity) {
+                                continue;
+                            }
+                            else {
+                                //function to see if there is a solution using the given ploidys
+                                calculate_CCF(cells_array, independent_evos, nested_data, purity, timepoints, options, timepoint_index);
+                            }
+                        }
+                        else {
+                            continue;
+                        }
                     }
                 }
             }
         }
     }
 
-    function calculate_child_CCF(cells_per_evo_array, independent_evos, nested_data, parent_cell_count, timepoints,
+    function get_combos_of_children_CCF(cell_counts, aff_chrs_lookup, timepoint, parent_cell_count, options, ploidy, alleles, allele_copy, sum_arr){
+        if(allele_copy.length > 1){
+            var allele = allele_copy[0];
+            var cells_arr = cell_counts[allele];
+            for(var i = 0; i < cells_arr.length; i++){
+                var updated_sum_arr = sum_arr.slice(0);
+                updated_sum_arr.push(cells_arr[i]);
+                var updated_alleles = JSON.parse(JSON.stringify(allele_copy));
+                updated_alleles.shift();
+                get_combos_of_children_CCF(cell_counts, aff_chrs_lookup, timepoint, parent_cell_count, options, ploidy, alleles, updated_alleles,
+                updated_sum_arr);
+            }
+        }
+        if(allele_copy.length == 1){
+            var allele = allele_copy[0];
+            var cells_arr = cell_counts[allele];
+            for(var i = 0; i < cells_arr.length; i++){
+                var updated_sum_arr = sum_arr.slice(0);
+                updated_sum_arr.push(cells_arr[i]);
+                var sum = updated_sum_arr.reduce(function (a, b) {
+                        return a + b;
+                    }, 0);
+                if(sum <= parent_cell_count){
+                    var CCF = {};
+                    for(var j = 1; j < alleles.length+1; j++){
+                        var current_allele = alleles[j-1];
+                        CCF[current_allele] = [updated_sum_arr[j-1]];
+                        var num_of_chrs = aff_chrs_lookup[current_allele][updated_sum_arr[j-1]];
+                        CCF[current_allele+'_chrs'] = num_of_chrs;
+                    }
+                    options[timepoint.toString()].push(CCF);
+                }
+            }
+        }
+    }
+
+    function calculate_child_CCF(independent_evos, nested_data, parent_cell_count, timepoints,
                                  options, timepoint_index, total_chromosomes) {
 
-        var max_cells_can_occupy = parent_cell_count * nested_data[nested_data[independent_evos[0]].parent_index_of_this].ploidy;
+        var ploidy = nested_data[nested_data[independent_evos[0]].parent_index_of_this].ploidy;
+        var cell_counts = {};
+        var alleles = [];
+        var aff_chrs_lookup = {};
 
-        //and the number of chromosomes in each child expansion
-        var chromosome_counts = {};
+        for(var i = 0; i < independent_evos.length; i++){
+            var vaf = nested_data[independent_evos[i]].values[timepoint_index].alt_count/100;
+            var num_of_chromosomes = vaf * total_chromosomes;
+            var allele = nested_data[independent_evos[i]].key;
+            alleles.push(allele);
+            aff_chrs_lookup[allele] = {};
 
-        //get the cells counts from each subclonal expansion by adding the last cell count to array
-        var all_evo_cell_counts = cells_per_evo_array;
+            cell_counts[allele] = [];
 
-        chromosome_counts[timepoints.toString()] = {};
-        for (var i = 0; i < independent_evos.length; i++) {
-            //calculate number of chromsomes from each subclonal evolution
-            //by multiplying number of cells for that subclonal expansion by the proposed ploidy of those cells
-            var chrs_for_this_evo = all_evo_cell_counts[i] * nested_data[independent_evos[i]].ploidy;
-            chromosome_counts[timepoints.toString()][nested_data[independent_evos[i]].key] = chrs_for_this_evo;
-        }
-
-        var will_work = true;
-
-        var chromosomes_affected_of_each = [];
-        var will_work = true;
-
-        for (var i = 0; i < independent_evos.length; i++) {
-            //variant allele frequency
-            var vaf = nested_data[independent_evos[i]].values[timepoint_index].alt_count;
-            var chromosomes_needed = total_chromosomes * (vaf / 100);
-            chromosomes_needed = Math.round(chromosomes_needed);
-
-            //if the number of cells we have for this independent evolution is less than the chromosomes needed for
-            //the VAF at this timepoint, then it wont work
-            if ((chromosomes_needed < all_evo_cell_counts[i]) && (nested_data[independent_evos[i]].values[timepoint_index].alt_count != 0)) {
-                will_work = false;
-            }
-
-            if (chromosomes_needed > ((chromosome_counts[timepoints.toString()][nested_data[independent_evos[i]].key]) + nested_data[independent_evos[i]].ploidy - 1)) {
-                will_work = false;
-            }
-
-            //else, try to find the closest number of chromosomes affected per independent evolution
-            else {
-                var proportions = generate_portions(nested_data[independent_evos[i]].ploidy);
-                var proportion_affected = chromosomes_needed / chromosome_counts[timepoints.toString()][nested_data[independent_evos[i]].key];
-                var closest_proportion = find_closest_proportion(proportions, proportion_affected);
-                var num_of_chromosomes_affected = proportions.indexOf(closest_proportion) + 1;
-                chromosomes_affected_of_each.push(num_of_chromosomes_affected);
+            for(var j = 1; j < ploidy+1; j++){
+                var num_of_cells = num_of_chromosomes/j;
+                num_of_cells = Math.round(num_of_cells);
+                aff_chrs_lookup[allele][num_of_cells] = j;
+                cell_counts[allele].push(num_of_cells);
             }
         }
 
-        if (will_work == true) {
-            var CCF = {};
-            for (var i = 0; i < independent_evos.length; i++) {
-                var allele = nested_data[independent_evos[i]].key;
-                CCF[allele] = [cells_per_evo_array[i]];
-                CCF[allele + '_chrs'] = chromosomes_affected_of_each[i];
-            }
-            options[timepoints.toString()].push(CCF);
-        }
-
+        get_combos_of_children_CCF(cell_counts, aff_chrs_lookup, timepoints, parent_cell_count, options, ploidy, alleles, alleles, []);
         return;
-
     }
 
     //Function to see if there is a solution for CCF given the independent clonal expansions and cell ploidys
@@ -277,9 +282,6 @@
                 chromosome_counts[timepoints.toString()][nested_data[independent_evos[i]].key] = chrs_for_this_evo;
             }
 
-
-        var will_work = true;
-
             var chromosomes_affected_of_each = [];
             var will_work = true;
 
@@ -289,11 +291,8 @@
                 var chromosomes_needed = total_chromosomes * (vaf/100);
                 chromosomes_needed = Math.round(chromosomes_needed);
 
-                //console.log(nested_data[independent_evos[i]].key);
-                //console.log(chromosomes_needed, " --- ", chromosome_counts[timepoints[t].toString()][nested_data[independent_evos[i]].key]);
-
-                //if the number of cells we have for this independent evolution is less than the chromosomes needed for
-                //the VAF at this timepoint, then it wont work
+                //if the number of cells we have for this independent evolution is greater than the chromosomes needed for
+                //the VAF at this timepoint, then it wont work. Need at least 1 chrs affected per cell
                 if ((chromosomes_needed < all_evo_cell_counts[i]) && (nested_data[independent_evos[i]].values[timepoint_index].alt_count != 0)) {
                     will_work = false;
                 }
@@ -752,6 +751,7 @@
     }
 
     //get purity at each timepoint for fishplot editor
+    //only works when parent is plot_background
     function get_purity_dict(tick_labels) {
         var purity_dict = {};
         for (var i = 0; i < tick_labels.length; i++) {
@@ -783,6 +783,27 @@
             }
         }
         return can_plot;
+    }
+
+    function get_pre_determined_total_chrs_count(nested_data, plot_background, tick_labels) {
+        var total_chrs = {};
+        for (var i = 0; i < tick_labels.length; i++) {
+            var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
+            total_chrs[tick_labels[i].toString()] = [];
+            //chrs from normal cells at timepoint
+            total_chrs[tick_labels[i].toString()].push((100 - purity_value) * 2);
+        }
+
+        var independent_evos = plot_background.children;
+        for (var i = 0; i < independent_evos.length; i++) {
+            var current_allele = nested_data[independent_evos[i]];
+            for (var j = 0; j < tick_labels.length; j++) {
+                total_chrs[tick_labels[j].toString()].push(
+                        current_allele.values[j + 1].ccf * current_allele.ploidy
+                );
+            }
+        }
+        return total_chrs;
     }
 
 
@@ -2464,8 +2485,6 @@
                                 var opt_copy = JSON.parse(JSON.stringify(current_opt));
                                 var chrs_check = true;
                                 for (var k = 0; k < alleles.length; k++) {
-                                    //console.log(alleles[k]);
-                                    //console.log(opt_copy[(alleles[k] + '_chrs').toString()], "  ", timepoint_data[j][(alleles[k]+'_chrs').toString()]);
                                     if(opt_copy[(alleles[k] + '_chrs').toString()] != timepoint_data[j][(alleles[k]+'_chrs').toString()]) {
                                         chrs_check = false;
                                     }
@@ -3581,28 +3600,6 @@
                                                     purity_dict[tick_labels[i].toString()] = purity_value;
                                                 }
 
-                                            function get_pre_determined_total_chrs_count(nested_data, plot_background, tick_labels){
-                                                var total_chrs = {};
-                                                for(var i = 0; i < tick_labels.length; i++){
-                                                    var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
-                                                    total_chrs[tick_labels[i].toString()]  = [];
-                                                    //chrs from normal cells at timepoint
-                                                    total_chrs[tick_labels[i].toString()].push((100-purity_value)*2);
-                                                }
-
-                                                var independent_evos = plot_background.children;
-                                                for (var i = 0; i < independent_evos.length; i++) {
-                                                    var current_allele = nested_data[independent_evos[i]];
-                                                    for (var j = 0; j < tick_labels.length; j++) {
-                                                        total_chrs[tick_labels[j].toString()].push(
-                                                                current_allele.values[j+1].ccf * current_allele.ploidy
-                                                        );
-                                                    }
-                                                }
-                                                return total_chrs;
-                                            }
-
-
                                             d3.select('#modal_table').remove();
 
                                             if (viable_parents == true) {
@@ -4357,25 +4354,21 @@
                                     });
                         }
 
+                        var viable_parents = true;
+                        var purity_dict = {};
                         CCF_options = {};
                         load_CCF_options(CCF_options, sample_timepoints);
 
-                        if (plot_background.children.length > 1) {
-
-                            var purity_dict = {};
-                            for (var i = 0; i < tick_labels.length; i++) {
-
-                                var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
-                                if (purity_value > 100) {
-                                    purity_value = 100;
-                                }
-                                if (purity_value < 0) {
-                                    purity_value = 0;
-                                }
-                                purity_dict[tick_labels[i].toString()] = purity_value;
+                        if(current_fish.parent_index_of_this == 'plot') {
+                            if(plot_background.children == 0){
+                                return;
                             }
-
-                            d3.select('#modal_table').remove();
+                            if(plot_background.children.length == 1){
+                                //function to apply ccf for single expansion
+                            }
+                            if (plot_background.children.length > 1) {
+                                purity_dict = get_purity_dict(tick_labels);
+                            }
 
                             CCF_options = {};
                             load_CCF_options(CCF_options, sample_timepoints);
@@ -4399,6 +4392,72 @@
                             else {
                                 CCF_options = [];
                             }
+                            //set parent to plot_background so we dont have to include if else statement when generating
+                            //table data
+                            parent = plot_background;
+                        }
+
+                        else {
+                            var parent_of_this = current_fish.parent_index_of_this;
+                            parent = complete_nested_data[parent_of_this];
+
+                            if(parent.children.length == 0){
+                                return;
+                            }
+
+                            for (var i = 0; i < tick_labels.length; i++) {
+
+                                var purity_value = complete_nested_data[parent_of_this].values[i + 1].ccf;
+                                if (purity_value == undefined) {
+                                    viable_parents = false;
+                                    break;
+                                }
+                                if (purity_value > 100) {
+                                    purity_value = 100;
+                                }
+                                if (purity_value < 0) {
+                                    purity_value = 0;
+                                }
+                                purity_dict[tick_labels[i].toString()] = purity_value;
+                            }
+
+                            if (viable_parents == true) {
+                                var total_chrs_counts = get_pre_determined_total_chrs_count(complete_nested_data,
+                                        plot_background, tick_labels);
+                                CCF_options = {};
+                                load_CCF_options(CCF_options, sample_timepoints);
+
+                                if(parent.children.length == 0){
+                                    return;
+                                }
+
+                                for (var i = 0; i < tick_labels.length; i++) {
+                                    //actual timepoint index is +1 since first timepoint is the origin
+                                    var timepoint_index = i + 1;
+                                    var total_chrs = total_chrs_counts[tick_labels[i].toString()].reduce(function (a, b) {
+                                        return a + b;
+                                    }, 0);
+
+                                    find_CCFs(parent.children, parent.children.length, complete_nested_data,
+                                            purity_dict[tick_labels[i].toString()], parent.children.length, [], tick_labels[i],
+                                            CCF_options, timepoint_index, true, total_chrs);
+                                }
+
+                                delete CCF_options[ten_percent_below_zero.toString()];
+
+                                var valid = is_valid(CCF_options, tick_labels);
+
+                                if (valid == true) {
+                                    var parent_alleles = get_parent_alleles(parent.children, canvas_nested_data);
+                                    CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
+                                }
+                                else {
+                                    CCF_options = [];
+                                }
+                            }
+                        }
+
+                            d3.select('#modal_table').remove();
 
                             var modal_table = d3.select('#CCF_modal_body').append('table')
                                     .attr('id', 'modal_table')
@@ -4483,7 +4542,7 @@
                                         var chrs_affected_array = [];
                                         for (var i = 0; i < alleles.length; i++) {
                                             var chrs_key = alleles[i] + '_chrs';
-                                            var ploidy = get_ploidy(alleles[i], canvas_nested_data, plot_background.children);
+                                            var ploidy = get_ploidy(alleles[i], canvas_nested_data, parent.children);
                                             var string = d[chrs_key] + '/' + ploidy;
                                             chrs_affected_array.push(string);
                                         }
@@ -4514,7 +4573,6 @@
                                     });
 
                             $("#CCF_modal").modal('show');
-                        }
 
                     });
 
