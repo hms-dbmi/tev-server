@@ -5205,6 +5205,126 @@
                                 }
                             });
 
+                    var back_to_VAF = button_group.append('li')
+                            .append('a')
+                            .style('cursor', 'pointer')
+                            .html('VAF')
+                            .on('click', function(){
+
+                                 var nested_data = canvas_nested_data.slice(0);
+
+                                    //Create shallow copy for values of each fishplot used
+                                    //Prevents find_origin function from permanently trimming allele values
+                                    update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
+
+                                    for (var i = 0; i < plot_background.children.length; i++) {
+                                        var parent = nested_data[plot_background.children[i]];
+                                        var start_point = parent.start_point;
+                                        nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
+                                    }
+
+                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
+
+                                    nested_data = reconstruct_data(nested_data, fishplot_svgs);
+
+                                    //collision detection for children after adjusting the independent evolution positions
+                                    nested_data = adjust_children_positioning(nested_data, num_of_timepoints, 'alt_count');
+
+                                    //load pinches
+                                    //Have to use fishplot svgs to select specific indices of nested_data
+                                    //Otherwise, we prematurely clip off the origin of fishplots starting after
+                                    //The first timepoint (i.e. Pretreatment in example file)
+                                    for (var i = 0; i < fishplot_svgs.length; i++) {
+                                        var current_allele = nested_data[i];
+                                        for (var j = 0; j < current_allele.values.length; j++) {
+                                            //Initialize all pinches to false
+                                            //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
+                                            current_allele.values[j].pinch = false;
+                                        }
+                                        current_allele.values = find_origin(current_allele);
+                                    }
+
+                                    d3.selectAll('.big_fish').remove();
+
+
+                                    for (var i = 0; i < nested_data.length; i++) {
+                                        var current_data = nested_data[i];
+
+                                        canvas_svg.append('path')
+                                                .attr('fill', 'none')
+                                                .attr('stroke-width', 5)
+                                                .attr("stroke", "transparent")
+                                                .attr('class', 'big_fish')
+                                                .style("stroke-linejoin", "round")
+                                                .attr('d', function () {
+                                                    return canvas_top_line_gen(current_data.values);
+                                                });
+
+                                        canvas_svg.append('path')
+                                                .attr('fill', 'none')
+                                                .attr("stroke", "transparent")
+                                                .style("stroke-linejoin", "round")
+                                                .attr('class', 'big_fish')
+                                                .attr('stroke-width', 8)
+                                                .attr('d', function () {
+                                                    return canvas_bottom_line_gen(current_data.values);
+                                                });
+
+                                        canvas_svg.append('path')
+                                                .datum(current_data.values)
+                                                .attr('fill', color_ref[current_data.values[0].parent_allele])
+                                                .attr('opacity', 1)
+                                                .attr('class', 'big_fish dropdown-toggle')
+                                                .attr('d', canvas_area_between_lines)
+                                                .attr('index', current_data.index)
+                                                .attr('id', 'big_fish' + current_data.index)
+                                                .style('cursor', 'pointer')
+                                                .on('mouseenter', function (d) {
+                                                    moused_over = parseInt(d3.select(this).attr('index'));
+                                                })
+                                                .on('mouseleave', function () {
+                                                    d3.select(this).attr('opacity', 1);
+                                                })
+                                                .on('contextmenu', function () {
+                                                    contextMenuFor = parseInt(d3.select(this).attr('index'));
+
+                                                    //give the button an attribute to reference the fishplots they're dealing with
+                                                    //now we can invoke a function on click
+                                                    d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
+                                                    d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
+
+                                                    if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                                                        contextMenuShowing = false;
+                                                    }
+                                                    if (contextMenuShowing == false) {
+                                                        contextMenuForPrevious = contextMenuFor;
+                                                        d3.event.preventDefault();
+                                                        d3.select('#context-div').attr('cm-showing', 'true');
+                                                        contextMenuShowing = true;
+                                                        d3.select('#context-div').style('left', function () {
+                                                                    var left = d3.event.pageX;
+                                                                    return left + 'px';
+                                                                })
+                                                                .style('top', function () {
+                                                                    //-75 pixels because of navbar padding
+                                                                    var top = d3.event.pageY - 75;
+                                                                    return top + 'px';
+                                                                })
+                                                                .style('z-index', 10)
+                                                                .style('opacity', 1);
+                                                    }
+                                                    else {
+                                                        d3.event.preventDefault();
+                                                        contextMenuShowing = false;
+                                                        d3.select('#context-div').attr('cm-showing', 'false');
+                                                        d3.select('#context-div').style('opacity', 0)
+                                                                .style('z-index', -1);
+                                                    }
+                                                });
+                                    }
+
+                            });
+
                     d3.select('#convert_to_ccf_div').style('left', function () {
                         var button_width = d3.select('#plot_options_button').node().offsetWidth;
                         button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-left')) * 2;
