@@ -806,6 +806,21 @@
         return total_chrs;
     }
 
+    //function to plot CCF relative to cancer cells, not to total cells in sample
+    function relative_to_cancer_cells(nested_data, fishplot_svgs, purity_dict, timepoints){
+        for(var i = 0; i < fishplot_svgs.length; i++){
+            var allele_data = nested_data[fishplot_svgs[i]].values;
+            allele_data[0].only_cancer_ccf = 0;
+            for(var j = 0; j < timepoints.length; j++){
+                var total_cc_cells = purity_dict[timepoints[j].toString()];
+                if(allele_data[j+1].ccf == undefined){
+                    return 0;
+                }
+                allele_data[j+1].only_cancer_ccf = parseInt((allele_data[j+1].ccf/total_cc_cells) * 100);
+            }
+        }
+    }
+
 
     (function() {
 
@@ -3813,15 +3828,15 @@
                     var save_fishplot_div_top = d3.select(el).node().clientHeight;
                     var save_fishplot_top_padding = 0.10; //pad the top by 10 percent
 
-                    d3.select(el).style('height', function () {
-                        var height = d3.select(this).node().clientHeight;
-                        var extra_pixels = save_fishplot_div_height * save_fishplot_top_padding;
-                        var total_save_fishplot_div_pixels = save_fishplot_div_height + extra_pixels;
-                        height = height + total_save_fishplot_div_pixels;
-                        return height + 'px';
-                    });
+{#                    d3.select(el).style('height', function () {#}
+{#                        var height = d3.select(this).node().clientHeight;#}
+{#                        var extra_pixels = save_fishplot_div_height * save_fishplot_top_padding;#}
+{#                        var total_save_fishplot_div_pixels = save_fishplot_div_height + extra_pixels;#}
+{#                        height = height + total_save_fishplot_div_pixels;#}
+{#                        return height + 'px';#}
+{#                    });#}
 
-                    var save_fishplot_div_wrapper = d3.select(el)
+                    var save_fishplot_div_wrapper = d3.select('#figure6-wrapper')
                             .append('div')
                             .attr('id', 'save_fishplot_div_wrapper')
                             .style('top', save_fishplot_div_top + 'px')
@@ -4903,22 +4918,35 @@
                             .style('position', 'relative')
                             .style('float', 'left');
 
-                    function set_up_ccf_boundries(canvas_nested_data, fishplot_svgs) {
+                    function set_up_ccf_boundries(canvas_nested_data, fishplot_svgs, ccf_type) {
                         for (var i = 0; i < fishplot_svgs.length; i++) {
                             var current_allele = canvas_nested_data[fishplot_svgs[i]];
                             var start_point = current_allele.start_point;
                             for (var j = 0; j < current_allele.values.length; j++) {
-                                var half_ccf = current_allele.values[j].ccf / 2;
+                                var half_ccf = current_allele.values[j][ccf_type] / 2;
                                 current_allele.values[j].top = start_point + half_ccf;
                                 current_allele.values[j].bottom = start_point - half_ccf;
                             }
                         }
                     }
 
-                    var convert_to_ccf_button = convert_to_ccf_div.append('button')
-                            .attr('id', 'convert_to_ccf_button')
-                            .attr('class', 'btn btn-default btn-sm')
-                            .html('Convert to CCF')
+                    var plot_options_div_group = convert_to_ccf_div.append('div')
+                            .attr('class', 'btn-group')
+                            .style('width', '100px');
+
+                    var plot_options_button = plot_options_div_group.append('button')
+                            .attr('id', 'plot_options_button')
+                            .attr('class', 'btn btn-default btn-sm dropdown-toggle')
+                            .attr('data-toggle', 'dropdown')
+                            .html('Plot options');
+
+                    var button_group = plot_options_div_group.append('ul')
+                            .attr('class', 'dropdown-menu');
+
+                    var convert_to_ccf_button = button_group.append('li')
+                            .append('a')
+                            .style('cursor', 'pointer')
+                            .html('CCF (Total Sample)')
                             .on('click', function () {
                                 var can_plot = can_plot_CCF(canvas_nested_data, fishplot_svgs);
                                 if (can_plot == false) {
@@ -4927,7 +4955,7 @@
                                 if (can_plot) {
                                     canvas_svg.html('');
                                     var purity = get_purity_dict(tick_labels);
-                                    set_up_ccf_boundries(canvas_nested_data, fishplot_svgs);
+                                    set_up_ccf_boundries(canvas_nested_data, fishplot_svgs, 'ccf');
 
                                     var nested_data = canvas_nested_data.slice(0);
 
@@ -5045,10 +5073,142 @@
 
                             });
 
+                    var convert_only_CCF = button_group.append('li')
+                            .append('a')
+                            .style('cursor', 'pointer')
+                            .html('CCF (Cancer Cells Only)')
+                            .on('click', function(){
+                                var purity = get_purity_dict(tick_labels);
+                                relative_to_cancer_cells(canvas_nested_data, fishplot_svgs, purity, tick_labels);
+
+                                var can_plot = can_plot_CCF(canvas_nested_data, fishplot_svgs);
+                                if (can_plot == false) {
+                                    //modal
+                                }
+                                if (can_plot) {
+                                    canvas_svg.html('');
+                                    var purity = get_purity_dict(tick_labels);
+                                    set_up_ccf_boundries(canvas_nested_data, fishplot_svgs, 'only_cancer_ccf');
+
+                                    var nested_data = canvas_nested_data.slice(0);
+
+                                    //Create shallow copy for values of each fishplot used
+                                    //Prevents find_origin function from permanently trimming allele values
+                                    update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
+
+                                    for (var i = 0; i < plot_background.children.length; i++) {
+                                        var parent = nested_data[plot_background.children[i]];
+                                        var start_point = parent.start_point;
+                                        nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'only_cancer_ccf');
+                                    }
+
+                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'only_cancer_ccf');
+
+                                    nested_data = reconstruct_data(nested_data, fishplot_svgs);
+
+                                    //collision detection for children after adjusting the independent evolution positions
+                                    nested_data = adjust_children_positioning(nested_data, num_of_timepoints, 'only_cancer_ccf');
+
+                                    //load pinches
+                                    //Have to use fishplot svgs to select specific indices of nested_data
+                                    //Otherwise, we prematurely clip off the origin of fishplots starting after
+                                    //The first timepoint (i.e. Pretreatment in example file)
+                                    for (var i = 0; i < fishplot_svgs.length; i++) {
+                                        var current_allele = nested_data[i];
+                                        for (var j = 0; j < current_allele.values.length; j++) {
+                                            //Initialize all pinches to false
+                                            //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
+                                            current_allele.values[j].pinch = false;
+                                        }
+                                        current_allele.values = find_origin(current_allele);
+                                    }
+
+                                    d3.selectAll('.big_fish').remove();
+
+
+                                    for (var i = 0; i < nested_data.length; i++) {
+                                        var current_data = nested_data[i];
+
+                                        canvas_svg.append('path')
+                                                .attr('fill', 'none')
+                                                .attr('stroke-width', 5)
+                                                .attr("stroke", "transparent")
+                                                .attr('class', 'big_fish')
+                                                .style("stroke-linejoin", "round")
+                                                .attr('d', function () {
+                                                    return canvas_top_line_gen(current_data.values);
+                                                });
+
+                                        canvas_svg.append('path')
+                                                .attr('fill', 'none')
+                                                .attr("stroke", "transparent")
+                                                .style("stroke-linejoin", "round")
+                                                .attr('class', 'big_fish')
+                                                .attr('stroke-width', 8)
+                                                .attr('d', function () {
+                                                    return canvas_bottom_line_gen(current_data.values);
+                                                });
+
+                                        canvas_svg.append('path')
+                                                .datum(current_data.values)
+                                                .attr('fill', color_ref[current_data.values[0].parent_allele])
+                                                .attr('opacity', 1)
+                                                .attr('class', 'big_fish dropdown-toggle')
+                                                .attr('d', canvas_area_between_lines)
+                                                .attr('index', current_data.index)
+                                                .attr('id', 'big_fish' + current_data.index)
+                                                .style('cursor', 'pointer')
+                                                .on('mouseenter', function (d) {
+                                                    moused_over = parseInt(d3.select(this).attr('index'));
+                                                })
+                                                .on('mouseleave', function () {
+                                                    d3.select(this).attr('opacity', 1);
+                                                })
+                                                .on('contextmenu', function () {
+                                                    contextMenuFor = parseInt(d3.select(this).attr('index'));
+
+                                                    //give the button an attribute to reference the fishplots they're dealing with
+                                                    //now we can invoke a function on click
+                                                    d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
+                                                    d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
+
+                                                    if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                                                        contextMenuShowing = false;
+                                                    }
+                                                    if (contextMenuShowing == false) {
+                                                        contextMenuForPrevious = contextMenuFor;
+                                                        d3.event.preventDefault();
+                                                        d3.select('#context-div').attr('cm-showing', 'true');
+                                                        contextMenuShowing = true;
+                                                        d3.select('#context-div').style('left', function () {
+                                                                    var left = d3.event.pageX;
+                                                                    return left + 'px';
+                                                                })
+                                                                .style('top', function () {
+                                                                    //-75 pixels because of navbar padding
+                                                                    var top = d3.event.pageY - 75;
+                                                                    return top + 'px';
+                                                                })
+                                                                .style('z-index', 10)
+                                                                .style('opacity', 1);
+                                                    }
+                                                    else {
+                                                        d3.event.preventDefault();
+                                                        contextMenuShowing = false;
+                                                        d3.select('#context-div').attr('cm-showing', 'false');
+                                                        d3.select('#context-div').style('opacity', 0)
+                                                                .style('z-index', -1);
+                                                    }
+                                                });
+                                    }
+
+                                }
+                            });
+
                     d3.select('#convert_to_ccf_div').style('left', function () {
-                        var button_width = d3.select('#convert_to_ccf_button').node().offsetWidth;
-                        button_width = button_width + parseInt(d3.select('#convert_to_ccf_button').style('padding-left')) * 2;
-                        button_width = button_width + parseInt(d3.select('#convert_to_ccf_button').style('padding-right')) * 2;
+                        var button_width = d3.select('#plot_options_button').node().offsetWidth;
+                        button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-left')) * 2;
+                        button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-right')) * 2;
 
                         var load_fishplot_div_left = parseInt(d3.select('#load_fishplot_div').style('left'));
                         var load_fishplot_div_width = parseInt(d3.select('#load_fishplot_div').style('width'));
@@ -5057,10 +5217,10 @@
                                 return new_div_left + 'px';
                             })
                             .style('width', function () {
-                                var button_width = d3.select('#convert_to_ccf_button').node().offsetWidth;
-                                button_width = button_width + parseInt(d3.select('#convert_to_ccf_button').style('padding-left'));
-                                button_width = button_width + parseInt(d3.select('#convert_to_ccf_button').style('padding-right'));
-                                button_width = button_width + parseInt(d3.select('#convert_to_ccf_button').style('margin'));
+                                var button_width = d3.select('#plot_options_button').node().offsetWidth;
+                                button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-left'));
+                                button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-right'));
+                                button_width = button_width + parseInt(d3.select('#plot_options_button').style('margin'));
                                 return button_width + 'px';
                             });
 
@@ -5471,24 +5631,21 @@
                             d3.select('#tr' + i).append('td')
                                     .style('text-align', 'center')
                                     .attr('value', nested_data[i].values[j].alt_count)
+                                    .attr('conserved_val', nested_data[i].values[j].alt_count)
                                     .attr('timepoint', timepoints[j])
                                     .attr('allele', nested_data[i].key)
                                     .attr('index', i)
-                                    .attr('data-toggle', 'popover')
-                                    .attr('title', function(){
-                                        var allele = d3.select(this).attr('allele');
-                                        return allele + 'is already plotted';
-                                    })
-                                    .attr('data-content', "Please remove the allele from the plot to change it's VAF.")
                                     .html(nested_data[i].values[j].alt_count + '%')
                                     .on('dblclick', function () {
                                         var index = parseInt(d3.select(this).attr('index'));
                                         if(plotted.indexOf(index) != -1){
-                                            
+
                                             return;
                                         }
 
+                                        var allele = d3.select(this).attr('allele');
                                         var alt_count = d3.select(this).attr('value');
+                                        var conserved_alt_count = d3.select(this).attr('conserved_val');
                                         var current_td = d3.select(this);
                                         current_td.html(' ');
                                         var form = current_td.append('form');
@@ -5509,7 +5666,11 @@
                                                                 new_vaf = 0;
                                                             }
                                                             current_td.innerHTML = '';
-                                                            current_td.attr('value', new_vaf).html(new_vaf + '%');
+                                                            var percentage = '%';
+                                                            if(new_vaf != conserved_alt_count){
+                                                                percentage = percentage + ' *';
+                                                            }
+                                                            current_td.attr('value', new_vaf).html(new_vaf + percentage);
                                                             var updated_info = [current_td.attr('allele'),
                                                                 current_td.attr('timepoint'),
                                                                 new_vaf];
@@ -5531,7 +5692,7 @@
                 });
 
             }
-        })
+        });
 
     })();
 
@@ -5664,8 +5825,10 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                 </div>
             </div>
             <div class="row">
+                <div id="figure6-wrapper" style="overflow: visible;">
                 <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info" colors="color_ref"
                      style="width: 100%; height: 600px; float: left; overflow: hidden;">
+                </div>
                 </div>
             </div>
 
