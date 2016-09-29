@@ -118,10 +118,8 @@ def parse_tev_file(file):
     #Subject ID is required
     subject_id_index = int(file[0].index("Subject ID"))
 
-    try:
-        date_index = int(file[0].index("Date"))
-    except:
-        date_index = None
+
+    timepoint_index = int(file[0].index("Day"))
 
     try:
         sample_barcode_index = int(file[0].index("Sample_Barcode"))
@@ -201,21 +199,21 @@ def parse_tev_file(file):
 
         patient_id = file[i][subject_id_index]
 
-        if date_index == None:
-            sample_date = None
-        else:
-            try:
-                sample_date = file[i][date_index]
-                sample_date = sample_date.split('/')
-                if (len(sample_date[0]) == 1):
-                    sample_date[0] = "0" + sample_date[0]
-                if (len(sample_date[1]) == 1):
-                    sample_date[1] = "0" + sample_date[1]
-                sample_date[2] = "20" + sample_date[2]
-                sample_date = sample_date[2] + "-" + sample_date[0] + "-" + sample_date[1]
-                sample_date = datetime.datetime.strptime(sample_date, "%Y-%m-%d").date()
-            except:
-                sample_date = None
+        # if date_index == None:
+        #     sample_date = None
+        # else:
+        #     try:
+        #         sample_date = file[i][date_index]
+        #         sample_date = sample_date.split('/')
+        #         if (len(sample_date[0]) == 1):
+        #             sample_date[0] = "0" + sample_date[0]
+        #         if (len(sample_date[1]) == 1):
+        #             sample_date[1] = "0" + sample_date[1]
+        #         sample_date[2] = "20" + sample_date[2]
+        #         sample_date = sample_date[2] + "-" + sample_date[0] + "-" + sample_date[1]
+        #         sample_date = datetime.datetime.strptime(sample_date, "%Y-%m-%d").date()
+        #     except:
+        #         sample_date = None
 
         if (Source.objects.filter(subject_id=patient_id).exists()):
             source = Source.objects.get(subject_id=patient_id)
@@ -224,16 +222,15 @@ def parse_tev_file(file):
             source.subject_id = patient_id
             source.save()
 
-        if Sample.objects.filter(source=source, timestamp=sample_date).exists():
-            sample = Sample.objects.get(source=source, timestamp=sample_date)
+        if Sample.objects.filter(source=source, timepoint=file[i][timepoint_index]).exists():
+            sample = Sample.objects.get(source=source, timepoint=file[i][timepoint_index])
         else:
             sample = Sample()
-            sample.timepoint = 0
+            sample.timepoint = file[i][timepoint_index]
         try:
             sample.sample_barcode = str(file[i][sample_barcode_index])
         except:
             sample.sample_barcode = None
-            sample.timestamp = sample_date
             try:
                 sample.assay = str(file[i][assay_index])
             except:
@@ -313,8 +310,6 @@ def parse_tev_file(file):
             variant_allele.ref_seq
 
         variant_allele.save()
-
-        correct_timepoints(patient_id)
 
 
 def save_fishplot(request):

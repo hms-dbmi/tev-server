@@ -15,7 +15,6 @@ class Source(models.Model):
 class Sample(models.Model):
     source  = models.ForeignKey(Source, on_delete=models.CASCADE, related_name='Samples')
     timepoint = models.IntegerField()
-    timestamp = models.DateField(null=True)
     sample_barcode = models.CharField(max_length=250, null=True)
     assay = models.CharField(max_length=250, null=True)
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

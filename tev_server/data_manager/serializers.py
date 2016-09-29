@@ -11,7 +11,7 @@ class SampleSerializer(serializers.ModelSerializer):
     VariantAlleles = VariantAlleleSerializer(many=True)
     class Meta:
         model = Sample
-        fields = ('source', 'timepoint', 'timestamp', 'uuid', 'VariantAlleles')
+        fields = ('source', 'timepoint', 'uuid', 'VariantAlleles')
 
 
 class SourceSerializer(serializers.ModelSerializer):
