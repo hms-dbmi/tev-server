@@ -4635,6 +4635,9 @@
 
                         if (current_fish.parent_index_of_this != 'plot') {
                             var parent_index = current_fish.parent_index_of_this;
+                            for(var i = 0; i < current_fish.values.length; i++){
+                                delete current_fish.values[i].ccf;
+                            }
                             var parent = canvas_nested_data[parent_index];
                             var child_index = parent.children.indexOf(index);
                             if (child_index > -1) {
