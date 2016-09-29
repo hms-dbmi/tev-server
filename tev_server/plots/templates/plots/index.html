@@ -4819,7 +4819,19 @@
                                 return;
                             }
                             if(plot_background.children.length == 1){
-                                //function to apply ccf for single expansion
+                                //function to convert to 100% CCF when out of cancer cells only?
+                                purity_dict = get_purity_dict(tick_labels);
+                                for(var j = 0; j < tick_labels.length; j++) {
+                                    canvas_nested_data[plot_background.children[0]].values[j+1].ccf = purity_dict[tick_labels[j].toString()];
+                                }
+                                var parent_index = plot_background.children[0];
+                                for(var j = 0; j < fishplot_svgs.length; j++){
+                                    if(fishplot_svgs[j] != parent_index){
+                                        for(var k = 0; k < canvas_nested_data[fishplot_svgs[j]].values.length; k++){
+                                            canvas_nested_data[fishplot_svgs[j]].values[k].ccf = undefined;
+                                        }
+                                    }
+                                }
                             }
                             if (plot_background.children.length > 1) {
                                 purity_dict = get_purity_dict(tick_labels);
