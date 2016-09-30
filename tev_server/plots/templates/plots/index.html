@@ -91,23 +91,16 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
 
-<!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
-      integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
-      crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 
 <!-- Optional theme -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css"
       integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r"
       crossorigin="anonymous">
 
-<!-- Latest compiled and minified JavaScript -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
-        integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
-        crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
 <script>
-
     //Function to calculate CCF based on ploidy and purity specified
     function find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_per_evo_array, timepoints,
                        options, timepoint_index, is_child, pre_determined_total_chrs){
@@ -1377,7 +1370,6 @@
 
 
     (function() {
-
         //Application name: tevApp
         //Dependencies: None
         var tevApp = angular.module('tevApp', []);
@@ -6071,6 +6063,10 @@
             }
         }]);
 
+        $(function () {
+            $('[data-toggle="popover"]').popover()
+        });
+
         tevApp.directive('editorTable', function () {
             return {
                 restrict: 'A',
@@ -6099,6 +6095,7 @@
                 scope.$watch('plotted', function(updated_data){
                     plotted = updated_data;
                 });
+
 
                 scope.$watch('data', function(updated_data){
                     d3.selectAll('table').remove();
@@ -6164,6 +6161,8 @@
                     d3.select(el).append('h2').style('text-align', 'center').html('VAF of Alleles at Each Timepoint');
 
                     var table = d3.select(el).append('table').attr('class', 'table table-bordered')
+                            .attr('id', 'editor-table')
+                            .attr('data-toggle', 'table')
                             .style('table-layout', 'fixed');
 
                     var header1 = table.append('thead').append('tr');
@@ -6230,7 +6229,11 @@
                                                             current_td.innerHTML = '';
                                                             var percentage = '%';
                                                             if(new_vaf != conserved_alt_count){
-                                                                percentage = percentage + ' *';
+                                                                percentage = percentage + ' '
+                                                                + '<a data-toggle="popover" data-trigger="click" ' +
+                                                                        'title="This VAF has been altered"'
+                                                                        + 'data-content="The original VAF was ' + conserved_alt_count
+                                                                + '">*</a>';
                                                             }
                                                             current_td.attr('value', new_vaf).html(new_vaf + percentage);
                                                             var updated_info = [current_td.attr('allele'),
@@ -6252,8 +6255,8 @@
                     }
 
                 });
-
             }
+
         });
 
     })();
