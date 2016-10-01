@@ -1,1 +1,1 @@
-web: gunicorn tev_server.wsgi
+web: gunicorn tev_server/tev_server.wsgi
