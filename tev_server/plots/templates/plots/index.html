@@ -4425,6 +4425,14 @@
 
                             });
 
+                    svgs.append('svg:image')
+                            .attr('x', mini_x_range_max*0.10)
+                            .attr('y', mini_fishplot_container_height*0.85)
+                            .attr('width', mini_fishplot_container_height*0.14)
+                            .attr('height', mini_fishplot_container_height*0.14)
+                            .attr('id', 'infolight')
+                            .attr('xlink:href', 'https://cdn0.iconfinder.com/data/icons/glyphpack/85/info-alt-128.png');
+
                     //Mini fishplot divs in scroll container
                     svgs.append('path')
                             .attr('id', function (d, i) {
