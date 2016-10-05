@@ -1,1 +1,0 @@
-web: gunicorn tev_server/tev_server.wsgi

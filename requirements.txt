@@ -1,5 +1,0 @@
-dj-database-url==0.4.1
-gunicorn==19.6.0
-django>= 1.9.6
-djangorestframework>=3.3.3
-scipy>=0.17.1
