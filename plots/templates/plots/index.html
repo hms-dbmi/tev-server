@@ -4432,7 +4432,10 @@
                             .attr('height', mini_fishplot_container_height*0.14)
                             .attr('id', 'infolight')
                             .attr('xlink:href',
-                                    'https://cdn0.iconfinder.com/data/icons/seo-web-15/130/seo-social-web-network-internet_186-128.png');
+                                    'https://cdn0.iconfinder.com/data/icons/seo-web-15/130/seo-social-web-network-internet_186-128.png')
+                            .on('click', function(){
+
+                            });
 
                     //Mini fishplot divs in scroll container
                     svgs.append('path')
@@ -4528,6 +4531,7 @@
 
                                 //remove cog wheel
                                 d3.select('#dragable_div').select('#cog_wheel').remove();
+                                d3.select('#dragable_div').select('#infolight').remove();
 
                                 var bounding = d3.select('#fishplot_area' + i).node().getBoundingClientRect();
                                 left_adjustment = bounding.left - parseInt(left_in_container);
@@ -5902,6 +5906,7 @@
 
                                         //remove cog wheel
                                         d3.select('#dragable_div').select('#cog_wheel').remove();
+                                        d3.select('#dragable_div').select('#infolight').remove();
 
                                         var bounding = d3.select('#fishplot_area' + i).node().getBoundingClientRect();
                                         left_adjustment = bounding.left - parseInt(left_in_container);
@@ -6012,6 +6017,7 @@
 
                                         //remove cog wheel
                                         d3.select('#dragable_div').select('#cog_wheel').remove();
+                                        d3.select('#dragable_div').select('#infolight').remove();
 
                                         var bounding = d3.select('#fishplot_area' + i).node().getBoundingClientRect();
                                         left_adjustment = bounding.left - parseInt(left_in_container);
