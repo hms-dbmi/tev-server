@@ -24,7 +24,7 @@ class GeneSerializer(serializers.ModelSerializer):
     VariantAlleles = VariantAlleleSerializer(many=True)
     class Meta:
         model = Gene
-        fields = ('name', 'uuid', 'VariantAlleles')
+        fields = ('name', 'chromosome', 'uuid', 'VariantAlleles')
 
 # class RecursiveSerializer(serializers.Serializer):
 #     def to_representation(self, value):

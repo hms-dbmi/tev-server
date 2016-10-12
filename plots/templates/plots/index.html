@@ -1395,6 +1395,7 @@
                     //Loop through to get all uuid
                     //So we only have to access them, instead of loop through for every amino acid change
                     var gene_uuids = [];
+                    var chromosomes = {};
                     for(var i = 0; i < gene_data.length; i++){
                         gene_uuids.push(gene_data[i].uuid);
                     }
@@ -1409,6 +1410,9 @@
                                     + alleles[j].AA_position.toString()
                                     + alleles[j].AA_variant;
                             var alt_count = alleles[j].alternative_freq;
+                            if(chromosomes[allele] == undefined){
+                                chromosomes[allele] = gene_data[gene_uuids.indexOf(alleles[j].gene)].chromosome;
+                            }
                             allele_data.push({
                                 allele: allele,
                                 Sample_Barcode: timepoint,
@@ -1416,7 +1420,7 @@
                             });
                         }
                     }
-                    return allele_data;
+                    return [allele_data, chromosomes];
                 },
 
                 patch: function(data){
@@ -1500,6 +1504,7 @@
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
                 $scope.tevData = [];
                 $scope.alleleified_data = [];
+                $scope.chromosome_dict = {};
                 $scope.linked_alleleified_data = [];
                 $scope.dendro_data = [];
                 $scope.dendro_y_data = [];
@@ -1545,6 +1550,8 @@
                     $scope.tevData = tevData.Samples;
 
                     var alleleified_data = allelify.alleleify($scope.tevData, gene_data);
+                    $scope.chromosome_dict = alleleified_data[1];
+                    alleleified_data = alleleified_data[0];
                     alleleified_data = allelify.patch(alleleified_data);
                     $scope.alleleified_data = alleleified_data;
                     $scope.color_ref = allelify.allele_color_reference(alleleified_data);
@@ -2855,7 +2862,8 @@
                 scope: {
                     data: '=',
                     values: '=',
-                    colors: '='
+                    colors: '=',
+                    chromosomes: '='
                 },
                 link: link
             };
@@ -2866,10 +2874,14 @@
                 var width = el.clientWidth;
                 var height = el.clientHeight;
                 var color_ref = scope.colors;
-
+                var chromosome_ref = scope.chromosomes;
 
                 scope.$watch('colors', function(new_colors){
                     color_ref = new_colors;
+                });
+
+                scope.$watch('chromosomes', function(updated_info){
+                    chromosome_ref = updated_info;
                 });
 
                 scope.$watch('data', function (updated_data) {
@@ -2888,6 +2900,11 @@
                     }).entries(data);
 
                     canvas_nested_data = sort_nested_alleles(canvas_nested_data);
+
+                    for(var i = 0; i < canvas_nested_data.length; i++){
+                        canvas_nested_data[i].chromosome = chromosome_ref[canvas_nested_data[i].key];
+                        mini_nested_data[i].chromosome = chromosome_ref[mini_nested_data[i].key];
+                    }
 
                     var fishplot_data = [];
 
@@ -4327,7 +4344,6 @@
                                     used_data_indices: fishplot_svgs,
                                     data: canvas_nested_data
                                 };
-                                console.log(params_dict);
 
                                 if(fishplot_svgs.length < 1){
                                     d3.select('#dialog-header')
@@ -4571,7 +4587,7 @@
 
                     svgs.append('text')
                             .attr('x', function(d, i){
-                                var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
+                                var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/3;
                                 center = center * 0.5; //cut in half, then cut in half again
                                 return center + 'px';
                             })
@@ -4579,7 +4595,7 @@
                             .text(function(){
                                 return 'Chrs Affected: ' + 'N/A';
                             })
-                            .attr('font-size', '15px')
+                            .attr('font-size', '12px')
                             .attr('text-anchor', 'middle')
                             .attr('id', function(d, i){
                                 return 'chrs_aff_text'+i;
@@ -4587,19 +4603,39 @@
                             .attr('class', 'noselect info_text');
 
                     svgs.append('text')
-                            .attr('font-size', '15px')
+                            .attr('x', function(d, i){
+                                var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/3;
+                                center = center * 1.5; //cut in half, then cut in half again
+                                return center + 'px';
+                            })
+                            .attr('y', '15px')
+                            .text(function(d){
+                                return 'Chr: ' + d.chromosome;
+                            })
+                            .attr('font-size', '12px')
+                            .attr('text-anchor', 'middle')
+                            .attr('id', function(d, i){
+                                return 'chr'+i;
+                            })
+                            .attr('class', 'noselect info_text');
+
+                    svgs.append('text')
+                            .attr('font-size', '12px')
                             .attr('text-anchor', 'middle')
                             .attr('id', function(d, i){
                                 return 'ploidy_text'+i;
                             })
                             .attr('class', 'noselect info_text')
                             .attr('x', function(d, i){
-                                var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
-                                center = center * 1.5; //cut in half, then cut in half again
+                                var center = d3.select('#mini_fishplot_svg'+i).node().clientWidth/3;
+                                center = center * 2.5; //cut in half, then cut in half again
                                 return center + 'px';
                             })
                             .attr('y', '15px')
-                            .text(function(){
+                            .text(function(d){
+                                if(d.chromosome == 'X' || d.chromosome == 'Y'){
+                                    return 'Ploidy: ' + 1;
+                                }
                                 return 'Ploidy: ' + 2; //Will put variable for Ploidy eventually
                             });
 
@@ -4624,10 +4660,22 @@
 
                     svgs.append('line')
                             .attr('x1', function(d, i){
-                                return d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
+                                return d3.select('#mini_fishplot_svg'+i).node().clientWidth/3;
                             })
                             .attr('x2', function(d, i){
-                                return d3.select('#mini_fishplot_svg'+i).node().clientWidth/2;
+                                return d3.select('#mini_fishplot_svg'+i).node().clientWidth/3;
+                            })
+                            .attr('y1', '0px')
+                            .attr('y2', '20px')
+                            .attr('stroke', '#000000')
+                            .attr('class', 'info_lines');
+
+                    svgs.append('line')
+                            .attr('x1', function(d, i){
+                                return (d3.select('#mini_fishplot_svg'+i).node().clientWidth/3)*2;
+                            })
+                            .attr('x2', function(d, i){
+                                return (d3.select('#mini_fishplot_svg'+i).node().clientWidth/3)*2;
                             })
                             .attr('y1', '0px')
                             .attr('y2', '20px')
@@ -5170,7 +5218,7 @@
                                     if(subject_fishplots[i].name == name){
                                         fishplot_data = subject_fishplots[i];
                                         if(fishplot_data.data[0].parent_index_of_this != "plot"){
-                                            fishplot_data.data = fishplot_data.data.reverse();
+                                            fishplot_data.data = reverse_fishplot_data(fishplot_data.data);
                                         }
                                         break;
                                     }
@@ -6412,6 +6460,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
             <div class="row">
                 <div id="figure6-wrapper" style="overflow: visible;">
                 <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info" colors="color_ref"
+                     chromosomes="chromosome_dict"
                      style="width: 100%; height: 600px; float: left; overflow: hidden;">
                 </div>
                 </div>
