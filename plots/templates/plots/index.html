@@ -1505,6 +1505,12 @@
                 $scope.tevData = [];
                 $scope.alleleified_data = [];
                 $scope.chromosome_dict = {};
+                $scope.position_dict = {};
+                $scope.type_dict = {};
+                $scope.cDNA_dict = {};
+                $scope.ref_seq_dict = {};
+                $scope.reference = {};
+                $scope.alternative = {};
                 $scope.linked_alleleified_data = [];
                 $scope.dendro_data = [];
                 $scope.dendro_y_data = [];
@@ -2557,7 +2563,7 @@
                         //cannot be parent of clone that derived earlier, even if it has a higher variant allele freq
                         var ranking_adjustment = Math.pow(10, num_of_timepoints);
                         var allele_freqs = fishplot_data[i].freqs;
-                        for(var j = 1; j < allele_freqs.length; j++){
+                        for(var j = 0; j < allele_freqs.length; j++){
                             if(allele_freqs[j] != 0){
                                 var rank = ranking_adjustment * allele_freqs[j];
                                 sort_array.push({
@@ -2955,7 +2961,7 @@
                         //cannot be parent of clone that derived earlier, even if it has a higher variant allele freq
                         var ranking_adjustment = Math.pow(10, num_of_timepoints);
                         var allele_freqs = fishplot_data[i].freqs;
-                        for(var j = 1; j < allele_freqs.length; j++){
+                        for(var j = 0; j < allele_freqs.length; j++){
                             if(allele_freqs[j] != 0){
                                 var rank = ranking_adjustment * allele_freqs[j];
                                 sort_array.push({
@@ -2971,6 +2977,7 @@
                     sort_array.sort(function(a, b){
                        return b.rank - a.rank;
                     });
+                    console.log(sort_array);
 
                     //Order mini fishplot svgs by rank
                     mini_nested_data = order_by_rank(mini_nested_data, sort_array);
@@ -2986,10 +2993,10 @@
                         canvas_nested_data[i].index = i;
                         canvas_nested_data[i].ploidy = 2;
                         canvas_nested_data[i].chrs_affected = 'N/A';
-                        canvas_nested_data[i].color = color_ref[canvas_nested_data[i].values[0].parent_allele];
+                        canvas_nested_data[i].color = color_ref[canvas_nested_data[i].key];
 
                         mini_nested_data[i].ploidy = 2;
-                        mini_nested_data[i].color = color_ref[mini_nested_data[i].values[0].parent_allele];
+                        mini_nested_data[i].color = color_ref[mini_nested_data[i].key];
                     }
 
                     //Add input for purity atop the canvas
@@ -6202,7 +6209,7 @@
                         //cannot be parent of clone that derived earlier, even if it has a higher variant allele freq
                         var ranking_adjustment = Math.pow(10, num_of_timepoints);
                         var allele_freqs = fishplot_data[i].freqs;
-                        for (var j = 1; j < allele_freqs.length; j++) {
+                        for (var j = 0; j < allele_freqs.length; j++) {
                             if (allele_freqs[j] != 0) {
                                 var rank = ranking_adjustment * allele_freqs[j];
                                 sort_array.push({
@@ -6223,7 +6230,7 @@
 
                     //Any initial attributes on alleles will be applied within this for loop
                     for (var i = 0; i < nested_data.length; i++) {
-                        nested_data[i].color = color_ref[nested_data[i].values[0].parent_allele];
+                        nested_data[i].color = color_ref[nested_data[i].key];
                     }
 
                     d3.select(el).append('h2').style('text-align', 'center').html('VAF of Alleles at Each Timepoint');
