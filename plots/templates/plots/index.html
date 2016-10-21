@@ -1396,6 +1396,13 @@
                     //So we only have to access them, instead of loop through for every amino acid change
                     var gene_uuids = [];
                     var chromosomes = {};
+                    var positions = {};
+                    var types = {};
+                    var cDNAs = {};
+                    var ref_seqs = {};
+                    var references = {};
+                    var alternatives = {};
+
                     for(var i = 0; i < gene_data.length; i++){
                         gene_uuids.push(gene_data[i].uuid);
                     }
@@ -1412,6 +1419,12 @@
                             var alt_count = alleles[j].alternative_freq;
                             if(chromosomes[allele] == undefined){
                                 chromosomes[allele] = gene_data[gene_uuids.indexOf(alleles[j].gene)].chromosome;
+                                positions[allele] = gene_data[gene_uuids.indexOf(alleles[j].gene)].position;
+                                types[allele] = alleles[j].type;
+                                cDNAs[allele] = alleles[j].cDNA_change;
+                                ref_seqs[allele] = alleles[j].ref_seq;
+                                references[allele] = alleles[j].reference;
+                                alternatives[allele] = alleles[j].alternative;
                             }
                             allele_data.push({
                                 allele: allele,
@@ -1420,7 +1433,7 @@
                             });
                         }
                     }
-                    return [allele_data, chromosomes];
+                    return [allele_data, chromosomes, positions, types, cDNAs, ref_seqs, references, alternatives];
                 },
 
                 patch: function(data){
@@ -1509,7 +1522,7 @@
                 $scope.type_dict = {};
                 $scope.cDNA_dict = {};
                 $scope.ref_seq_dict = {};
-                $scope.reference = {};
+                $scope.reference_dict = {};
                 $scope.alternative = {};
                 $scope.linked_alleleified_data = [];
                 $scope.dendro_data = [];
@@ -1557,6 +1570,12 @@
 
                     var alleleified_data = allelify.alleleify($scope.tevData, gene_data);
                     $scope.chromosome_dict = alleleified_data[1];
+                    $scope.position_dict = alleleified_data[2];
+                    $scope.type_dict = alleleified_data[3];
+                    $scope.cDNA_dict = alleleified_data[4];
+                    $scope.ref_seq_dict = alleleified_data[5];
+                    $scope.reference_dict = alleleified_data[6];
+                    $scope.alternative_dict = alleleified_data[7];
                     alleleified_data = alleleified_data[0];
                     alleleified_data = allelify.patch(alleleified_data);
                     $scope.alleleified_data = alleleified_data;
@@ -2658,6 +2677,9 @@
                                     }
                                 }
                                 else{
+                                    if(next_up == "none"){
+                                        break;
+                                    }
                                     var parent_allele = nestedData[next_up];
                                 }
                                 //Check if it can fit inside parent_allele alongside parent_allele's children
@@ -2869,7 +2891,13 @@
                     data: '=',
                     values: '=',
                     colors: '=',
-                    chromosomes: '='
+                    chromosomes: '=',
+                    positions: '=',
+                    types: '=',
+                    cdnas: '=',
+                    refseqs: '=',
+                    references: '=',
+                    alternatives: '='
                 },
                 link: link
             };
@@ -2881,6 +2909,13 @@
                 var height = el.clientHeight;
                 var color_ref = scope.colors;
                 var chromosome_ref = scope.chromosomes;
+                var position_ref = scope.positions;
+                var type_ref = scope.types;
+                var cDNA_ref = scope.cdnas;
+                var ref_seq_ref = scope.refseqs;
+                var reference_ref = scope.references;
+                var alternative_ref = scope.alternatives;
+
 
                 scope.$watch('colors', function(new_colors){
                     color_ref = new_colors;
@@ -2888,6 +2923,30 @@
 
                 scope.$watch('chromosomes', function(updated_info){
                     chromosome_ref = updated_info;
+                });
+
+                scope.$watch('positions', function(updated_info){
+                    position_ref = updated_info;
+                });
+
+                scope.$watch('types', function(updated_info){
+                    type_ref = updated_info;
+                });
+
+                scope.$watch('cdnas', function(updated_info){
+                    cDNA_ref = updated_info;ƒ
+                });
+
+                scope.$watch('refseqs', function(updated_info){
+                    ref_seq_ref = updated_info;
+                });
+
+                scope.$watch('references', function(updated_info){
+                    reference_ref = updated_info;
+                });
+
+                scope.$watch('alternatives', function(updated_info){
+                    alternative_ref = updated_info;
                 });
 
                 scope.$watch('data', function (updated_data) {
@@ -2909,7 +2968,20 @@
 
                     for(var i = 0; i < canvas_nested_data.length; i++){
                         canvas_nested_data[i].chromosome = chromosome_ref[canvas_nested_data[i].key];
+                        canvas_nested_data[i].position = position_ref[canvas_nested_data[i].key];
+                        canvas_nested_data[i].type_of = type_ref[canvas_nested_data[i].key];
+                        canvas_nested_data[i].cDNA = cDNA_ref[canvas_nested_data[i].key];
+                        canvas_nested_data[i].ref_seq = ref_seq_ref[canvas_nested_data[i].key];
+                        canvas_nested_data[i].reference = reference_ref[canvas_nested_data[i].key];
+                        canvas_nested_data[i].alternative = alternative_ref[canvas_nested_data[i].key];
+
                         mini_nested_data[i].chromosome = chromosome_ref[mini_nested_data[i].key];
+                        mini_nested_data[i].position = position_ref[mini_nested_data[i].key];
+                        mini_nested_data[i].type_of = type_ref[mini_nested_data[i].key];
+                        mini_nested_data[i].cDNA = cDNA_ref[mini_nested_data[i].key];
+                        mini_nested_data[i].ref_seq = ref_seq_ref[mini_nested_data[i].key];
+                        mini_nested_data[i].reference = reference_ref[mini_nested_data[i].key];
+                        mini_nested_data[i].alternative = alternative_ref[mini_nested_data[i].key];
                     }
 
                     var fishplot_data = [];
@@ -2977,7 +3049,6 @@
                     sort_array.sort(function(a, b){
                        return b.rank - a.rank;
                     });
-                    console.log(sort_array);
 
                     //Order mini fishplot svgs by rank
                     mini_nested_data = order_by_rank(mini_nested_data, sort_array);
@@ -4457,10 +4528,13 @@
                             .attr('width', mini_fishplot_container_height*0.15)
                             .attr('height', mini_fishplot_container_height*0.14)
                             .attr('id', 'infolight')
+                            .attr('index', function(d, i){
+                                return i;
+                            })
                             .attr('xlink:href',
                                     'https://cdn0.iconfinder.com/data/icons/seo-web-15/130/seo-social-web-network-internet_186-128.png')
-                            .on('click', function(){
-
+                            .on('click', function(d, i){
+                                console.log(d);
                             });
 
                     //Mini fishplot divs in scroll container
@@ -6467,7 +6541,8 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
             <div class="row">
                 <div id="figure6-wrapper" style="overflow: visible;">
                 <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info" colors="color_ref"
-                     chromosomes="chromosome_dict"
+                     chromosomes="chromosome_dict" positions="position_dict" types="type_dict" cdnas="cDNA_dict" refseqs="ref_seq_dict"
+                     references="reference_dict" alternatives="alternative_dict"
                      style="width: 100%; height: 600px; float: left; overflow: hidden;">
                 </div>
                 </div>
@@ -6673,6 +6748,31 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 
                             <!--
                             Will fill this in with a custom message pertaining to the name the user saved the fishplot under
+                            -->
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <!--
+            Modal for information on variant/gene
+            -->
+
+            <div class="modal fade" id="gene-info-modal" role="dialog">
+                <div class="modal-dialog modal-md">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: #222222; color: #ffffff;">
+                            <button type="button" class="close" data-dismiss="modal" style="color: #ffffff;">&times;</button>
+                            <h4 id="dialog-header" class="gene-info-modal-header-title" style="color: #ffffff;"></h4>
+                        </div>
+                        <div id="gene-info-modal-body" class="modal-body">
+
+                            <!--
+                            Will fill this in with information regarding gene
                             -->
 
                         </div>
