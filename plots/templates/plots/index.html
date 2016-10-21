@@ -2969,7 +2969,7 @@
                     for(var i = 0; i < canvas_nested_data.length; i++){
                         canvas_nested_data[i].chromosome = chromosome_ref[canvas_nested_data[i].key];
                         canvas_nested_data[i].position = position_ref[canvas_nested_data[i].key];
-                        canvas_nested_data[i].type_of = type_ref[canvas_nested_data[i].key];
+                        canvas_nested_data[i].type = type_ref[canvas_nested_data[i].key];
                         canvas_nested_data[i].cDNA = cDNA_ref[canvas_nested_data[i].key];
                         canvas_nested_data[i].ref_seq = ref_seq_ref[canvas_nested_data[i].key];
                         canvas_nested_data[i].reference = reference_ref[canvas_nested_data[i].key];
@@ -2977,7 +2977,7 @@
 
                         mini_nested_data[i].chromosome = chromosome_ref[mini_nested_data[i].key];
                         mini_nested_data[i].position = position_ref[mini_nested_data[i].key];
-                        mini_nested_data[i].type_of = type_ref[mini_nested_data[i].key];
+                        mini_nested_data[i].type = type_ref[mini_nested_data[i].key];
                         mini_nested_data[i].cDNA = cDNA_ref[mini_nested_data[i].key];
                         mini_nested_data[i].ref_seq = ref_seq_ref[mini_nested_data[i].key];
                         mini_nested_data[i].reference = reference_ref[mini_nested_data[i].key];
@@ -4534,7 +4534,46 @@
                             .attr('xlink:href',
                                     'https://cdn0.iconfinder.com/data/icons/seo-web-15/130/seo-social-web-network-internet_186-128.png')
                             .on('click', function(d, i){
-                                console.log(d);
+                                d3.select('#gene-info-table').remove();
+                                d3.select('#gene-info-modal-header-title').html('');
+                                d3.select('#gene-info-modal-header-title').html(d.values[0].allele + ' ' + 'Gene Information');
+
+                                var info = ['chromosome', 'position', 'type', 'cDNA', 'ref_seq', 'reference', 'alternative'];
+                                var table_data = [];
+                                for(var i = 0; i < info.length; i++){
+                                    table_data.push({
+                                        name: info[i],
+                                        value: d[info[i]]
+                                    });
+                                }
+
+                                var table = d3.select('#gene-info-modal-body').append('table')
+                                        .attr('id', 'gene-info-table')
+                                        .attr('class', 'table');
+
+                                var thead = table.append('thead').append('tr');
+                                thead.append('th').html('Parameter');
+                                thead.append('th').html('Value');
+
+                                var tbody = table.append('tbody').attr('id', 'tbody-gene-info-table');
+
+                                var rows = tbody.selectAll('gene-info')
+                                        .data(table_data)
+                                        .enter()
+                                        .append('tr');
+
+                                rows.append('td')
+                                        .html(function(d){
+                                           return d.name;
+                                        });
+
+                                rows.append('td')
+                                        .html(function(d){
+                                            return d.value;
+                                        });
+
+                                 $('#gene-info-modal').modal('show');
+
                             });
 
                     //Mini fishplot divs in scroll container
@@ -6767,7 +6806,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                     <div class="modal-content">
                         <div class="modal-header" style="background: #222222; color: #ffffff;">
                             <button type="button" class="close" data-dismiss="modal" style="color: #ffffff;">&times;</button>
-                            <h4 id="dialog-header" class="gene-info-modal-header-title" style="color: #ffffff;"></h4>
+                            <h4 id="gene-info-modal-header-title" class="modal-title" style="color: #ffffff; text-align:center;"></h4>
                         </div>
                         <div id="gene-info-modal-body" class="modal-body">
 
