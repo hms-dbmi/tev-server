@@ -5338,7 +5338,7 @@
                                     if(subject_fishplots[i].name == name){
                                         fishplot_data = subject_fishplots[i];
                                         if(fishplot_data.data[0].parent_index_of_this != "plot"){
-                                            fishplot_data.data = reverse_fishplot_data(fishplot_data.data);
+                                            fishplot_data.data = fishplot_data.data.reverse();
                                         }
                                         break;
                                     }
