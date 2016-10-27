@@ -89,6 +89,7 @@ class CloneTimepointData(models.Model):
     clone = models.ForeignKey(CloneMetadata, on_delete=models.CASCADE, related_name='timepoint_data')
     Sample_Barcode = models.CharField(max_length=250)
     alt_count = models.IntegerField()
+    conserved_alt_count = models.IntegerField()
     allele = models.CharField(max_length=250)
     cluster = models.IntegerField()
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

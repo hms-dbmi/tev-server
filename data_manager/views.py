@@ -361,6 +361,7 @@ def save_fishplot(request):
             data.clone = clone
             data.Sample_Barcode = timepoint["Sample_Barcode"]
             data.alt_count = int(timepoint["alt_count"])
+            data.conserved_alt_count = int(timepoint["conserved_alt_count"])
             data.allele = timepoint["allele"]
             data.cluster = int(timepoint["cluster"])
             data.save()

@@ -1167,7 +1167,17 @@
                 canvas_nested_data[index].values[j].ccf = ccf[j];
             }
         }
+    }
 
+    //function to keep record of conserved alt count, mainly for fishplot table
+    //called in fishplot table scope, and fishplot editor (need when saving fishplot)
+    function add_conserved_alt_count(nested_data) {
+        for (var i = 0; i < nested_data.length; i++) {
+            var timepoint_data = nested_data[i].values;
+            for (var j = 0; j < timepoint_data.length; j++) {
+                timepoint_data[j].conserved_alt_count = timepoint_data[j].alt_count;
+            }
+        }
     }
 
     function fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
@@ -1568,6 +1578,8 @@
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
                 $scope.tevData = [];
                 $scope.alleleified_data = [];
+                //parameter for editor table only, when user loads previously saved fishplot
+                $scope.loaded_fishplot_data = [];
                 $scope.chromosome_dict = {};
                 $scope.position_dict = {};
                 $scope.type_dict = {};
@@ -3061,6 +3073,10 @@
                         }
                         fishplot_data.push(allele_data);
                     });
+
+                    add_conserved_alt_count(canvas_nested_data);
+                    add_conserved_alt_count(mini_nested_data);
+
 
                     var x_axis_labels = [];
                     x_axis_labels = uniqueAxisLabels(data, 'Sample_Barcode');
@@ -5424,15 +5440,19 @@
                                     fishplot_svgs.unshift(parseInt(fishplot_data.data[i].index));
                                     d3.select('#mini_fishplot_div' + fishplot_data.data[i].index).style('opacity', 0.35);
                                     var current_fish = canvas_nested_data[fishplot_data.data[i].index];
+                                    var mini_current_fish = mini_nested_data[fishplot_data.data[i].index];
                                     current_fish.children = [];
                                     current_fish.group = fishplot_data.data[i].group;
                                     current_fish.ploidy = fishplot_data.data[i].ploidy;
+                                    mini_current_fish.ploidy = fishplot_data.data[i].ploidy;
                                     current_fish.start_point = fishplot_data.data[i].start_point;
                                     current_fish.chrs_affected = fishplot_data.data[i].chrs_affected;
+                                    mini_current_fish.chrs_affected = fishplot_data.data[i].chrs_affected;
 
                                     //Re-do top and bottom based on start position from mousedown
                                     for (var j = 0; j < current_fish.values.length; j++) {
                                         current_fish.values[j].alt_count = fishplot_data.data[i].timepoint_data[j].alt_count;
+                                        mini_current_fish.values[j].alt_count = fishplot_data.data[i].timepoint_data[j].alt_count;
                                         current_fish.values[j].top = current_fish.start_point + (current_fish.values[j].alt_count / 2);
                                         current_fish.values[j].bottom = current_fish.start_point - (current_fish.values[j].alt_count / 2);
                                     }
@@ -5452,7 +5472,10 @@
                                 fishplot_svgs.reverse();
                                 scope.$apply(function() {
                                                 scope.$parent.plotted = fishplot_svgs;
+                                                scope.$parent.updated_editor_info = mini_nested_data;
+                                                scope.$parent.loaded_fishplot_data = canvas_nested_data;
                                             });
+
 
                                 var nested_data = canvas_nested_data.slice(0);
 
@@ -6033,15 +6056,23 @@
                             });
 
                     scope.$watch('values', function (new_values) {
-                        var allele = new_values[0];
-                        var timepoint = new_values[1];
-                        if (!isNaN(parseInt(timepoint))) {
-                            timepoint = parseInt(timepoint);
-                        }
-                        var vaf = new_values[2];
+                        //if 3 parameters sent through, it came from fishplot table
+                        if(new_values.length == 3) {
+                            var allele = new_values[0];
+                            var timepoint = new_values[1];
+                            if (!isNaN(parseInt(timepoint))) {
+                                timepoint = parseInt(timepoint);
+                            }
+                            var vaf = new_values[2];
 
-                        var index = allele_index(canvas_nested_data, allele);
-                        from_table_update_nested_data(canvas_nested_data, mini_nested_data, allele, timepoint, vaf);
+                            var index = allele_index(canvas_nested_data, allele);
+                            from_table_update_nested_data(canvas_nested_data, mini_nested_data, allele, timepoint, vaf);
+                        }
+
+                        //else it's updated mini fishplot data from loading saved fishplot
+                        if(new_values.length == 1){
+                            mini_nested_data = new_values;
+                        }
 
                         var temp_y_max = y_scale_domain_max(mini_nested_data);
                         if (temp_y_max > y_max) {
@@ -6329,7 +6360,8 @@
                 scope: {
                     data: '=',
                     colors: '=',
-                    plotted: '='
+                    plotted: '=',
+                    loadeddata: '='
                 },
                 link: link
             };
@@ -6344,6 +6376,8 @@
                 var color_ref = scope.colors;
                 var plotted = scope.plotted;
 
+                var timepoints = [];
+
                 scope.$watch('colors', function(new_colors){
                     color_ref = new_colors;
                 });
@@ -6351,7 +6385,6 @@
                 scope.$watch('plotted', function(updated_data){
                     plotted = updated_data;
                 });
-
 
                 scope.$watch('data', function(updated_data){
                     d3.selectAll('table').remove();
@@ -6363,7 +6396,7 @@
 
                     nested_data = sort_nested_alleles(nested_data);
 
-                    var timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
+                    timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
                     timepoints = timepoints.sort(function(a, b){
                        return a-b;
                     });
@@ -6382,6 +6415,9 @@
                         }
                         fishplot_data.push(allele_data);
                     });
+
+                    add_conserved_alt_count(nested_data);
+
 
                     //Sorting data by what can fit in what
                     var sort_array = [];
@@ -6448,11 +6484,27 @@
                             d3.select('#tr' + i).append('td')
                                     .style('text-align', 'center')
                                     .attr('value', nested_data[i].values[j].alt_count)
-                                    .attr('conserved_val', nested_data[i].values[j].alt_count)
+                                    .attr('conserved_val', nested_data[i].values[j].conserved_alt_count)
                                     .attr('timepoint', timepoints[j])
                                     .attr('allele', nested_data[i].key)
                                     .attr('index', i)
-                                    .html(nested_data[i].values[j].alt_count + '%')
+                                    .html(function(){
+                                        console.log(nested_data[i].values);
+                                        console.log(nested_data[i].values[j].alt_count, nested_data[i].values[j].conserved_alt_count);
+                                        if(nested_data[i].values[j].alt_count == nested_data[i].values[j].conserved_alt_count) {
+                                            return (nested_data[i].values[j].alt_count + '%');
+                                        }
+                                        else{
+                                            var conserved_alt_count = nested_data[i].values[j].conserved_alt_count;
+                                            var html = '%' + ' '
+                                                    + '<a data-toggle="popover" data-trigger="click" ' +
+                                                    'title="This VAF has been altered"'
+                                                    + 'data-content="The original VAF was ' + conserved_alt_count
+                                                    + '">*</a>';
+                                            return (nested_data[i].values[j].alt_count + html);
+                                        }
+
+                                    })
                                     .on('dblclick', function () {
                                         var index = parseInt(d3.select(this).attr('index'));
                                         if(plotted.indexOf(index) != -1){
@@ -6510,6 +6562,118 @@
                         }
                     }
 
+                });
+
+                scope.$watch('loadeddata', function(loaded_data){
+                    var nested_data = JSON.parse(JSON.stringify(loaded_data));
+
+                    //check if origin already added. If so, remove it
+                    for(var i = 0; i < nested_data.length; i++){
+                        var timepoint_data = nested_data[i].values;
+                        if(timepoint_data[0].Sample_Barcode < 0 || timepoint_data[0].Sample_Barcode == 'origin'){
+                            timepoint_data.shift();
+                        }
+                    }
+
+                    d3.select('#tbody-editor-table').remove();
+                    var tbody = d3.select('#editor-table').append('tbody').attr('id', 'tbody-editor-table').append('tr');
+                    tbody.append('td').attr('align', 'center').html('<b> Alleles </b>');
+
+                    for(var i = 0; i < timepoints.length; i++){
+                        if(Number.isInteger(timepoints[i]) == true){
+                            var timepoint = 'Day ' + timepoints[i];
+                        }
+                        else{
+                            timepoint = timepoints[i];
+                        }
+                        tbody.append('td').attr('align', 'center').html('<b>' + timepoint + '</b>');
+                    }
+
+                    for(var i = 0; i < nested_data.length; i++){
+                        var table_data = d3.select('#tbody-editor-table').append('tr').attr('id', 'tr'+i);
+                        d3.select('#tr'+i).append('td')
+                                .attr('bgcolor', nested_data[i].color)
+                                .style('text-align', 'center')
+                                .html(nested_data[i].key);
+                        for (var j = 0; j < timepoints.length; j++) {
+                            d3.select('#tr' + i).append('td')
+                                    .style('text-align', 'center')
+                                    .attr('value', nested_data[i].values[j].alt_count)
+                                    .attr('conserved_val', nested_data[i].values[j].conserved_alt_count)
+                                    .attr('timepoint', timepoints[j])
+                                    .attr('allele', nested_data[i].key)
+                                    .attr('index', i)
+                                    .html(function(){
+                                        if(nested_data[i].values[j].alt_count == nested_data[i].values[j].conserved_alt_count) {
+                                            return (nested_data[i].values[j].alt_count + '%');
+                                        }
+                                        else{
+                                            var conserved_alt_count = nested_data[i].values[j].conserved_alt_count;
+                                            var html = '%' + ' '
+                                                    + '<a data-toggle="popover" data-trigger="click" ' +
+                                                    'title="This VAF has been altered"'
+                                                    + 'data-content="The original VAF was ' + conserved_alt_count
+                                                    + '">*</a>';
+                                            return (nested_data[i].values[j].alt_count + html);
+                                        }
+
+                                    })
+                                    .on('dblclick', function () {
+                                        var index = parseInt(d3.select(this).attr('index'));
+                                        if(plotted.indexOf(index) != -1){
+
+                                            return;
+                                        }
+
+                                        var allele = d3.select(this).attr('allele');
+                                        var alt_count = d3.select(this).attr('value');
+                                        var conserved_alt_count = d3.select(this).attr('conserved_val');
+                                        var current_td = d3.select(this);
+                                        current_td.html(' ');
+                                        var form = current_td.append('form');
+                                        form.append('input')
+                                                .attr('type', 'number')
+                                                .attr('min', '0')
+                                                .attr('max', '100')
+                                                .attr('value', alt_count)
+                                                .on('keydown', function () {
+                                                    if (d3.event.keyCode == 13) {
+                                                        d3.event.preventDefault();
+                                                        if (!isNaN(parseInt(d3.select(this).node().value))) {
+                                                            var new_vaf = parseInt(d3.select(this).node().value);
+                                                            if (new_vaf > 100) {
+                                                                new_vaf = 100;
+                                                            }
+                                                            if (new_vaf < 0) {
+                                                                new_vaf = 0;
+                                                            }
+                                                            current_td.innerHTML = '';
+                                                            var percentage = '%';
+                                                            if(new_vaf != conserved_alt_count){
+                                                                percentage = percentage + ' '
+                                                                + '<a data-toggle="popover" data-trigger="click" ' +
+                                                                        'title="This VAF has been altered"'
+                                                                        + 'data-content="The original VAF was ' + conserved_alt_count
+                                                                + '">*</a>';
+                                                            }
+                                                            current_td.attr('value', new_vaf).html(new_vaf + percentage);
+                                                            var updated_info = [current_td.attr('allele'),
+                                                                current_td.attr('timepoint'),
+                                                                new_vaf];
+                                                            //update with parent scope with info on the allele, timepoint,
+                                                            //and new VAF
+                                                            //updated_editor_info will be used to communicate between the table
+                                                            //and the fishplot editor
+                                                            scope.$apply(function () {
+                                                                scope.$parent.updated_editor_info = updated_info;
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                        form.append('label').html('%');
+                                    });
+                        }
+                    }
                 });
             }
 
@@ -6642,6 +6806,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
             </div>
             <div class="row">
                 <div id="figure7" editor-table data="alleleified_data" colors="color_ref" plotted="plotted"
+                     loadeddata="loaded_fishplot_data"
                      style="width: 100%; float: left;">
                 </div>
             </div>
