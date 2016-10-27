@@ -1387,7 +1387,7 @@
             $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
         });
 
-        tevApp.factory('alleleify', function(){
+        tevApp.factory('alleleify', ['$http', function($http){
             return {
                 alleleify: function(data, gene_data){
                     var allele_data = [];
@@ -1491,9 +1491,60 @@
                         color_ref[allele] = colors[i];
                     }
                     return color_ref;
+                },
+
+                patients_with_gene: function (alleleified_data, source_data, gene_data) {
+                    //nest alleles to get gene names, will use gene_data to convert uuid to these gene names when done
+                    var alleles = d3.nest().key(function (d) {
+                                return d.allele;
+                            })
+                            .entries(alleleified_data);
+                    var genes = [];
+                    var gene_to_uuid = {};
+                    var gene_uuids = [];
+                    var genes_dict = {};
+                    for (var i = 0; i < alleles.length; i++) {
+                        genes.push(alleles[i].key.split('-')[0]);
+                    }
+                    //grab gene uuids to look up in sources (foreign key)
+                    for (var i = 0; i < gene_data.length; i++) {
+                        if (genes.indexOf(gene_data[i].name) != -1) {
+                            genes_dict[gene_data[i].uuid] = [];
+                            gene_uuids.push(gene_data[i].uuid);
+                            gene_to_uuid[gene_data[i].name] = gene_data[i].uuid;
+                        }
+                    }
+
+                    for (var i = 0; i < source_data.length; i++) {
+                        var source = source_data[i].subject_id;
+                        var samples = source_data[i].Samples;
+                        var genes_used = [];
+                        for (var j = 0; j < samples.length; j++) {
+                            var variants = samples[j].VariantAlleles;
+                            for (var k = 0; k < variants.length; k++) {
+                                if (gene_uuids.indexOf(variants[k].gene) != -1 && genes_used.indexOf(variants[k].gene) == -1) {
+                                    genes_used.push(variants[k].gene);
+                                    genes_dict[variants[k].gene].push(source);
+                                }
+                                if (genes_used.length == gene_uuids.length) {
+                                    break;
+                                }
+                            }
+                            if (genes_used.length == gene_uuids.length) {
+                                break;
+                            }
+                        }
+                    }
+
+                    for(var i = 0; i < genes.length; i++){
+                        genes_dict[genes[i]] = genes_dict[gene_to_uuid[genes[i]]];
+                        delete genes_dict[gene_to_uuid[genes[i]]];
+                    }
+                    
+                    return genes_dict;
                 }
             };
-        });
+        }]);
 
         tevApp.factory('saved_fishplots', function(){
            return {
@@ -1536,6 +1587,9 @@
                 $scope.saved_fishplot_names = [];
                 $scope.updated_editor_info = [];
                 $scope.color_ref = {};
+                //dictionary with how many patients in DB share mutation in gene
+                //could do on allele basis?
+                $scope.patient_gene_dict = {};
 
                 //Check if an allele has already been plotted. For editor table... dont allow change if plotted
                 $scope.plotted = [];
@@ -1549,10 +1603,12 @@
                 //Get the data from the API
                 var source_request = $http.get('../api/v1/sources/');
                 var gene_request = $http.get('../api/v1/genes/');
+                var sample_request = $http.get('../api/v1/samples/');
                 var saved_fishplot_names_request = $http.get('../api/v1/saved_fishplots_just_names/');
 
                 $q.all([source_request, gene_request, saved_fishplot_names_request]).then(function(results_array){
                     var tevData = results_array[0].data;
+                    var source_data = results_array[0].data;
                     var gene_data = results_array[1].data;
                     var saved_fishplot_names = results_array[2].data;
                     tevData = $filter('filter')(tevData, {'uuid': source_uuid})[0];
@@ -1580,6 +1636,7 @@
                     alleleified_data = allelify.patch(alleleified_data);
                     $scope.alleleified_data = alleleified_data;
                     $scope.color_ref = allelify.allele_color_reference(alleleified_data);
+                    $scope.patient_gene_dict = allelify.patients_with_gene(alleleified_data, source_data, gene_data);
 
                     //Send through this data, when the data from the API has been recieved
                     $scope.dendro_data = dendro_data;
@@ -2897,7 +2954,8 @@
                     cdnas: '=',
                     refseqs: '=',
                     references: '=',
-                    alternatives: '='
+                    alternatives: '=',
+                    patientswithgene: '='
                 },
                 link: link
             };
@@ -2915,6 +2973,7 @@
                 var ref_seq_ref = scope.refseqs;
                 var reference_ref = scope.references;
                 var alternative_ref = scope.alternatives;
+                var patients_with_gene_ref = scope.patientswithgene;
 
 
                 scope.$watch('colors', function(new_colors){
@@ -2934,7 +2993,7 @@
                 });
 
                 scope.$watch('cdnas', function(updated_info){
-                    cDNA_ref = updated_info;ƒ
+                    cDNA_ref = updated_info;
                 });
 
                 scope.$watch('refseqs', function(updated_info){
@@ -2947,6 +3006,10 @@
 
                 scope.$watch('alternatives', function(updated_info){
                     alternative_ref = updated_info;
+                });
+
+                scope.$watch('patientswithgene', function(updated_info){
+                    patients_with_gene_ref = updated_info;
                 });
 
                 scope.$watch('data', function (updated_data) {
@@ -2974,6 +3037,7 @@
                         canvas_nested_data[i].ref_seq = ref_seq_ref[canvas_nested_data[i].key];
                         canvas_nested_data[i].reference = reference_ref[canvas_nested_data[i].key];
                         canvas_nested_data[i].alternative = alternative_ref[canvas_nested_data[i].key];
+                        canvas_nested_data[i]['patients with gene']= patients_with_gene_ref[canvas_nested_data[i].key.split('-')[0]].length;
 
                         mini_nested_data[i].chromosome = chromosome_ref[mini_nested_data[i].key];
                         mini_nested_data[i].position = position_ref[mini_nested_data[i].key];
@@ -2982,6 +3046,7 @@
                         mini_nested_data[i].ref_seq = ref_seq_ref[mini_nested_data[i].key];
                         mini_nested_data[i].reference = reference_ref[mini_nested_data[i].key];
                         mini_nested_data[i].alternative = alternative_ref[mini_nested_data[i].key];
+                        mini_nested_data[i]['patients with gene'] = patients_with_gene_ref[mini_nested_data[i].key.split('-')[0]].length;
                     }
 
                     var fishplot_data = [];
@@ -4538,7 +4603,8 @@
                                 d3.select('#gene-info-modal-header-title').html('');
                                 d3.select('#gene-info-modal-header-title').html(d.values[0].allele + ' ' + 'Gene Information');
 
-                                var info = ['chromosome', 'position', 'type', 'cDNA', 'ref_seq', 'reference', 'alternative'];
+                                var info = ['chromosome', 'position', 'type', 'cDNA', 'ref_seq', 'reference', 'alternative',
+                                    'patients with gene'];
                                 var table_data = [];
                                 for(var i = 0; i < info.length; i++){
                                     table_data.push({
@@ -4546,6 +4612,7 @@
                                         value: d[info[i]]
                                     });
                                 }
+
 
                                 var table = d3.select('#gene-info-modal-body').append('table')
                                         .attr('id', 'gene-info-table')
@@ -6581,7 +6648,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                 <div id="figure6-wrapper" style="overflow: visible;">
                 <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info" colors="color_ref"
                      chromosomes="chromosome_dict" positions="position_dict" types="type_dict" cdnas="cDNA_dict" refseqs="ref_seq_dict"
-                     references="reference_dict" alternatives="alternative_dict"
+                     references="reference_dict" alternatives="alternative_dict" patientswithgene="patient_gene_dict"
                      style="width: 100%; height: 600px; float: left; overflow: hidden;">
                 </div>
                 </div>
