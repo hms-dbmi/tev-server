@@ -1540,7 +1540,7 @@
                         genes_dict[genes[i]] = genes_dict[gene_to_uuid[genes[i]]];
                         delete genes_dict[gene_to_uuid[genes[i]]];
                     }
-                    
+
                     return genes_dict;
                 }
             };
@@ -5418,6 +5418,7 @@
                                 plot_background.groups = {};
                                 plot_background.children = [];
                                 d3.selectAll('.mini_fishplot_divs').style('opacity', 1);
+                                console.log(fishplot_data);
 
                                 for(var i = 0; i < fishplot_data.data.length; i++){
                                     fishplot_svgs.unshift(parseInt(fishplot_data.data[i].index));
@@ -5431,6 +5432,7 @@
 
                                     //Re-do top and bottom based on start position from mousedown
                                     for (var j = 0; j < current_fish.values.length; j++) {
+                                        current_fish.values[j].alt_count = fishplot_data.data[i].timepoint_data[j].alt_count;
                                         current_fish.values[j].top = current_fish.start_point + (current_fish.values[j].alt_count / 2);
                                         current_fish.values[j].bottom = current_fish.start_point - (current_fish.values[j].alt_count / 2);
                                     }
@@ -5496,7 +5498,6 @@
                                 }
 
                                 d3.selectAll('.big_fish').remove();
-
 
                                 for (var i = 0; i < nested_data.length; i++) {
                                     var current_data = nested_data[i];
