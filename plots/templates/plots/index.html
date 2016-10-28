@@ -4493,8 +4493,6 @@
                         }
                     }
 
-                    console.log(canvas_nested_data);
-
                     //Function to save the fishplot
                     d3.select('#save_as_fishplot_button')
                             .on('click', function () {
@@ -5426,8 +5424,13 @@
                                         fishplot_data = subject_fishplots[i];
                                         if(fishplot_data.data[0].parent_index_of_this != "plot"){
                                             fishplot_data.data = fishplot_data.data.reverse();
+                                            if(fishplot_data.data[0].timepoint_data[0].Sample_Barcode > 0 || fishplot_data.data[0].timepoint_data[0].Sample_Barcode != 'origin'){
+                                                for(var j = 0; j < fishplot_data.data.length; j++){
+                                                    fishplot_data.data[j].timepoint_data.reverse();
+                                                }
+                                            }
+
                                         }
-                                        break;
                                     }
                                 }
                                 if(fishplot_data == null){
@@ -5438,6 +5441,8 @@
                                 plot_background.groups = {};
                                 plot_background.children = [];
                                 d3.selectAll('.mini_fishplot_divs').style('opacity', 1);
+
+                                console.log(fishplot_data);
 
                                 for(var i = 0; i < fishplot_data.data.length; i++){
                                     fishplot_svgs.unshift(parseInt(fishplot_data.data[i].index));
