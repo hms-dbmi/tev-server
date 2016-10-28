@@ -239,6 +239,10 @@
                     will_work = false;
                 }
 
+                if(all_evo_cell_counts[i] > 0 && chromosomes_needed == 0){
+                    will_work = false;
+                }
+
                 if (chromosomes_needed > ((chromosome_counts[timepoints.toString()][nested_data[independent_evos[i]].key]) + nested_data[independent_evos[i]].ploidy-1)) {
                     will_work = false;
                 }
