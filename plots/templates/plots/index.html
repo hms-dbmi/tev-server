@@ -107,16 +107,16 @@
         //need to update to keep track of how many times we need to recursively call this function
         var max_cells_of_this_evo = purity; //- (num_of_evos-1);
 
-        if(is_child == true){
+        if(is_child == true && independent_evos.length == 1){
                 calculate_child_CCF(independent_evos, nested_data, purity, timepoints, options,
-                        timepoint_index, pre_determined_total_chrs);
+                        timepoint_index);
         }
 
         if((counter == num_of_evos) && (num_of_evos == 1)){
             return;
         }
 
-        if(is_child == false) {
+        else {
 
             //The following lines of this function are for generating all possible combinations of cell counts per
             //independent clonal expansion based on the purity (or percentage of cells assigned to parent)
@@ -126,7 +126,7 @@
                 for (var i = 0; i < max_cells_of_this_evo + 1; i++) {
                     cells_per_evo_array.push(i);
                     find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_per_evo_array, timepoints,
-                            options, timepoint_index, is_child, null);
+                            options, timepoint_index, is_child, pre_determined_total_chrs);
                     cells_per_evo_array = [];
                 }
             }
@@ -147,7 +147,7 @@
                     }
                     else {
                         find_CCFs(independent_evos, counter, nested_data, purity, num_of_evos, cells_array, timepoints,
-                                options, timepoint_index, is_child, null);
+                                options, timepoint_index, is_child, pre_determined_total_chrs);
                     }
                 }
             }
@@ -182,69 +182,19 @@
         }
     }
 
-    function get_combos_of_children_CCF(cell_counts, aff_chrs_lookup, timepoint, parent_cell_count, options, ploidy, alleles, allele_copy, sum_arr){
-        if(allele_copy.length > 1){
-            var allele = allele_copy[0];
-            var cells_arr = cell_counts[allele];
-            for(var i = 0; i < cells_arr.length; i++){
-                var updated_sum_arr = sum_arr.slice(0);
-                updated_sum_arr.push(cells_arr[i]);
-                var updated_alleles = JSON.parse(JSON.stringify(allele_copy));
-                updated_alleles.shift();
-                get_combos_of_children_CCF(cell_counts, aff_chrs_lookup, timepoint, parent_cell_count, options, ploidy, alleles, updated_alleles,
-                updated_sum_arr);
-            }
-        }
-        if(allele_copy.length == 1){
-            var allele = allele_copy[0];
-            var cells_arr = cell_counts[allele];
-            for(var i = 0; i < cells_arr.length; i++){
-                var updated_sum_arr = sum_arr.slice(0);
-                updated_sum_arr.push(cells_arr[i]);
-                var sum = updated_sum_arr.reduce(function (a, b) {
-                        return a + b;
-                    }, 0);
-                if(sum <= parent_cell_count){
-                    var CCF = {};
-                    for(var j = 1; j < alleles.length+1; j++){
-                        var current_allele = alleles[j-1];
-                        CCF[current_allele] = [updated_sum_arr[j-1]];
-                        var num_of_chrs = aff_chrs_lookup[current_allele][updated_sum_arr[j-1]];
-                        CCF[current_allele+'_chrs'] = num_of_chrs;
-                    }
-                    options[timepoint.toString()].push(CCF);
-                }
-            }
-        }
-    }
-
     function calculate_child_CCF(independent_evos, nested_data, parent_cell_count, timepoints,
-                                 options, timepoint_index, total_chromosomes) {
-
-        var ploidy = nested_data[nested_data[independent_evos[0]].parent_index_of_this].ploidy;
-        var cell_counts = {};
-        var alleles = [];
-        var aff_chrs_lookup = {};
-
-        for(var i = 0; i < independent_evos.length; i++){
-            var vaf = nested_data[independent_evos[i]].values[timepoint_index].alt_count/100;
-            var num_of_chromosomes = vaf * total_chromosomes;
-            var allele = nested_data[independent_evos[i]].key;
-            alleles.push(allele);
-            aff_chrs_lookup[allele] = {};
-
-            cell_counts[allele] = [];
-
-            for(var j = 1; j < ploidy+1; j++){
-                var num_of_cells = num_of_chromosomes/j;
-                num_of_cells = Math.round(num_of_cells);
-                aff_chrs_lookup[allele][num_of_cells] = j;
-                cell_counts[allele].push(num_of_cells);
+                                 options, timepoint_index) {
+        var max_cells_of_this_evo = parent_cell_count;
+        for (var i = 0; i < max_cells_of_this_evo + 1; i++) {
+            var cells_array = [];
+            cells_array.push(i);
+            var sum = i;
+            if ((sum <= parent_cell_count)){
+                //function to see if there is a solution using the given ploidys
+                calculate_CCF(cells_array, independent_evos, nested_data, parent_cell_count, timepoints, options, timepoint_index);
             }
         }
 
-        get_combos_of_children_CCF(cell_counts, aff_chrs_lookup, timepoints, parent_cell_count, options, ploidy, alleles, alleles, []);
-        return;
     }
 
     //Function to see if there is a solution for CCF given the independent clonal expansions and cell ploidys
@@ -265,7 +215,6 @@
 
         //Initialize the chromosome count coming from normal cells
         chromosome_counts.normal = num_chrs_normal_cells;
-
 
             chromosome_counts[timepoints.toString()] = {};
             for (var i = 0; i < independent_evos.length; i++) {
@@ -1020,6 +969,12 @@
         }
         else {
             CCF_options = [];
+        }
+
+        if(CCF_options.length > 100){
+            var first_fifty = CCF_options.slice(0, 50);
+            var last_fifty = CCF_options.slice((CCF_options.length - 50))
+            CCF_options = first_fifty.concat(last_fifty);
         }
 
         var modal_table = d3.select('#CCF_modal_body_reprompt').append('table')
@@ -3268,6 +3223,12 @@
                                         CCF_options = [];
                                     }
 
+                                    if (CCF_options.length > 100) {
+                                        var first_fifty = CCF_options.slice(0, 50);
+                                        var last_fifty = CCF_options.slice((CCF_options.length - 50))
+                                        CCF_options = first_fifty.concat(last_fifty);
+                                    }
+
                                     var modal_table = d3.select('#CCF_modal_body')
                                             .append('table')
                                             .attr('id', 'modal_table')
@@ -3903,6 +3864,12 @@
                                                     CCF_options = [];
                                                 }
 
+                                                if (CCF_options.length > 100) {
+                                                    var first_fifty = CCF_options.slice(0, 50);
+                                                    var last_fifty = CCF_options.slice((CCF_options.length - 50))
+                                                    CCF_options = first_fifty.concat(last_fifty);
+                                                }
+
                                                 var modal_table = d3.select('#CCF_modal_body').append('table')
                                                         .attr('id', 'modal_table')
                                                         .attr('class', 'table table-hover');
@@ -4252,6 +4219,12 @@
                                                 }
                                                 else {
                                                     CCF_options = [];
+                                                }
+
+                                                if (CCF_options.length > 100) {
+                                                    var first_fifty = CCF_options.slice(0, 50);
+                                                    var last_fifty = CCF_options.slice((CCF_options.length - 50))
+                                                    CCF_options = first_fifty.concat(last_fifty);
                                                 }
 
                                                 var modal_table = d3.select('#CCF_modal_body').append('table')
@@ -5183,6 +5156,12 @@
                                 else {
                                     CCF_options = [];
                                 }
+
+                                if (CCF_options.length > 100) {
+                                    var first_fifty = CCF_options.slice(0, 50);
+                                    var last_fifty = CCF_options.slice((CCF_options.length - 50))
+                                    CCF_options = first_fifty.concat(last_fifty);
+                                }
                             }
                         }
 
@@ -5439,8 +5418,6 @@
                                 plot_background.groups = {};
                                 plot_background.children = [];
                                 d3.selectAll('.mini_fishplot_divs').style('opacity', 1);
-
-                                console.log(fishplot_data);
 
                                 for(var i = 0; i < fishplot_data.data.length; i++){
                                     fishplot_svgs.unshift(parseInt(fishplot_data.data[i].index));
