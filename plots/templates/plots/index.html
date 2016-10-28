@@ -1488,8 +1488,8 @@
                 },
 
                 allele_color_reference: function(alleleified_data){
-                    var colors = ['#a6cee3','#1f78b4','#b2df8a','#33a02c', '#fb9a99', '#e31a1c',
-                                    '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99','#b15928'];
+                    var colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#bcbd22', '#17becf',
+                    '#393b79', '#637939', '#b5cf6b', '#e7ba52', '#d6616b', '#843c39', '#7b4173'];
 
                     var nested_data = d3.nest().key(function (d) {
                                 return d.allele;
@@ -1549,9 +1549,7 @@
 
                     for(var i = 0; i < genes.length; i++){
                         genes_dict[genes[i]] = genes_dict[gene_to_uuid[genes[i]]];
-                        delete genes_dict[gene_to_uuid[genes[i]]];
                     }
-
                     return genes_dict;
                 }
             };
