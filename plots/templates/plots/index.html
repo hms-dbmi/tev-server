@@ -5822,15 +5822,17 @@
                             .selectAll('inputs')
                             .data(tick_labels)
                             .enter()
+                            .append('div')
                             .append('label')
+                            .attr('class', 'control-label')
                             .attr('for', function(d, i){
                                 return 'day' + d.toString() + '_input';
                             })
-                            .attr('class', 'form-control-label')
                             .html(function(d){
                                 return 'Day ' + d.toString() + ': ';
                             })
                             .append('input')
+                            .style('width', '150px')
                             .attr('type','number')
                             .attr('min', '0')
                             .attr('max', '100')
@@ -6832,9 +6834,9 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
             Modal for editing purity at timepoints
             -->
 
-            <div class="modal fade" id="purityModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+            <div class="modal fade bs-example-modal-sm" id="purityModal" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel"
                  aria-hidden="true">
-                <div class="modal-dialog" role="document">
+                <div class="modal-dialog modal-sm" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -6843,7 +6845,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                             <h4 class="modal-title" id="purityModalHeader">Edit Purity Information</h4>
                         </div>
                         <div class="modal-body">
-                            <form id="purityForm">
+                            <form id="purityForm" >
 
                                 <!--
                                 Will edit the form in d3 based on the timepoints
