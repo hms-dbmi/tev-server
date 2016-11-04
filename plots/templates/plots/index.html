@@ -3109,249 +3109,12 @@
                         mini_nested_data[i].color = color_ref[mini_nested_data[i].key];
                     }
 
-                    //Add input for purity atop the canvas
-                    var purity_div_height  = height*0.05;
-
-                    var purity_div_wrapper = d3.select(el).append('div')
-                            .style('top', '0px')
-                            .style('left', '0px')
-                            .style('width', '100%')
-                            .style('height', purity_div_height+'px')
-                            .style('position', 'relative')
-                            .style('float', 'left')
-                            .style('padding', '0px')
-                            .attr('id', 'purity_div_wrapper');
-
-                    var purity_input_div = purity_div_wrapper.append('div')
-                            .style('top', '0px')
-                            .style('left', function(){
-                                //left of canvas is actually set below
-                                var canvas_left = (width * 0.27);
-                                var rightmost_of_div = purity_div_wrapper.node().clientWidth;
-                                var middle_of_canvas = (canvas_left + rightmost_of_div)/2;
-                                return middle_of_canvas + 'px';
-                            })
-                            .style('width', '73%')
-                            .style('height', '100%')
-                            .style('float', 'right')
-                            .style('position', 'absolute')
-                            .attr('id', 'purity_input_div');
-
                     var CCF_options = {};
 
 
                     var allele_color_reference = associated_allele_colors(canvas_nested_data);
 
                     load_CCF_options(CCF_options, sample_timepoints);
-
-                    var edit_purity_button = purity_input_div.append('button')
-                            .attr('class', 'btn btn-default btn-sm')
-                            .attr('id', 'save_fishplot_button')
-                            .html('Edit Purity')
-                            .on('click', function(){
-                                $("#purityModal").modal('show');
-                            });
-
-                    //move button to the left by the length of its width to center it above canvas
-                    d3.select('#purity_input_div').style('left', function(){
-                        var button_width = edit_purity_button.node().offsetWidth;
-                        var div_left = parseInt(d3.select('#purity_input_div').style('left'));
-                        var new_left = div_left - button_width;
-                        new_left = new_left + 'px';
-                        return new_left;
-                    });
-
-                    var labels = d3.select('#purityForm')
-                            .selectAll('inputs')
-                            .data(tick_labels)
-                            .enter()
-                            .append('label')
-                            .attr('for', function(d, i){
-                                return 'day' + d.toString() + '_input';
-                            })
-                            .attr('class', 'form-control-label')
-                            .html(function(d){
-                                return 'Day ' + d.toString() + ': ';
-                            })
-                            .append('input')
-                            .attr('type','number')
-                            .attr('min', '0')
-                            .attr('max', '100')
-                            .attr('class', 'form-control')
-                            .attr('id', function(d, i){
-                                return 'day' + d.toString() + '_input';
-                            })
-                            .attr('value', 90);
-
-                    d3.select('#save_purity_button')
-                            .on('click', function () {
-
-                                if (plot_background.children.length > 1) {
-
-                                    var purity_dict = {};
-                                    for (var i = 0; i < tick_labels.length; i++) {
-
-                                        var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
-                                        if(purity_value > 100){
-                                            purity_value = 100;
-                                        }
-                                        if(purity_value < 0){
-                                            purity_value = 0;
-                                        }
-                                        purity_dict[tick_labels[i].toString()] = purity_value;
-                                    }
-
-                                    d3.select('#modal_table').remove();
-
-                                    CCF_options = {};
-                                    load_CCF_options(CCF_options, sample_timepoints);
-                                    var complete_nested_data = canvas_nested_data.slice();
-
-                                    for (var i = 0; i < tick_labels.length; i++) {
-                                        //actual timepoint index is +1 since first timepoint is the origin
-                                        var timepoint_index = i + 1;
-                                        find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                purity_dict[tick_labels[i].toString()], plot_background.children.length, [], tick_labels[i],
-                                                CCF_options, timepoint_index, false, null);
-                                    }
-
-                                    delete CCF_options[ten_percent_below_zero.toString()];
-
-                                    var valid = is_valid(CCF_options, tick_labels);
-
-                                    if (valid == true) {
-                                        var parent_alleles = get_parent_alleles(plot_background.children, canvas_nested_data);
-                                        CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
-                                    }
-                                    else {
-                                        CCF_options = [];
-                                    }
-
-                                    if (CCF_options.length > 100) {
-                                        var first_fifty = CCF_options.slice(0, 50);
-                                        var last_fifty = CCF_options.slice((CCF_options.length - 50))
-                                        CCF_options = first_fifty.concat(last_fifty);
-                                    }
-
-                                    var modal_table = d3.select('#CCF_modal_body')
-                                            .append('table')
-                                            .attr('id', 'modal_table')
-                                            .attr('class', 'table table-hover');
-                                    var thead = modal_table.append('thead').append('tr');
-
-                                    var alleles_column = thead.append('th').html('Parent Alleles');
-                                    var chrs_affected_column = thead.append('th').html('Chrs Affected');
-                                    var timepoints_column = thead.append('th').html('CCFs at Timepoints');
-
-                                    var table_body = modal_table.append('tbody')
-                                            .style('cursor', 'pointer');
-
-                                    var rows = table_body.selectAll('possible_ccfs')
-                                            .data(CCF_options)
-                                            .enter()
-                                            .append('tr')
-                                            .attr('index', function(d, i){
-                                                return i;
-                                            })
-                                            .attr('is-clicked', 0)
-                                            .on('mouseover', function () {
-                                                if (d3.select(this).attr('is-clicked') != 1) {
-                                                    d3.select(this).style('background-color', '#f5f5f5');
-                                                }
-                                            })
-                                            .on('mouseout', function () {
-                                                if (d3.select(this).attr('is-clicked') != 1) {
-                                                    d3.select(this).style('background-color', '#ffffff');
-                                                }
-                                            })
-                                            .on('mouseenter', function () {
-                                                if (d3.select(this).attr('is-clicked') != 1) {
-                                                    d3.select(this).style('background-color', '#f5f5f5');
-                                                }
-                                            })
-                                            .on('click', function(d){
-                                                //unselect previously selected tr
-                                                if(d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr'){
-                                                    d3.select('#selected-tr').attr('id', '')
-                                                            .attr('is-clicked', 0)
-                                                            .style('background-color', '#ffffff');
-                                                }
-
-                                                d3.select(this).attr('id', 'selected-tr');
-
-                                                var is_clicked = d3.select(this).attr('is-clicked');
-                                                if(is_clicked == 0){
-                                                    d3.select(this).attr('class', 'is-clicked');
-                                                    d3.select(this).attr('is-clicked', 1);
-                                                    d3.select(this).style('background-color', '#DCDCDC');
-                                                }
-                                                else if(is_clicked == 1) {
-                                                    d3.select(this).attr('is-clicked', 0);
-                                                    d3.select(this).style('background-color', '#f5f5f5');
-                                                }
-                                            });
-
-                                    rows.append('td')
-                                            .attr('class', function(d, i){
-                                                return 'row-data-' + i;
-                                            })
-                                            .html(function (d) {
-                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                for (var i = 0; i < alleles.length; i++) {
-                                                    var allele = alleles[i];
-                                                    var color = allele_color_reference[allele];
-                                                    var string = '<span style="color:' + color + '">'
-                                                            + allele + '</span>';
-                                                    alleles[i] = string;
-                                                }
-                                                alleles = alleles.join(' </br> ');
-                                                return alleles;
-                                            });
-
-                                    rows.append('td')
-                                            .attr('class', function(d, i){
-                                                return 'row-data-' + i;
-                                            })
-                                            .html(function (d) {
-                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                var chrs_affected_array = [];
-                                                for (var i = 0; i < alleles.length; i++) {
-                                                    var chrs_key = alleles[i] + '_chrs';
-                                                    var ploidy = get_ploidy(alleles[i], canvas_nested_data, plot_background.children);
-                                                    var string = d[chrs_key] + '/' + ploidy;
-                                                    chrs_affected_array.push(string);
-                                                }
-                                                chrs_affected_array = chrs_affected_array.join(' </br> ');
-                                                return chrs_affected_array;
-                                            });
-
-                                    rows.append('td')
-                                            .attr('class', function(d, i){
-                                                return 'row-data-' + i;
-                                            })
-                                            .html(function (d) {
-                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                var cell_fraction_array = [];
-                                                for (var i = 0; i < alleles.length; i++) {
-                                                    var current_allele = alleles[i];
-                                                    var allele_string = [];
-                                                    for (j = 0; j < tick_labels.length; j++) {
-                                                        allele_string.push('<span style="color:#0000FF">'
-                                                                + tick_labels[j] + ': '
-                                                                + '</span>' + d[current_allele][j]);
-                                                    }
-                                                    var string = allele_string.join(', ');
-                                                    cell_fraction_array.push(string);
-                                                }
-                                                cell_fraction_array = cell_fraction_array.join(' </br> ');
-                                                return cell_fraction_array;
-                                            });
-
-                                    d3.select('#CCF_modal_body').attr('popped-up', 1);
-                                    $("#CCF_modal").modal('show');
-                                }
-
-                            });
 
                     //Div wrapper for dragable div
                     var dragable_div_wrapper = d3.select(el).append('div')
@@ -3366,7 +3129,6 @@
                             .attr('id', 'dragable_div_wrapper');
 
                     var new_height = d3.select('#dragable_div_wrapper').node().offsetHeight;
-                    new_height = new_height + purity_div_height;
                     d3.select(el).style('height', new_height + 'px');
 
 
@@ -3389,7 +3151,7 @@
 
                     //Div to hold canvas svg
                     var canvas = d3.select(el).append('div')
-                            .style('top', purity_div_height + 'px')
+                            .style('top', new_height + 'px')
                             .style('left', width * 0.27 + 'px')
                             .style('width', '73%')
                             .style('height', height + 'px')
@@ -4514,8 +4276,6 @@
                                     $('#saved-fishplot-dialog-box').modal('show');
                                     return;
                                 }
-                                console.log(params_dict);
-
 
                                 if(fishplot_svgs.length > 0 && exists == false) {
                                     $http({
@@ -5594,7 +5354,7 @@
                                 button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('padding-right')) * 2;
 
                                 var save_fishplot_div_left = parseInt(d3.select('#save_fishplot_div').style('left'));
-                                var new_div_left = save_fishplot_div_left - 70; //pad 70px
+                                var new_div_left = save_fishplot_div_left - 85; //pad 85px
                                 new_div_left = new_div_left - button_width;
                                 return new_div_left + 'px';
                             })
@@ -6040,6 +5800,232 @@
                                 button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-left'));
                                 button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-right'));
                                 button_width = button_width + parseInt(d3.select('#plot_options_button').style('margin'));
+                                return button_width + 'px';
+                            });
+
+                    var edit_purity_div = d3.select('#save_fishplot_div_wrapper').append('div')
+                            .attr('id', 'edit_purity_div')
+                            .style('top', '0px')
+                            .style('height', '100%')
+                            .style('position', 'relative')
+                            .style('float', 'left');
+
+                    var edit_purity_button = edit_purity_div.append('button')
+                            .attr('class', 'btn btn-default btn-sm')
+                            .attr('id', 'edit_purity_button')
+                            .html('Edit Purity')
+                            .on('click', function(){
+                                $("#purityModal").modal('show');
+                            });
+
+                    var labels = d3.select('#purityForm')
+                            .selectAll('inputs')
+                            .data(tick_labels)
+                            .enter()
+                            .append('label')
+                            .attr('for', function(d, i){
+                                return 'day' + d.toString() + '_input';
+                            })
+                            .attr('class', 'form-control-label')
+                            .html(function(d){
+                                return 'Day ' + d.toString() + ': ';
+                            })
+                            .append('input')
+                            .attr('type','number')
+                            .attr('min', '0')
+                            .attr('max', '100')
+                            .attr('class', 'form-control')
+                            .attr('id', function(d, i){
+                                return 'day' + d.toString() + '_input';
+                            })
+                            .attr('value', 90);
+
+                    d3.select('#save_purity_button')
+                            .on('click', function () {
+
+                                if (plot_background.children.length > 1) {
+
+                                    var purity_dict = {};
+                                    for (var i = 0; i < tick_labels.length; i++) {
+
+                                        var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
+                                        if(purity_value > 100){
+                                            purity_value = 100;
+                                        }
+                                        if(purity_value < 0){
+                                            purity_value = 0;
+                                        }
+                                        purity_dict[tick_labels[i].toString()] = purity_value;
+                                    }
+
+                                    d3.select('#modal_table').remove();
+
+                                    CCF_options = {};
+                                    load_CCF_options(CCF_options, sample_timepoints);
+                                    var complete_nested_data = canvas_nested_data.slice();
+
+                                    for (var i = 0; i < tick_labels.length; i++) {
+                                        //actual timepoint index is +1 since first timepoint is the origin
+                                        var timepoint_index = i + 1;
+                                        find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
+                                                purity_dict[tick_labels[i].toString()], plot_background.children.length, [], tick_labels[i],
+                                                CCF_options, timepoint_index, false, null);
+                                    }
+
+                                    delete CCF_options[ten_percent_below_zero.toString()];
+
+                                    var valid = is_valid(CCF_options, tick_labels);
+
+                                    if (valid == true) {
+                                        var parent_alleles = get_parent_alleles(plot_background.children, canvas_nested_data);
+                                        CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
+                                    }
+                                    else {
+                                        CCF_options = [];
+                                    }
+
+                                    if (CCF_options.length > 100) {
+                                        var first_fifty = CCF_options.slice(0, 50);
+                                        var last_fifty = CCF_options.slice((CCF_options.length - 50))
+                                        CCF_options = first_fifty.concat(last_fifty);
+                                    }
+
+                                    var modal_table = d3.select('#CCF_modal_body')
+                                            .append('table')
+                                            .attr('id', 'modal_table')
+                                            .attr('class', 'table table-hover');
+                                    var thead = modal_table.append('thead').append('tr');
+
+                                    var alleles_column = thead.append('th').html('Parent Alleles');
+                                    var chrs_affected_column = thead.append('th').html('Chrs Affected');
+                                    var timepoints_column = thead.append('th').html('CCFs at Timepoints');
+
+                                    var table_body = modal_table.append('tbody')
+                                            .style('cursor', 'pointer');
+
+                                    var rows = table_body.selectAll('possible_ccfs')
+                                            .data(CCF_options)
+                                            .enter()
+                                            .append('tr')
+                                            .attr('index', function(d, i){
+                                                return i;
+                                            })
+                                            .attr('is-clicked', 0)
+                                            .on('mouseover', function () {
+                                                if (d3.select(this).attr('is-clicked') != 1) {
+                                                    d3.select(this).style('background-color', '#f5f5f5');
+                                                }
+                                            })
+                                            .on('mouseout', function () {
+                                                if (d3.select(this).attr('is-clicked') != 1) {
+                                                    d3.select(this).style('background-color', '#ffffff');
+                                                }
+                                            })
+                                            .on('mouseenter', function () {
+                                                if (d3.select(this).attr('is-clicked') != 1) {
+                                                    d3.select(this).style('background-color', '#f5f5f5');
+                                                }
+                                            })
+                                            .on('click', function(d){
+                                                //unselect previously selected tr
+                                                if(d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr'){
+                                                    d3.select('#selected-tr').attr('id', '')
+                                                            .attr('is-clicked', 0)
+                                                            .style('background-color', '#ffffff');
+                                                }
+
+                                                d3.select(this).attr('id', 'selected-tr');
+
+                                                var is_clicked = d3.select(this).attr('is-clicked');
+                                                if(is_clicked == 0){
+                                                    d3.select(this).attr('class', 'is-clicked');
+                                                    d3.select(this).attr('is-clicked', 1);
+                                                    d3.select(this).style('background-color', '#DCDCDC');
+                                                }
+                                                else if(is_clicked == 1) {
+                                                    d3.select(this).attr('is-clicked', 0);
+                                                    d3.select(this).style('background-color', '#f5f5f5');
+                                                }
+                                            });
+
+                                    rows.append('td')
+                                            .attr('class', function(d, i){
+                                                return 'row-data-' + i;
+                                            })
+                                            .html(function (d) {
+                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
+                                                for (var i = 0; i < alleles.length; i++) {
+                                                    var allele = alleles[i];
+                                                    var color = allele_color_reference[allele];
+                                                    var string = '<span style="color:' + color + '">'
+                                                            + allele + '</span>';
+                                                    alleles[i] = string;
+                                                }
+                                                alleles = alleles.join(' </br> ');
+                                                return alleles;
+                                            });
+
+                                    rows.append('td')
+                                            .attr('class', function(d, i){
+                                                return 'row-data-' + i;
+                                            })
+                                            .html(function (d) {
+                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
+                                                var chrs_affected_array = [];
+                                                for (var i = 0; i < alleles.length; i++) {
+                                                    var chrs_key = alleles[i] + '_chrs';
+                                                    var ploidy = get_ploidy(alleles[i], canvas_nested_data, plot_background.children);
+                                                    var string = d[chrs_key] + '/' + ploidy;
+                                                    chrs_affected_array.push(string);
+                                                }
+                                                chrs_affected_array = chrs_affected_array.join(' </br> ');
+                                                return chrs_affected_array;
+                                            });
+
+                                    rows.append('td')
+                                            .attr('class', function(d, i){
+                                                return 'row-data-' + i;
+                                            })
+                                            .html(function (d) {
+                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
+                                                var cell_fraction_array = [];
+                                                for (var i = 0; i < alleles.length; i++) {
+                                                    var current_allele = alleles[i];
+                                                    var allele_string = [];
+                                                    for (j = 0; j < tick_labels.length; j++) {
+                                                        allele_string.push('<span style="color:#0000FF">'
+                                                                + tick_labels[j] + ': '
+                                                                + '</span>' + d[current_allele][j]);
+                                                    }
+                                                    var string = allele_string.join(', ');
+                                                    cell_fraction_array.push(string);
+                                                }
+                                                cell_fraction_array = cell_fraction_array.join(' </br> ');
+                                                return cell_fraction_array;
+                                            });
+
+                                    d3.select('#CCF_modal_body').attr('popped-up', 1);
+                                    $("#CCF_modal").modal('show');
+                                }
+
+                            });
+
+                    //update the save_fishplot_div to move button to the right
+                    d3.select('#edit_purity_div').style('left', function () {
+                                var button_width = d3.select('#edit_purity_button').node().offsetWidth;
+                                button_width = button_width + parseInt(d3.select('#edit_purity_button').style('padding-left')) * 2;
+                                button_width = button_width + parseInt(d3.select('#edit_purity_button').style('padding-right')) * 2;
+
+                                var save_fishplot_div_left = parseInt(d3.select('#convert_to_ccf_div').style('left'));
+                                var new_div_left = save_fishplot_div_left - 75; //pad 75px
+                                new_div_left = new_div_left - button_width;
+                                return new_div_left + 'px';
+                            })
+                            .style('width', function () {
+                                var button_width = d3.select('#edit_purity_button').node().offsetWidth;
+                                button_width = button_width + parseInt(d3.select('#edit_purity_button').style('padding-left'));
+                                button_width = button_width + parseInt(d3.select('#edit_purity_button').style('padding-right'));
+                                button_width = button_width + parseInt(d3.select('#edit_purity_button').style('margin'));
                                 return button_width + 'px';
                             });
 
