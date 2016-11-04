@@ -11,6 +11,7 @@ from rest_framework.response import Response
 import datetime
 import re
 import json
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 
 def index(request):
@@ -311,10 +312,12 @@ def parse_tev_file(file):
 
         variant_allele.save()
 
-
+@ensure_csrf_cookie
 def save_fishplot(request):
     post_info = request.body
     post_info = json.loads(post_info.decode('utf-8'))
+
+    print(post_info)
 
     subject_id = post_info["subject_id"]
     name = post_info["name"]
