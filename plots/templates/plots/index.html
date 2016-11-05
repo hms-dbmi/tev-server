@@ -6685,6 +6685,9 @@
         $("#exampleModal").modal('show');
     }
 
+$('.panel-collapse.in')
+    .collapse('hide');
+
 </script>
 <body ng-controller = "tevDataController" style="margin-left: 2.5%; margin-right: 2.5%; margin-bottom: 2.5%">
 <!--
@@ -6775,21 +6778,54 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
 
     </div>
 
-<div id="editor-div" class="tab-pane">
-    <div class="row">
-        <div id="editor-wrapper" class="col-lg-12 col-md-12 col-sm-12">
-            <div class="row">
-                <div id="figure1" figure1-plot data="clustered_alleleified_data" colors="color_ref"
-                     style="height: 600px; width: 100%; float:left;">
+    <div id="editor-div" class="tab-pane">
+        <div class="row">
+            <div id="editor-wrapper" class="col-lg-12 col-md-12 col-sm-12">
+                <div class="row">
+                    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingOne">
+                                <h4 class="panel-title">
+                                    <a role="button" data-toggle="collapse"
+                                       href="#collapseOne"
+                                       aria-expanded="true" aria-controls="collapseOne">
+                                        VAF Over Time
+                                    </a>
+                                </h4>
+                            </div>
+                            <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel"
+                                 aria-labelledby="headingOne">
+                                <div class="panel-body">
+                                    <div id="figure1" figure1-plot data="clustered_alleleified_data" colors="color_ref"
+                                         style="height: 600px; width: 100%; float:left;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingTwo">
+                                <h4 class="panel-title">
+                                    <a class="collapsed" role="button" data-toggle="collapse"
+                                       href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                        VAF Editor Table
+                                    </a>
+                                </h4>
+                            </div>
+                            <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel"
+                                 aria-labelledby="headingTwo">
+                                <div class="panel-body">
+                                    <div id="figure7" editor-table data="alleleified_data" colors="color_ref"
+                                         plotted="plotted"
+                                         loadeddata="loaded_fishplot_data"
+                                         style="width: 100%; float: left;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="row">
-                <div id="figure7" editor-table data="alleleified_data" colors="color_ref" plotted="plotted"
-                     loadeddata="loaded_fishplot_data"
-                     style="width: 100%; float: left;">
-                </div>
-            </div>
-            <div class="row">
+
+                <div class="row">
                 <div id="figure6-wrapper" style="overflow: visible;">
                 <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info" colors="color_ref"
                      chromosomes="chromosome_dict" positions="position_dict" types="type_dict" cdnas="cDNA_dict" refseqs="ref_seq_dict"
