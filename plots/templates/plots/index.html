@@ -88,6 +88,11 @@
         color: #ffffff;
     }
 
+    .panel-default > .panel-heading-custom {
+        background: #222222;
+        color: #ffffff;
+    }
+
 </style>
 
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.js"></script>
@@ -6658,6 +6663,11 @@
 
         });
 
+        $('.closeall').ready(function(){
+            $('.panel-collapse.in')
+            .collapse('hide');
+        });
+
     })();
 
     function pack_nested_data(nested_data, fishplots_used) {
@@ -6684,9 +6694,6 @@
 
         $("#exampleModal").modal('show');
     }
-
-$('.panel-collapse.in')
-    .collapse('hide');
 
 </script>
 <body ng-controller = "tevDataController" style="margin-left: 2.5%; margin-right: 2.5%; margin-bottom: 2.5%">
@@ -6775,20 +6782,20 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                 </div>
             </div>
         </div>
-
     </div>
 
     <div id="editor-div" class="tab-pane">
         <div class="row">
             <div id="editor-wrapper" class="col-lg-12 col-md-12 col-sm-12">
                 <div class="row">
-                    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                    <div class="panel-group allclose" id="accordion" role="tablist" aria-multiselectable="true">
                         <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingOne">
+                            <div class="panel-heading panel-heading-custom" role="tab" id="headingOne" style="background: #222222;">
                                 <h4 class="panel-title">
                                     <a role="button" data-toggle="collapse"
                                        href="#collapseOne"
-                                       aria-expanded="true" aria-controls="collapseOne">
+                                       aria-expanded="true" aria-controls="collapseOne"
+                                       style="color: #ffffff;">
                                         VAF Over Time
                                     </a>
                                 </h4>
@@ -6803,10 +6810,11 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                             </div>
                         </div>
                         <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingTwo">
+                            <div class="panel-heading panel-heading-custom" role="tab" id="headingTwo" style="background: #222222;">
                                 <h4 class="panel-title">
                                     <a class="collapsed" role="button" data-toggle="collapse"
-                                       href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                       href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo"
+                                        style="color: #ffffff;">
                                         VAF Editor Table
                                     </a>
                                 </h4>
