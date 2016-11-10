@@ -5877,10 +5877,7 @@
 
                     d3.select('#save_purity_button')
                             .on('click', function () {
-
-                                if (plot_background.children.length > 1) {
-
-                                    var purity_dict = {};
+                                 var purity_dict = {};
                                     for (var i = 0; i < tick_labels.length; i++) {
 
                                         var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
@@ -5892,6 +5889,12 @@
                                         }
                                         purity_dict[tick_labels[i].toString()] = purity_value;
                                     }
+
+                                scope.$apply(function(){
+                                    scope.$parent.purity_data = purity_dict;
+                                })
+
+                                if (plot_background.children.length > 1) {
 
                                     d3.select('#modal_table').remove();
 
