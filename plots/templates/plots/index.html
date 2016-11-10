@@ -3867,7 +3867,6 @@
                             .append('div')
                             .attr('id', 'save_fishplot_div_wrapper')
                             .style('top', save_fishplot_div_top + 'px')
-                            .style('left', '0px')
                             .style('height', save_fishplot_div_height + 'px')
                             .style('width', '100%')
                             .style('float', 'left')
@@ -3881,8 +3880,7 @@
                             .style('left', '0px')
                             .style('width', '100%')
                             .style('height', '100%')
-                            .style('position', 'relative')
-                            .style('float', 'left');
+                            .style('float', 'right');
 
                     var save_fishplot_button = save_fishplot_div.append('button')
                             .attr('class', 'btn btn-default btn-sm')
@@ -4557,8 +4555,7 @@
                             .attr('id', 'load_fishplot_div')
                             .style('top', '0px')
                             .style('height', '100%')
-                            .style('position', 'relative')
-                            .style('float', 'left');
+                            .style('float', 'right');
 
                     load_fishplot_div.append('button')
                             .attr('id', 'load_fishplot_button')
@@ -4825,8 +4822,7 @@
                             .attr('id', 'convert_to_ccf_div')
                             .style('top', '0px')
                             .style('height', '100%')
-                            .style('position', 'relative')
-                            .style('float', 'left');
+                            .style('float', 'right');
 
                     var plot_options_div_group = convert_to_ccf_div.append('div')
                             .attr('class', 'btn-group')
@@ -5278,8 +5274,7 @@
                             .attr('id', 'edit_purity_div')
                             .style('top', '0px')
                             .style('height', '100%')
-                            .style('position', 'relative')
-                            .style('float', 'left');
+                            .style('float', 'right');
 
                     var edit_purity_button = edit_purity_div.append('button')
                             .attr('class', 'btn btn-default btn-sm')
@@ -6242,12 +6237,12 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                 </div>
 
                 <div id="purity-row" class="row">
-                    <div id="purity-line-div" purity-line-plot data="purity_data"
-                         style="width: 100%; height: 150px; float: left;">
+                    <div id="purity-line-div" purity-line-plot data="purity_data" class="col-sm-12 col-md-12 col-lg-12"
+                         style="height: 150px; float: left;">
                     </div>
                 </div>
 
-                <div id="editor-row" class="row" style="position: relative;">
+                <div id="editor-row" class="row" >
                 <div id="figure6-wrapper" style="overflow: visible;">
                 <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info" colors="color_ref"
                      chromosomes="chromosome_dict" positions="position_dict" types="type_dict" cdnas="cDNA_dict" refseqs="ref_seq_dict"
