@@ -35,6 +35,10 @@
         shape-rendering: crispEdges;
     }
 
+    .purity-line-ticks {
+        font-size: 10px;
+    }
+
     .node circle {
         stroke-width: 1.5px;
     }
@@ -1538,11 +1542,24 @@
            } ;
         });
 
+        tevApp.factory('purity', function(){
+           return {
+               init_purities: function(data){
+                   var timepoints = uniqueAxisLabels(data, 'Sample_Barcode');
+                   var purity_dict = {};
+                   for(var i = 0; i < timepoints.length; i++){
+                       purity_dict[timepoints[i]] = 90;
+                   }
+                   return purity_dict;
+               }
+           }
+        });
+
 
         //Controller name: TevDataController
         //Services: scope, http
-        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q', 'saved_fishplots',
-            function($scope, $http, $filter, allelify, $q, saved_fishplots){
+        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q', 'saved_fishplots', 'purity',
+            function($scope, $http, $filter, allelify, $q, saved_fishplots, purity){
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
                 $scope.tevData = [];
                 $scope.alleleified_data = [];
@@ -1570,6 +1587,9 @@
                 //dictionary with how many patients in DB share mutation in gene
                 //could do on allele basis?
                 $scope.patient_gene_dict = {};
+
+                //data for purity line plot above fishplot editor
+                $scope.purity_data = {};
 
                 //Check if an allele has already been plotted. For editor table... dont allow change if plotted
                 $scope.plotted = [];
@@ -1617,6 +1637,8 @@
                     $scope.alleleified_data = alleleified_data;
                     $scope.color_ref = allelify.allele_color_reference(alleleified_data);
                     $scope.patient_gene_dict = allelify.patients_with_gene(alleleified_data, source_data, gene_data);
+
+                    $scope.purity_data = purity.init_purities(alleleified_data);
 
                     //Send through this data, when the data from the API has been recieved
                     $scope.dendro_data = dendro_data;
@@ -6663,6 +6685,126 @@
 
         });
 
+        tevApp.directive('purityLinePlot', function(){
+
+            return {
+                restrict: 'A',
+                scope: {
+                    data: '='
+                },
+                link: link
+            };
+
+            function link(scope, element){
+                var data = scope.data;
+                var el = element[0];
+                var width = el.clientWidth;
+                var height = el.clientHeight;
+
+                scope.$watch('data', function(updated_data){
+                    d3.select(el).selectAll('div').remove();
+                   data = updated_data;
+
+                    //Div to hold purity line plot svg... placed over editor div
+                    var canvas = d3.select(el).append('div')
+                            .style('top', 0 + 'px')
+                            .style('left', width * 0.27 + 'px')
+                            .style('width', '73%')
+                            .style('height', height + 'px')
+                           // .style('border-top', '1px solid black')
+                            // .style('border-left', '1px solid black')
+                           // .style('border-right', '1px solid black')
+                            .style('padding', '2px')
+                            .style('float', 'right')
+                            .attr('id', 'purity-lineplot-wrapper');
+
+                    //Canvas svg where fishplot will be plotted
+                    var canvas_svg = canvas.append('svg')
+                            .attr('width', '100%')
+                            .attr('height', '100%')
+                            .attr('id', 'line-plot-canvas');
+
+                    var timepoints = Object.keys(data);
+                    timepoints = timepoints.map(Number);
+                    var x_axis_labels = JSON.parse(JSON.stringify(timepoints));
+                    var x_max = Math.max.apply(null, x_axis_labels);
+
+                    var ten_percent_below_zero = 0.1 * x_max;
+                    ten_percent_below_zero = parseInt(0 - ten_percent_below_zero);
+                    x_axis_labels.unshift(ten_percent_below_zero);
+
+                    var ten_percent_above_max = 0.1 * x_max;
+                    ten_percent_above_max = x_max + ten_percent_above_max;
+                    x_axis_labels.push(ten_percent_above_max);
+
+                    var canvas_range_max_x = d3.select('#line-plot-canvas').node().clientWidth;
+
+                    var x_scale = d3.scale.linear().domain(d3.extent(x_axis_labels, function(d){ return d;}))
+                            .rangeRound([canvas_range_max_x * 0.01, canvas_range_max_x * 0.99], 0.25);
+
+                    var manual_padding = height * 0.075;
+
+                    var y_scale = d3.scale.linear().domain([100, 0]).range([(0+manual_padding), (height-manual_padding)]);
+                    var y_axis = d3.svg.axis().scale(y_scale).tickValues([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+                            .orient('left');
+
+                    var line_gen = d3.svg.line().x(function (d) {
+                                return x_scale(d.timepoint);
+                            })
+                            .y(function (d) {
+                                return y_scale(d.purity);
+                            });
+
+                    var purity_data = [];
+
+                    for(var i = 0; i < timepoints.length; i++){
+                        purity_data.push({
+                            timepoint: timepoints[i],
+                            purity: data[timepoints[i]]
+                        });
+                    }
+
+                    canvas_svg.append('path')
+                            .attr('d', line_gen(purity_data))
+                            .attr('fill', 'none')
+                            .attr("stroke", "#1e90ff")
+                            .style("stroke-linejoin", "round")
+                            .attr('stroke-width', 1);
+
+                    var points = canvas_svg.selectAll('points')
+                            .data(purity_data)
+                            .enter()
+                            .append('circle')
+                            .attr('cx', function(d){
+                                return x_scale(d.timepoint);
+                            })
+                            .attr('cy', function(d){
+                                return y_scale(d.purity);
+                            })
+                            .attr('r', 3)
+                            .attr('fill', '#1e90ff');
+
+                    canvas_svg.append('text')
+                            .attr('x', function(){
+                                return 0;
+                            })
+                            .attr('y', function(){
+                                return 0;
+                            })
+                            .html('Purity')
+                            .attr('text-anchor', 'middle')
+                            .attr('transform', 'translate(20, 75)rotate(270)');
+
+                    canvas_svg.append("svg:g")
+                            .attr('class', 'axis purity-line-ticks')
+                        .attr("transform", "translate(" + 6 + "0)")
+                        .call(y_axis);
+
+                });
+            }
+
+        });
+
         $('.closeall').ready(function(){
             $('.panel-collapse.in')
             .collapse('hide');
@@ -6830,6 +6972,12 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div id="purity-line-div" purity-line-plot data="purity_data"
+                         style="width: 100%; height: 150px; float: left;">
                     </div>
                 </div>
 
