@@ -112,7 +112,8 @@
       integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r"
       crossorigin="anonymous">
 
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://use.fontawesome.com/6138a840c3.js"></script>
 
 <script>
     //Function to calculate CCF based on ploidy and purity specified
@@ -6810,12 +6811,23 @@
             .collapse('hide');
         });
 
+
     })();
 
-    function pack_nested_data(nested_data, fishplots_used) {
-        for (var i = 0; i < fishplots_used.length; i++) {
-
+    function change_icon(icon_number){
+        var icon_id = '#expand'+icon_number;
+        var is_expanded = d3.select(icon_id).attr('expanded');
+        if(is_expanded == 'false'){
+            d3.select(icon_id).attr('class', 'fa fa-minus');
+            d3.select(icon_id).attr('expanded', 'true');
+            return;
         }
+        if(is_expanded == 'true'){
+            d3.select(icon_id).attr('class', 'fa fa-plus');
+            d3.select(icon_id).attr('expanded', 'false');
+            return;
+        }
+
     }
 
     function update_clonal_information_text(){
@@ -6934,11 +6946,11 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                         <div class="panel panel-default">
                             <div class="panel-heading panel-heading-custom" role="tab" id="headingOne" style="background: #222222;">
                                 <h4 class="panel-title">
-                                    <a role="button" data-toggle="collapse"
+                                    <a id="expand-btn-1" role="button" onclick="change_icon(1)" data-toggle="collapse"
                                        href="#collapseOne"
                                        aria-expanded="true" aria-controls="collapseOne"
                                        style="color: #ffffff;">
-                                        VAF Over Time
+                                        <i id="expand1" expanded=false class="fa fa-plus" aria-hidden="true"></i> VAF Over Time
                                     </a>
                                 </h4>
                             </div>
@@ -6954,10 +6966,10 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                         <div class="panel panel-default">
                             <div class="panel-heading panel-heading-custom" role="tab" id="headingTwo" style="background: #222222;">
                                 <h4 class="panel-title">
-                                    <a class="collapsed" role="button" data-toggle="collapse"
+                                    <a id="expand-btn-2" onclick="change_icon(2)" class="collapsed" role="button" data-toggle="collapse"
                                        href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo"
                                         style="color: #ffffff;">
-                                        VAF Editor Table
+                                        <i id="expand2" expanded=false class="fa fa-plus" aria-hidden="true"></i> VAF Editor Table
                                     </a>
                                 </h4>
                             </div>
