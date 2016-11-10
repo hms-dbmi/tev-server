@@ -1111,7 +1111,6 @@
 
                 $('#CCF_modal_reprompt').modal('show');
 
-
     }
 
     function alleles_in_nested_data(canvas_nested_data) {
@@ -1303,6 +1302,7 @@
 
 
         if (index == fishplot_svgs.length-1) {
+            console.log('here');
             if(prompt_ccf == true){
                 d3.select('#save-CCF-button-reprompt').attr('last-prompt', true);
                 if(from_button == true || from_button == 'true') {
@@ -3620,172 +3620,6 @@
                                                         });
                                             }
 
-                                            CCF_options = {};
-                                            load_CCF_options(CCF_options, sample_timepoints);
-
-                                            if(plot_background.children.length > 1) {
-
-                                                var purity_dict = {};
-                                                for (var i = 0; i < tick_labels.length; i++) {
-
-                                                    var purity_value = parseInt(d3.select('#day' + tick_labels[i].toString() + '_input').node().value);
-                                                    if (purity_value > 100) {
-                                                        purity_value = 100;
-                                                    }
-                                                    if (purity_value < 0) {
-                                                        purity_value = 0;
-                                                    }
-                                                    purity_dict[tick_labels[i].toString()] = purity_value;
-                                                }
-
-                                                d3.select('#modal_table').remove();
-
-                                                CCF_options = {};
-                                                load_CCF_options(CCF_options, sample_timepoints);
-
-                                                for (var i = 0; i < tick_labels.length; i++) {
-                                                    //actual timepoint index is +1 since first timepoint is the origin
-                                                    var timepoint_index = i + 1;
-                                                    find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                            purity_dict[tick_labels[i].toString()], plot_background.children.length, [], tick_labels[i],
-                                                            CCF_options, timepoint_index, false, null);
-                                                }
-
-                                                delete CCF_options[ten_percent_below_zero.toString()];
-
-                                                var valid = is_valid(CCF_options, tick_labels);
-
-                                                if (valid == true) {
-                                                    var parent_alleles = get_parent_alleles(plot_background.children, canvas_nested_data);
-                                                    CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
-                                                }
-                                                else {
-                                                    CCF_options = [];
-                                                }
-
-                                                if (CCF_options.length > 100) {
-                                                    var first_fifty = CCF_options.slice(0, 50);
-                                                    var last_fifty = CCF_options.slice((CCF_options.length - 50))
-                                                    CCF_options = first_fifty.concat(last_fifty);
-                                                }
-
-                                                var modal_table = d3.select('#CCF_modal_body').append('table')
-                                                        .attr('id', 'modal_table')
-                                                        .attr('class', 'table table-hover');
-                                                var thead = modal_table.append('thead').append('tr');
-
-                                                var alleles_column = thead.append('th').html('Parent Alleles');
-                                                var chrs_affected_column = thead.append('th').html('Chrs Affected');
-                                                var timepoints_column = thead.append('th').html('CCFs at Timepoints');
-
-                                                var table_body = modal_table.append('tbody')
-                                                        .style('cursor', 'pointer');
-
-                                                var rows = table_body.selectAll('possible_ccfs')
-                                                        .data(CCF_options)
-                                                        .enter()
-                                                        .append('tr')
-                                                        .attr('index', function(d, i){
-                                                            return i;
-                                                        })
-                                                        .attr('is-clicked', 0)
-                                                        .on('mouseover', function () {
-                                                            if (d3.select(this).attr('is-clicked') != 1) {
-                                                                d3.select(this).style('background-color', '#f5f5f5');
-                                                            }
-                                                        })
-                                                        .on('mouseout', function () {
-                                                            if (d3.select(this).attr('is-clicked') != 1) {
-                                                                d3.select(this).style('background-color', '#ffffff');
-                                                            }
-                                                        })
-                                                        .on('mouseenter', function () {
-                                                            if (d3.select(this).attr('is-clicked') != 1) {
-                                                                d3.select(this).style('background-color', '#f5f5f5');
-                                                            }
-                                                        })
-                                                        .on('click', function (d) {
-                                                            //unselect previously selected tr
-                                                            if (d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr') {
-                                                                d3.select('#selected-tr').attr('id', '')
-                                                                        .attr('is-clicked', 0)
-                                                                        .style('background-color', '#ffffff');
-                                                            }
-
-                                                            d3.select(this).attr('id', 'selected-tr');
-
-                                                            var is_clicked = d3.select(this).attr('is-clicked');
-                                                            if (is_clicked == 0) {
-                                                                d3.select(this).attr('class', 'is-clicked');
-                                                                d3.select(this).attr('is-clicked', 1);
-                                                                d3.select(this).style('background-color', '#DCDCDC');
-                                                            }
-                                                            else if (is_clicked == 1) {
-                                                                d3.select(this).attr('is-clicked', 0);
-                                                                d3.select(this).style('background-color', '#f5f5f5');
-                                                            }
-                                                        });
-
-                                                rows.append('td')
-                                                        .attr('class', function (d, i) {
-                                                            return 'row-data-' + i;
-                                                        })
-                                                        .html(function (d) {
-                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                            for (var i = 0; i < alleles.length; i++) {
-                                                                var allele = alleles[i];
-                                                                var color = allele_color_reference[allele];
-                                                                var string = '<span style="color:' + color + '">'
-                                                                        + allele + '</span>';
-                                                                alleles[i] = string;
-                                                            }
-                                                            alleles = alleles.join(' </br> ');
-                                                            return alleles;
-                                                        });
-
-                                                rows.append('td')
-                                                        .attr('class', function (d, i) {
-                                                            return 'row-data-' + i;
-                                                        })
-                                                        .html(function (d) {
-                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                            var chrs_affected_array = [];
-                                                            for (var i = 0; i < alleles.length; i++) {
-                                                                var chrs_key = alleles[i] + '_chrs';
-                                                                var ploidy = get_ploidy(alleles[i], canvas_nested_data, plot_background.children);
-                                                                var string = d[chrs_key] + '/' + ploidy;
-                                                                chrs_affected_array.push(string);
-                                                            }
-                                                            chrs_affected_array = chrs_affected_array.join(' </br> ');
-                                                            return chrs_affected_array;
-                                                        });
-
-                                                rows.append('td')
-                                                        .attr('class', function (d, i) {
-                                                            return 'row-data-' + i;
-                                                        })
-                                                        .html(function (d) {
-                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                            var cell_fraction_array = [];
-                                                            for (var i = 0; i < alleles.length; i++) {
-                                                                var current_allele = alleles[i];
-                                                                var allele_string = [];
-                                                                for (j = 0; j < tick_labels.length; j++){
-                                                                    allele_string.push('<span style="color:#0000FF">'
-                                                                            + tick_labels[j] + ': '
-                                                                            + '</span>' + d[current_allele][j]);
-                                                                }
-                                                                var string = allele_string.join(', ');
-                                                                cell_fraction_array.push(string);
-                                                            }
-                                                            cell_fraction_array = cell_fraction_array.join(' </br> ');
-                                                            return cell_fraction_array;
-                                                        });
-
-                                                d3.select('#CCF_modal_body').attr('popped-up', 1);
-                                                $("#CCF_modal").modal('show');
-                                            }
-
                                         }
                                         else {
                                             setTimeout(function() {
@@ -3964,183 +3798,6 @@
                                                                         .style('z-index', -1);
                                                             }
                                                         });
-                                            }
-
-                                            var viable_parents = true;
-                                            CCF_options = {};
-                                            load_CCF_options(CCF_options, sample_timepoints);
-
-                                                var purity_dict = {};
-                                                for (var i = 0; i < tick_labels.length; i++) {
-
-                                                    var purity_value = complete_nested_data[parent_of_this].values[i+1].ccf;
-                                                    if(purity_value == undefined){
-                                                        viable_parents = false;
-                                                        break;
-                                                    }
-                                                    if (purity_value > 100) {
-                                                        purity_value = 100;
-                                                    }
-                                                    if (purity_value < 0) {
-                                                        purity_value = 0;
-                                                    }
-                                                    purity_dict[tick_labels[i].toString()] = purity_value;
-                                                }
-
-                                            d3.select('#modal_table').remove();
-
-                                            if (viable_parents == true) {
-                                                var total_chrs_counts = get_pre_determined_total_chrs_count(complete_nested_data,
-                                                        plot_background, tick_labels);
-                                                CCF_options = {};
-                                                load_CCF_options(CCF_options, sample_timepoints);
-                                                parent = complete_nested_data[parent_of_this];
-
-                                                for (var i = 0; i < tick_labels.length; i++) {
-                                                    //actual timepoint index is +1 since first timepoint is the origin
-                                                    var timepoint_index = i + 1;
-                                                    var total_chrs = total_chrs_counts[tick_labels[i].toString()].reduce(function(a, b){
-                                                        return a+b;
-                                                    }, 0);
-
-                                                    find_CCFs(parent.children, parent.children.length, complete_nested_data,
-                                                            purity_dict[tick_labels[i].toString()], parent.children.length, [], tick_labels[i],
-                                                            CCF_options, timepoint_index, true, total_chrs);
-                                                }
-
-                                                delete CCF_options[ten_percent_below_zero.toString()];
-
-                                                var valid = is_valid(CCF_options, tick_labels);
-
-                                                if (valid == true) {
-                                                    var parent_alleles = get_parent_alleles(parent.children, canvas_nested_data);
-                                                    CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
-                                                }
-                                                else {
-                                                    CCF_options = [];
-                                                }
-
-                                                if (CCF_options.length > 100) {
-                                                    var first_fifty = CCF_options.slice(0, 50);
-                                                    var last_fifty = CCF_options.slice((CCF_options.length - 50))
-                                                    CCF_options = first_fifty.concat(last_fifty);
-                                                }
-
-                                                var modal_table = d3.select('#CCF_modal_body').append('table')
-                                                        .attr('id', 'modal_table')
-                                                        .attr('class', 'table table-hover');
-                                                var thead = modal_table.append('thead').append('tr');
-
-                                                var alleles_column = thead.append('th').html('Parent Alleles');
-                                                var chrs_affected_column = thead.append('th').html('Chrs Affected');
-                                                var timepoints_column = thead.append('th').html('CCFs at Timepoints');
-
-                                                var table_body = modal_table.append('tbody')
-                                                        .style('cursor', 'pointer');
-
-                                                var rows = table_body.selectAll('possible_ccfs')
-                                                        .data(CCF_options)
-                                                        .enter()
-                                                        .append('tr')
-                                                        .attr('index', function (d, i) {
-                                                            return i;
-                                                        })
-                                                        .attr('is-clicked', 0)
-                                                        .on('mouseover', function () {
-                                                            if (d3.select(this).attr('is-clicked') != 1) {
-                                                                d3.select(this).style('background-color', '#f5f5f5');
-                                                            }
-                                                        })
-                                                        .on('mouseout', function () {
-                                                            if (d3.select(this).attr('is-clicked') != 1) {
-                                                                d3.select(this).style('background-color', '#ffffff');
-                                                            }
-                                                        })
-                                                        .on('mouseenter', function () {
-                                                            if (d3.select(this).attr('is-clicked') != 1) {
-                                                                d3.select(this).style('background-color', '#f5f5f5');
-                                                            }
-                                                        })
-                                                        .on('click', function (d) {
-                                                            //unselect previously selected tr
-                                                            if (d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr') {
-                                                                d3.select('#selected-tr').attr('id', '')
-                                                                        .attr('is-clicked', 0)
-                                                                        .style('background-color', '#ffffff');
-                                                            }
-
-                                                            d3.select(this).attr('id', 'selected-tr');
-
-                                                            var is_clicked = d3.select(this).attr('is-clicked');
-                                                            if (is_clicked == 0) {
-                                                                d3.select(this).attr('class', 'is-clicked');
-                                                                d3.select(this).attr('is-clicked', 1);
-                                                                d3.select(this).style('background-color', '#DCDCDC');
-                                                            }
-                                                            else if (is_clicked == 1) {
-                                                                d3.select(this).attr('is-clicked', 0);
-                                                                d3.select(this).style('background-color', '#f5f5f5');
-                                                            }
-                                                        });
-
-                                                rows.append('td')
-                                                        .attr('class', function (d, i) {
-                                                            return 'row-data-' + i;
-                                                        })
-                                                        .html(function (d) {
-                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                            for (var i = 0; i < alleles.length; i++) {
-                                                                var allele = alleles[i];
-                                                                var color = allele_color_reference[allele];
-                                                                var string = '<span style="color:' + color + '">'
-                                                                        + allele + '</span>';
-                                                                alleles[i] = string;
-                                                            }
-                                                            alleles = alleles.join(' </br> ');
-                                                            return alleles;
-                                                        });
-
-                                                rows.append('td')
-                                                        .attr('class', function (d, i) {
-                                                            return 'row-data-' + i;
-                                                        })
-                                                        .html(function (d) {
-                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                            var chrs_affected_array = [];
-                                                            for (var i = 0; i < alleles.length; i++) {
-                                                                var chrs_key = alleles[i] + '_chrs';
-                                                                var ploidy = get_ploidy(alleles[i], canvas_nested_data, parent.children);
-                                                                var string = d[chrs_key] + '/' + ploidy;
-                                                                chrs_affected_array.push(string);
-                                                            }
-                                                            chrs_affected_array = chrs_affected_array.join(' </br> ');
-                                                            return chrs_affected_array;
-                                                        });
-
-                                                rows.append('td')
-                                                        .attr('class', function (d, i) {
-                                                            return 'row-data-' + i;
-                                                        })
-                                                        .html(function (d) {
-                                                            var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                            var cell_fraction_array = [];
-                                                            for (var i = 0; i < alleles.length; i++) {
-                                                                var current_allele = alleles[i];
-                                                                var allele_string = [];
-                                                                for (j = 0; j < tick_labels.length; j++) {
-                                                                    allele_string.push('<span style="color:#0000FF">'
-                                                                            + tick_labels[j] + ': '
-                                                                            + '</span>' + d[current_allele][j]);
-                                                                }
-                                                                var string = allele_string.join(', ');
-                                                                cell_fraction_array.push(string);
-                                                            }
-                                                            cell_fraction_array = cell_fraction_array.join(' </br> ');
-                                                            return cell_fraction_array;
-                                                        });
-
-                                                d3.select('#CCF_modal_body').attr('popped-up', 1);
-                                                $("#CCF_modal").modal('show');
                                             }
                                         }
                                         else {
@@ -4834,244 +4491,9 @@
                                     });
                         }
 
-                        var viable_parents = true;
-                        var purity_dict = {};
                         CCF_options = {};
                         load_CCF_options(CCF_options, sample_timepoints);
 
-                        if(current_fish.parent_index_of_this == 'plot') {
-                            if(plot_background.children == 0){
-                                return;
-                            }
-                            if(plot_background.children.length == 1){
-                                //function to convert to 100% CCF when out of cancer cells only?
-                                purity_dict = get_purity_dict(tick_labels);
-                                for(var j = 0; j < tick_labels.length; j++) {
-                                    canvas_nested_data[plot_background.children[0]].values[j+1].ccf = purity_dict[tick_labels[j].toString()];
-                                }
-                                var parent_index = plot_background.children[0];
-                                for(var j = 0; j < fishplot_svgs.length; j++){
-                                    if(fishplot_svgs[j] != parent_index){
-                                        for(var k = 0; k < canvas_nested_data[fishplot_svgs[j]].values.length; k++){
-                                            canvas_nested_data[fishplot_svgs[j]].values[k].ccf = undefined;
-                                        }
-                                    }
-                                }
-                            }
-                            if (plot_background.children.length > 1) {
-                                purity_dict = get_purity_dict(tick_labels);
-                            }
-
-                            CCF_options = {};
-                            load_CCF_options(CCF_options, sample_timepoints);
-
-                            for (var i = 0; i < tick_labels.length; i++) {
-                                //actual timepoint index is +1 since first timepoint is the origin
-                                var timepoint_index = i + 1;
-                                find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                        purity_dict[tick_labels[i].toString()], plot_background.children.length, [], tick_labels[i],
-                                        CCF_options, timepoint_index, false, null);
-                            }
-
-                            delete CCF_options[ten_percent_below_zero.toString()];
-
-                            var valid = is_valid(CCF_options, tick_labels);
-
-                            if (valid == true) {
-                                var parent_alleles = get_parent_alleles(plot_background.children, canvas_nested_data);
-                                CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
-                            }
-                            else {
-                                CCF_options = [];
-                            }
-                            //set parent to plot_background so we dont have to include if else statement when generating
-                            //table data
-                            parent = plot_background;
-                        }
-
-                        else {
-                            var parent_of_this = current_fish.parent_index_of_this;
-                            parent = complete_nested_data[parent_of_this];
-
-                            if(parent.children.length == 0){
-                                return;
-                            }
-
-                            for (var i = 0; i < tick_labels.length; i++) {
-
-                                var purity_value = complete_nested_data[parent_of_this].values[i + 1].ccf;
-                                if (purity_value == undefined) {
-                                    viable_parents = false;
-                                    break;
-                                }
-                                if (purity_value > 100) {
-                                    purity_value = 100;
-                                }
-                                if (purity_value < 0) {
-                                    purity_value = 0;
-                                }
-                                purity_dict[tick_labels[i].toString()] = purity_value;
-                            }
-
-                            if (viable_parents == true) {
-                                var total_chrs_counts = get_pre_determined_total_chrs_count(complete_nested_data,
-                                        plot_background, tick_labels);
-                                CCF_options = {};
-                                load_CCF_options(CCF_options, sample_timepoints);
-
-                                if(parent.children.length == 0){
-                                    return;
-                                }
-
-                                for (var i = 0; i < tick_labels.length; i++) {
-                                    //actual timepoint index is +1 since first timepoint is the origin
-                                    var timepoint_index = i + 1;
-                                    var total_chrs = total_chrs_counts[tick_labels[i].toString()].reduce(function (a, b) {
-                                        return a + b;
-                                    }, 0);
-
-                                    find_CCFs(parent.children, parent.children.length, complete_nested_data,
-                                            purity_dict[tick_labels[i].toString()], parent.children.length, [], tick_labels[i],
-                                            CCF_options, timepoint_index, true, total_chrs);
-                                }
-
-                                delete CCF_options[ten_percent_below_zero.toString()];
-
-                                var valid = is_valid(CCF_options, tick_labels);
-
-                                if (valid == true) {
-                                    var parent_alleles = get_parent_alleles(parent.children, canvas_nested_data);
-                                    CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
-                                }
-                                else {
-                                    CCF_options = [];
-                                }
-
-                                if (CCF_options.length > 100) {
-                                    var first_fifty = CCF_options.slice(0, 50);
-                                    var last_fifty = CCF_options.slice((CCF_options.length - 50))
-                                    CCF_options = first_fifty.concat(last_fifty);
-                                }
-                            }
-                        }
-
-                            d3.select('#modal_table').remove();
-
-                            var modal_table = d3.select('#CCF_modal_body').append('table')
-                                    .attr('id', 'modal_table')
-                                    .attr('class', 'table table-hover');
-                            var thead = modal_table.append('thead').append('tr');
-
-                            var alleles_column = thead.append('th').html('Parent Alleles');
-                            var chrs_affected_column = thead.append('th').html('Chrs Affected');
-                            var timepoints_column = thead.append('th').html('CCFs at Timepoints');
-
-                            var table_body = modal_table.append('tbody')
-                                    .style('cursor', 'pointer');
-
-                            var rows = table_body.selectAll('possible_ccfs')
-                                    .data(CCF_options)
-                                    .enter()
-                                    .append('tr')
-                                    .attr('index', function (d, i) {
-                                        return i;
-                                    })
-                                    .attr('is-clicked', 0)
-                                    .on('mouseover', function () {
-                                        if (d3.select(this).attr('is-clicked') != 1) {
-                                            d3.select(this).style('background-color', '#f5f5f5');
-                                        }
-                                    })
-                                    .on('mouseout', function () {
-                                        if (d3.select(this).attr('is-clicked') != 1) {
-                                            d3.select(this).style('background-color', '#ffffff');
-                                        }
-                                    })
-                                    .on('mouseenter', function () {
-                                        if (d3.select(this).attr('is-clicked') != 1) {
-                                            d3.select(this).style('background-color', '#f5f5f5');
-                                        }
-                                    })
-                                    .on('click', function (d) {
-                                        //unselect previously selected tr
-                                        if (d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr') {
-                                            d3.select('#selected-tr').attr('id', '')
-                                                    .attr('is-clicked', 0)
-                                                    .style('background-color', '#ffffff');
-                                        }
-
-                                        d3.select(this).attr('id', 'selected-tr');
-
-                                        var is_clicked = d3.select(this).attr('is-clicked');
-                                        if (is_clicked == 0) {
-                                            d3.select(this).attr('class', 'is-clicked');
-                                            d3.select(this).attr('is-clicked', 1);
-                                            d3.select(this).style('background-color', '#DCDCDC');
-                                        }
-                                        else if (is_clicked == 1) {
-                                            d3.select(this).attr('is-clicked', 0);
-                                            d3.select(this).style('background-color', '#f5f5f5');
-                                        }
-                                    });
-
-                            rows.append('td')
-                                    .attr('class', function (d, i) {
-                                        return 'row-data-' + i;
-                                    })
-                                    .html(function (d) {
-                                        var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                        for (var i = 0; i < alleles.length; i++) {
-                                            var allele = alleles[i];
-                                            var color = allele_color_reference[allele];
-                                            var string = '<span style="color:' + color + '">'
-                                                    + allele + '</span>';
-                                            alleles[i] = string;
-                                        }
-                                        alleles = alleles.join(' </br> ');
-                                        return alleles;
-                                    });
-
-                            rows.append('td')
-                                    .attr('class', function (d, i) {
-                                        return 'row-data-' + i;
-                                    })
-                                    .html(function (d) {
-                                        var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                        var chrs_affected_array = [];
-                                        for (var i = 0; i < alleles.length; i++) {
-                                            var chrs_key = alleles[i] + '_chrs';
-                                            var ploidy = get_ploidy(alleles[i], canvas_nested_data, parent.children);
-                                            var string = d[chrs_key] + '/' + ploidy;
-                                            chrs_affected_array.push(string);
-                                        }
-                                        chrs_affected_array = chrs_affected_array.join(' </br> ');
-                                        return chrs_affected_array;
-                                    });
-
-                            rows.append('td')
-                                    .attr('class', function (d, i) {
-                                        return 'row-data-' + i;
-                                    })
-                                    .html(function (d) {
-                                        var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                        var cell_fraction_array = [];
-                                        for (var i = 0; i < alleles.length; i++) {
-                                            var current_allele = alleles[i];
-                                            var allele_string = [];
-                                            for (j = 0; j < tick_labels.length; j++) {
-                                                allele_string.push('<span style="color:#0000FF">'
-                                                        + tick_labels[j] + ': '
-                                                        + '</span>' + d[current_allele][j]);
-                                            }
-                                            var string = allele_string.join(', ');
-                                            cell_fraction_array.push(string);
-                                        }
-                                        cell_fraction_array = cell_fraction_array.join(' </br> ');
-                                        return cell_fraction_array;
-                                    });
-
-                        d3.select('#CCF_modal_body').attr('popped-up', 1);
-                            $("#CCF_modal").modal('show');
 
                     });
 
@@ -5418,7 +4840,6 @@
                             .on('click', function () {
                                 var can_plot = can_plot_CCF(canvas_nested_data, fishplot_svgs);
                                 if (can_plot == false) {
-
                                     var complete_nested_data = canvas_nested_data.slice(0);
                                     d3.select('#modal_table').remove();
                                     d3.select('#save-CCF-button-reprompt').attr('type', 'ccf');
@@ -5689,6 +5110,23 @@
                                 }
                             });
 
+                    var reset_CCF = button_group.append('li')
+                            .append('a')
+                            .style('cursor', 'pointer')
+                            .html('Reset CCF')
+                            .on('click', function(){
+                                for(var i = 0; i < canvas_nested_data.length; i++){
+                                    var allele_values = canvas_nested_data[i].values;
+                                    for(var j = 0; j < allele_values.length; j++){
+                                        allele_values[j].ccf = undefined;
+                                    }
+                                }
+
+                                fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
+                                        canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor, contextMenuShowing,
+                                        contextMenuForPrevious, 'alt_count', allele_color_reference)
+                            });
+
                     var back_to_VAF = button_group.append('li')
                             .append('a')
                             .style('cursor', 'pointer')
@@ -5890,152 +5328,14 @@
 
                                     d3.select('#modal_table').remove();
 
-                                    CCF_options = {};
-                                    load_CCF_options(CCF_options, sample_timepoints);
-                                    var complete_nested_data = canvas_nested_data.slice();
+                                    var complete_nested_data = canvas_nested_data.slice(0);
+                                    d3.select('#modal_table').remove();
+                                    d3.select('#save-CCF-button-reprompt').attr('type', 'ccf');
 
-                                    for (var i = 0; i < tick_labels.length; i++) {
-                                        //actual timepoint index is +1 since first timepoint is the origin
-                                        var timepoint_index = i + 1;
-                                        find_CCFs(plot_background.children, plot_background.children.length, complete_nested_data,
-                                                purity_dict[tick_labels[i].toString()], plot_background.children.length, [], tick_labels[i],
-                                                CCF_options, timepoint_index, false, null);
-                                    }
-
-                                    delete CCF_options[ten_percent_below_zero.toString()];
-
-                                    var valid = is_valid(CCF_options, tick_labels);
-
-                                    if (valid == true) {
-                                        var parent_alleles = get_parent_alleles(plot_background.children, canvas_nested_data);
-                                        CCF_options = all_cell_combos(CCF_options, tick_labels, parent_alleles);
-                                    }
-                                    else {
-                                        CCF_options = [];
-                                    }
-
-                                    if (CCF_options.length > 100) {
-                                        var first_fifty = CCF_options.slice(0, 50);
-                                        var last_fifty = CCF_options.slice((CCF_options.length - 50))
-                                        CCF_options = first_fifty.concat(last_fifty);
-                                    }
-
-                                    var modal_table = d3.select('#CCF_modal_body')
-                                            .append('table')
-                                            .attr('id', 'modal_table')
-                                            .attr('class', 'table table-hover');
-                                    var thead = modal_table.append('thead').append('tr');
-
-                                    var alleles_column = thead.append('th').html('Parent Alleles');
-                                    var chrs_affected_column = thead.append('th').html('Chrs Affected');
-                                    var timepoints_column = thead.append('th').html('CCFs at Timepoints');
-
-                                    var table_body = modal_table.append('tbody')
-                                            .style('cursor', 'pointer');
-
-                                    var rows = table_body.selectAll('possible_ccfs')
-                                            .data(CCF_options)
-                                            .enter()
-                                            .append('tr')
-                                            .attr('index', function(d, i){
-                                                return i;
-                                            })
-                                            .attr('is-clicked', 0)
-                                            .on('mouseover', function () {
-                                                if (d3.select(this).attr('is-clicked') != 1) {
-                                                    d3.select(this).style('background-color', '#f5f5f5');
-                                                }
-                                            })
-                                            .on('mouseout', function () {
-                                                if (d3.select(this).attr('is-clicked') != 1) {
-                                                    d3.select(this).style('background-color', '#ffffff');
-                                                }
-                                            })
-                                            .on('mouseenter', function () {
-                                                if (d3.select(this).attr('is-clicked') != 1) {
-                                                    d3.select(this).style('background-color', '#f5f5f5');
-                                                }
-                                            })
-                                            .on('click', function(d){
-                                                //unselect previously selected tr
-                                                if(d3.select('#selected-tr').node() != null && d3.select(this).attr('id') != 'selected-tr'){
-                                                    d3.select('#selected-tr').attr('id', '')
-                                                            .attr('is-clicked', 0)
-                                                            .style('background-color', '#ffffff');
-                                                }
-
-                                                d3.select(this).attr('id', 'selected-tr');
-
-                                                var is_clicked = d3.select(this).attr('is-clicked');
-                                                if(is_clicked == 0){
-                                                    d3.select(this).attr('class', 'is-clicked');
-                                                    d3.select(this).attr('is-clicked', 1);
-                                                    d3.select(this).style('background-color', '#DCDCDC');
-                                                }
-                                                else if(is_clicked == 1) {
-                                                    d3.select(this).attr('is-clicked', 0);
-                                                    d3.select(this).style('background-color', '#f5f5f5');
-                                                }
-                                            });
-
-                                    rows.append('td')
-                                            .attr('class', function(d, i){
-                                                return 'row-data-' + i;
-                                            })
-                                            .html(function (d) {
-                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                for (var i = 0; i < alleles.length; i++) {
-                                                    var allele = alleles[i];
-                                                    var color = allele_color_reference[allele];
-                                                    var string = '<span style="color:' + color + '">'
-                                                            + allele + '</span>';
-                                                    alleles[i] = string;
-                                                }
-                                                alleles = alleles.join(' </br> ');
-                                                return alleles;
-                                            });
-
-                                    rows.append('td')
-                                            .attr('class', function(d, i){
-                                                return 'row-data-' + i;
-                                            })
-                                            .html(function (d) {
-                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                var chrs_affected_array = [];
-                                                for (var i = 0; i < alleles.length; i++) {
-                                                    var chrs_key = alleles[i] + '_chrs';
-                                                    var ploidy = get_ploidy(alleles[i], canvas_nested_data, plot_background.children);
-                                                    var string = d[chrs_key] + '/' + ploidy;
-                                                    chrs_affected_array.push(string);
-                                                }
-                                                chrs_affected_array = chrs_affected_array.join(' </br> ');
-                                                return chrs_affected_array;
-                                            });
-
-                                    rows.append('td')
-                                            .attr('class', function(d, i){
-                                                return 'row-data-' + i;
-                                            })
-                                            .html(function (d) {
-                                                var alleles = JSON.parse(JSON.stringify(parent_alleles));
-                                                var cell_fraction_array = [];
-                                                for (var i = 0; i < alleles.length; i++) {
-                                                    var current_allele = alleles[i];
-                                                    var allele_string = [];
-                                                    for (j = 0; j < tick_labels.length; j++) {
-                                                        allele_string.push('<span style="color:#0000FF">'
-                                                                + tick_labels[j] + ': '
-                                                                + '</span>' + d[current_allele][j]);
-                                                    }
-                                                    var string = allele_string.join(', ');
-                                                    cell_fraction_array.push(string);
-                                                }
-                                                cell_fraction_array = cell_fraction_array.join(' </br> ');
-                                                return cell_fraction_array;
-                                            });
-
-                                    d3.select('#CCF_modal_body').attr('popped-up', 1);
-                                    $("#CCF_modal").modal('show');
+                                    reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
+                                            complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
+                                            canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
+                                            contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints);
                                 }
 
                             });
