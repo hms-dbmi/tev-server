@@ -2978,6 +2978,14 @@
                 var alternative_ref = scope.alternatives;
                 var patients_with_gene_ref = scope.patientswithgene;
 
+                //When trying to get offsetTop for figure6 div it doesn't use heights of collapsed div
+                //It uses their full heights, as if they were expanded
+                var panel_heading_one_height = d3.select('#heading1').node().clientHeight;
+                var panel_heading_two_height = d3.select('#heading2').node().clientHeight;
+                var purity_div_height = d3.select('#purity-row').node().clientHeight;
+                var estimated_accordian_padding = 3*20;
+                var estimated_offsetTop = panel_heading_one_height+panel_heading_two_height+purity_div_height+estimated_accordian_padding;
+                height = d3.select(window).node().outerHeight - estimated_offsetTop;
 
                 scope.$watch('colors', function(new_colors){
                     color_ref = new_colors;
@@ -6187,10 +6195,10 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
     <div id="editor-div" class="tab-pane fade in active">
         <div class="row">
             <div id="editor-wrapper" class="col-lg-12 col-md-12 col-sm-12">
-                <div class="row">
+                <div id="collapsable-row" class="row">
                     <div class="panel-group allclose" id="accordion" role="tablist" aria-multiselectable="true">
                         <div class="panel panel-default">
-                            <div class="panel-heading panel-heading-custom" role="tab" id="headingOne" style="background: #222222;">
+                            <div id="heading1" class="panel-heading panel-heading-custom" role="tab" id="headingOne" style="background: #222222;">
                                 <h4 class="panel-title">
                                     <a id="expand-btn-1" role="button" onclick="change_icon(1)" data-toggle="collapse"
                                        href="#collapseOne"
@@ -6210,7 +6218,7 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                             </div>
                         </div>
                         <div class="panel panel-default">
-                            <div class="panel-heading panel-heading-custom" role="tab" id="headingTwo" style="background: #222222;">
+                            <div id="heading2" class="panel-heading panel-heading-custom" role="tab" id="headingTwo" style="background: #222222;">
                                 <h4 class="panel-title">
                                     <a id="expand-btn-2" onclick="change_icon(2)" class="collapsed" role="button" data-toggle="collapse"
                                        href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo"
@@ -6233,13 +6241,13 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
                     </div>
                 </div>
 
-                <div class="row">
+                <div id="purity-row" class="row">
                     <div id="purity-line-div" purity-line-plot data="purity_data"
                          style="width: 100%; height: 150px; float: left;">
                     </div>
                 </div>
 
-                <div class="row">
+                <div id="editor-row" class="row" style="position: relative;">
                 <div id="figure6-wrapper" style="overflow: visible;">
                 <div id="figure6" fishplot-editor data="alleleified_data" values="updated_editor_info" colors="color_ref"
                      chromosomes="chromosome_dict" positions="position_dict" types="type_dict" cdnas="cDNA_dict" refseqs="ref_seq_dict"
