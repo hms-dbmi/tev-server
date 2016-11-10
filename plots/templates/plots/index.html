@@ -4198,14 +4198,6 @@
                     var save_fishplot_div_top = d3.select(el).node().clientHeight;
                     var save_fishplot_top_padding = 0.10; //pad the top by 10 percent
 
-{#                    d3.select(el).style('height', function () {#}
-{#                        var height = d3.select(this).node().clientHeight;#}
-{#                        var extra_pixels = save_fishplot_div_height * save_fishplot_top_padding;#}
-{#                        var total_save_fishplot_div_pixels = save_fishplot_div_height + extra_pixels;#}
-{#                        height = height + total_save_fishplot_div_pixels;#}
-{#                        return height + 'px';#}
-{#                    });#}
-
                     var save_fishplot_div_wrapper = d3.select('#figure6-wrapper')
                             .append('div')
                             .attr('id', 'save_fishplot_div_wrapper')
