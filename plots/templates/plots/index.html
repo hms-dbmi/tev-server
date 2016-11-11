@@ -1822,6 +1822,7 @@
 
                 scope.$watch('data', function(updated_data){
                     overtimeLinePlot(updated_data, el, height, width);
+
                     $window.addEventListener('resize', overtime_resize);
                     function overtime_resize() {
                         var new_height = d3.select(el).node().clientHeight;
@@ -1834,7 +1835,7 @@
 
         //Directive that contains d3 code to render distribution of allele frequency at timepoints
         //Plot type: Box plots
-        tevApp.directive('figure2Plot', function(){
+        tevApp.directive('figure2Plot',['$window', function($window){
             return{
                 restrict: 'A',
                 link: link,
@@ -1859,9 +1860,9 @@
                     color_ref = new_colors;
                 });
 
-                scope.$watch('data', function(updatedData){
+                function makeBoxPlots(updatedData, el, height, width){
                     d3.select(el).select('svg').remove();
-                    d3.select(el).select('div').remove();
+                    d3.select(el).selectAll('div').remove();
 
                     data = updatedData[0];
                     alleles = updatedData[1];
@@ -2186,9 +2187,19 @@
                         return height;
                     });
 
-                }, true);
+                }
+
+                scope.$watch('data', function(updatedData){
+                    makeBoxPlots(updatedData, el, height, width);
+
+                    $window.addEventListener('resize', boxplot_resize);
+                    function boxplot_resize(){
+                        var new_width = d3.select(el).node().clientWidth;
+                        makeBoxPlots(updatedData, el, height, new_width);
+                    }
+                });
             }
-        });
+        }]);
 
         //Directive that contains d3 code to render dendrogram clustered by alternative allele freq
         //Plot type: Elbow dendrogram
@@ -2555,7 +2566,7 @@
 
         //Directive that contains d3 code to render proposed clonal evolution and alternative allele freq
         //Plot type: Fishplot
-        tevApp.directive('figure5Plot', function(){
+        tevApp.directive('figure5Plot',['$window', function($window){
 
             return {
                 restrict: 'A',
@@ -2573,8 +2584,8 @@
                 var height = el.clientHeight;
                 var color_ref = scope.colors;
 
-                scope.$watchGroup(['data', 'colors'], function(updatedData){
-                    d3.select(el).select('svg').remove();
+                function plotSuggestedFishplot(updatedData, el, height, width){
+                    d3.select(el).selectAll('svg').remove();
 
                     data = updatedData[0];
                     color_ref = updatedData[1];
@@ -2950,10 +2961,21 @@
                         .attr("transform", "translate(" + 4 + "0)")
                         .call(yAxis);
 
-                }, true);
+                }
+
+                scope.$watchGroup(['data', 'colors'], function(updatedData){
+                    plotSuggestedFishplot(updatedData, el, height, width);
+
+                    $window.addEventListener('resize', suggested_fishplot_resize);
+
+                    function suggested_fishplot_resize(){
+                        var new_width = d3.select(el).node().clientWidth;
+                        plotSuggestedFishplot(updatedData, el, height, new_width);
+                    }
+                });
             }
 
-        });
+        }]);
 
         tevApp.directive('fishplotEditor',['$http', '$filter', function ($http, $filter) {
             return {
@@ -6524,16 +6546,15 @@ Dont need to provide alleles to figure 1 because all that's changing is the colo
             </div>
             <div class="panel-body" style="padding: 0px;">
                 <div class="row col-lg-12">
-                    <div class="col-lg-6">
-                        <div id="figure1" figure1-plot data="clustered_alleleified_data" colors="color_ref" class="col-lg-11"
-                             style="height: 650px; float:left;">
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div id="figure1" figure1-plot data="clustered_alleleified_data" colors="color_ref"
+                             class="col-lg-11 col-md-11 col-sm-11" style="height: 650px; float:left;">
                         </div>
                     </div>
 
-                    <div class="col-lg-6" style="float: right;">
+                    <div class="col-lg-6 col-md-6 col-sm=12" style="float: right;">
                         <div id="figure2" figure2-plot data="[clustered_alleleified_data, alleles]" colors="color_ref"
-                             class="col-lg-11"
-                             style="height: 650px; float: right;">
+                             class="col-lg-11 col-md-11 col-sm-11" style="height: 650px; float: right;">
                         </div>
                     </div>
                 </div>
