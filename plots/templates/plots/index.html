@@ -1302,7 +1302,6 @@
 
 
         if (index == fishplot_svgs.length-1) {
-            console.log('here');
             if(prompt_ccf == true){
                 d3.select('#save-CCF-button-reprompt').attr('last-prompt', true);
                 if(from_button == true || from_button == 'true') {
@@ -1559,9 +1558,12 @@
 
         //Controller name: TevDataController
         //Services: scope, http
-        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q', 'saved_fishplots', 'purity',
-            function($scope, $http, $filter, allelify, $q, saved_fishplots, purity){
+        tevApp.controller('tevDataController', ['$scope', '$http', '$filter', 'alleleify', '$q', 'saved_fishplots', 'purity', '$window',
+            function($scope, $http, $filter, allelify, $q, saved_fishplots, purity, $window){
             //Initialize the scopes data to empty (will render blank plots until we've fetched data)
+
+                angular.element($window).on('resize', $scope.$apply.bind($scope));
+
                 $scope.tevData = [];
                 $scope.alleleified_data = [];
                 //parameter for editor table only, when user loads previously saved fishplot
@@ -1594,7 +1596,6 @@
 
                 //Check if an allele has already been plotted. For editor table... dont allow change if plotted
                 $scope.plotted = [];
-
                 $scope.prompt = 0;
 
                 var source_uuid = '{{ source }}';
@@ -1649,7 +1650,7 @@
 
         //Directive that contains d3 code to render allele frequency change over timepoints
         //Plot type: Line plot
-        tevApp.directive('figure1Plot', function(){
+        tevApp.directive('figure1Plot',['$window', function($window){
             return {
                scope: {
                    data: '=',
@@ -1671,9 +1672,9 @@
                    color_ref = new_colors;
                 });
 
-                scope.$watch('data', function(updatedData){
+                function overtimeLinePlot(updatedData, el, height, width){
                     d3.select(el).select('svg').remove();
-                    d3.select(el).select('div').remove();
+                    d3.select(el).selectAll('div').remove();
 
                     data = updatedData;
 
@@ -1817,9 +1818,19 @@
                         .attr("transform", "translate(" + 4 + "0)")
                         .call(yAxis);
 
-                }, true);
+                }
+
+                scope.$watch('data', function(updated_data){
+                    overtimeLinePlot(updated_data, el, height, width);
+                    $window.addEventListener('resize', overtime_resize);
+                    function overtime_resize() {
+                        var new_height = d3.select(el).node().clientHeight;
+                        var new_width = d3.select(el).node().clientWidth;
+                        overtimeLinePlot(updated_data, el, new_height, new_width);
+                    };
+                });
             }
-        });
+        }]);
 
         //Directive that contains d3 code to render distribution of allele frequency at timepoints
         //Plot type: Box plots
@@ -3184,7 +3195,7 @@
                             .style('overflow-x', 'hidden')
                             .style('padding', '2px')
                             .style('border', '1px solid black')
-                            .style('position', 'absolute')
+                            .style('position', 'relative')
                             .attr('id', 'container_div')
                             .on('scroll', function () {
                                 d3.selectAll('#dragable_div').remove();
@@ -3349,7 +3360,7 @@
                                 return top + 'px';
                             })
                             .style('left', '0px')
-                            .style('width', mini_x_range_max + 'px')
+                            .style('width', '100%')
                             .style('height', mini_fishplot_container_height + 'px')
                             .style('border', '0.5px solid black')
                             .style('position', 'absolute')
@@ -5984,7 +5995,7 @@
 
         });
 
-        tevApp.directive('purityLinePlot', function(){
+        tevApp.directive('purityLinePlot',['$window', function($window){
 
             return {
                 restrict: 'A',
@@ -6000,9 +6011,9 @@
                 var width = el.clientWidth;
                 var height = el.clientHeight;
 
-                scope.$watch('data', function(updated_data){
+                function makePurityLinePlot(updated_data, el, height, width) {
                     d3.select(el).selectAll('div').remove();
-                   data = updated_data;
+                    data = updated_data;
 
                     //Div to hold purity line plot svg... placed over editor div
                     var canvas = d3.select(el).append('div')
@@ -6010,9 +6021,9 @@
                             .style('left', width * 0.27 + 'px')
                             .style('width', '73%')
                             .style('height', height + 'px')
-                           // .style('border-top', '1px solid black')
+                            // .style('border-top', '1px solid black')
                             // .style('border-left', '1px solid black')
-                           // .style('border-right', '1px solid black')
+                            // .style('border-right', '1px solid black')
                             .style('padding', '2px')
                             .style('float', 'right')
                             .attr('id', 'purity-lineplot-wrapper');
@@ -6038,12 +6049,14 @@
 
                     var canvas_range_max_x = d3.select('#line-plot-canvas').node().clientWidth;
 
-                    var x_scale = d3.scale.linear().domain(d3.extent(x_axis_labels, function(d){ return d;}))
+                    var x_scale = d3.scale.linear().domain(d3.extent(x_axis_labels, function (d) {
+                                return d;
+                            }))
                             .rangeRound([canvas_range_max_x * 0.01, canvas_range_max_x * 0.99], 0.25);
 
                     var manual_padding = height * 0.075;
 
-                    var y_scale = d3.scale.linear().domain([100, 0]).range([(0+manual_padding), (height-manual_padding)]);
+                    var y_scale = d3.scale.linear().domain([100, 0]).range([(0 + manual_padding), (height - manual_padding)]);
                     var y_axis = d3.svg.axis().scale(y_scale).tickValues([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
                             .orient('left');
 
@@ -6056,7 +6069,7 @@
 
                     var purity_data = [];
 
-                    for(var i = 0; i < timepoints.length; i++){
+                    for (var i = 0; i < timepoints.length; i++) {
                         purity_data.push({
                             timepoint: timepoints[i],
                             purity: data[timepoints[i]]
@@ -6074,20 +6087,20 @@
                             .data(purity_data)
                             .enter()
                             .append('circle')
-                            .attr('cx', function(d){
+                            .attr('cx', function (d) {
                                 return x_scale(d.timepoint);
                             })
-                            .attr('cy', function(d){
+                            .attr('cy', function (d) {
                                 return y_scale(d.purity);
                             })
                             .attr('r', 3)
                             .attr('fill', '#1e90ff');
 
                     canvas_svg.append('text')
-                            .attr('x', function(){
+                            .attr('x', function () {
                                 return 0;
                             })
-                            .attr('y', function(){
+                            .attr('y', function () {
                                 return 0;
                             })
                             .html('Purity')
@@ -6096,13 +6109,24 @@
 
                     canvas_svg.append("svg:g")
                             .attr('class', 'axis purity-line-ticks')
-                        .attr("transform", "translate(" + 6 + "0)")
-                        .call(y_axis);
+                            .attr("transform", "translate(" + 6 + "0)")
+                            .call(y_axis);
 
+                }
+
+                scope.$watch('data', function(updated_data){
+                    makePurityLinePlot(updated_data, el, height, width);
+                    $window.addEventListener('resize', purity_resize);
+                    function purity_resize() {
+                        var new_height = d3.select(el).node().clientHeight;
+                        var new_width = d3.select(el).node().clientWidth;
+                        makePurityLinePlot(updated_data, el, new_height, new_width);
+                    };
                 });
+
             }
 
-        });
+        }]);
 
         $('.closeall').ready(function(){
             $('.panel-collapse.in')
