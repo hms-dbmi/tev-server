@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'home',
     'plots',
     'data_manager',
+    'variant_exploration',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

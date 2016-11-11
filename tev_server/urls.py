@@ -34,5 +34,6 @@ urlpatterns = [
     url(r'^', include('home.urls')),
     url(r'^', include(router.urls)),
     url(r'^plots/', include('plots.urls')),
-    url(r'^data/', include('data_manager.urls'))
+    url(r'^data/', include('data_manager.urls')),
+    url(r'^variant_exploration/', include('variant_exploration.urls'))
 ]
