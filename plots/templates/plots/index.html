@@ -1235,6 +1235,9 @@
                     .on('mouseenter', function (d) {
                         moused_over = parseInt(d3.select(this).attr('index'));
                     })
+                    .on('mouseover', function(){
+                        moused_over = parseInt(d3.select(this).attr('index'));
+                    })
                     .on('mouseleave', function () {
                         d3.select(this).attr('opacity', 1);
                     })
@@ -3624,6 +3627,9 @@
                                                             .on('mouseenter', function (d) {
                                                                 moused_over = parseInt(d3.select(this).attr('index'));
                                                             })
+                                                            .on('mouseover', function(){
+                                                                moused_over = parseInt(d3.select(this).attr('index'));
+                                                            })
                                                             .on('mouseleave', function () {
                                                                 d3.select(this).attr('opacity', 1);
                                                             })
@@ -3801,6 +3807,9 @@
                                                             .attr('id', 'big_fish' + current_data.index)
                                                             .style('cursor', 'pointer')
                                                             .on('mouseenter', function (d) {
+                                                                moused_over = parseInt(d3.select(this).attr('index'));
+                                                            })
+                                                            .on('mouseover', function(){
                                                                 moused_over = parseInt(d3.select(this).attr('index'));
                                                             })
                                                             .on('mouseleave', function () {
@@ -4492,6 +4501,9 @@
                                     .on('mouseenter', function (d) {
                                         moused_over = parseInt(d3.select(this).attr('index'));
                                     })
+                                    .on('mouseover', function(){
+                                        moused_over = parseInt(d3.select(this).attr('index'));
+                                    })
                                     .on('mouseleave', function () {
                                         d3.select(this).attr('opacity', 1);
                                     })
@@ -4793,6 +4805,9 @@
                                             .on('mouseenter', function (d) {
                                                 moused_over = parseInt(d3.select(this).attr('index'));
                                             })
+                                            .on('mouseover', function(){
+                                                moused_over = parseInt(d3.select(this).attr('index'));
+                                            })
                                             .on('mouseleave', function () {
                                                 d3.select(this).attr('opacity', 1);
                                             })
@@ -4966,6 +4981,9 @@
                                                 .on('mouseenter', function (d) {
                                                     moused_over = parseInt(d3.select(this).attr('index'));
                                                 })
+                                                .on('mouseover', function(){
+                                                    moused_over = parseInt(d3.select(this).attr('index'));
+                                                })
                                                 .on('mouseleave', function () {
                                                     d3.select(this).attr('opacity', 1);
                                                 })
@@ -5106,6 +5124,9 @@
                                                 .on('mouseenter', function (d) {
                                                     moused_over = parseInt(d3.select(this).attr('index'));
                                                 })
+                                                .on('mouseover', function(){
+                                                    moused_over = parseInt(d3.select(this).attr('index'));
+                                                })
                                                 .on('mouseleave', function () {
                                                     d3.select(this).attr('opacity', 1);
                                                 })
@@ -5242,6 +5263,9 @@
                                                 .attr('id', 'big_fish' + current_data.index)
                                                 .style('cursor', 'pointer')
                                                 .on('mouseenter', function (d) {
+                                                    moused_over = parseInt(d3.select(this).attr('index'));
+                                                })
+                                                .on('mouseover', function(){
                                                     moused_over = parseInt(d3.select(this).attr('index'));
                                                 })
                                                 .on('mouseleave', function () {
@@ -5694,6 +5718,7 @@
                         y_max = y_scale_domain_max(mini_nested_data);
                         generate_mini_fishplot_top_and_bottom(mini_nested_data, y_max);
 
+                        mini_x_scale = d3.scale.linear().rangeRound([0, mini_x_range_max], 0.5)
                         mini_x_scale = d3.scale.linear().rangeRound([0, mini_x_range_max], 0.5)
                                 .domain(d3.extent(x_axis_labels, function (d) {
                                     return d;

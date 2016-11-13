@@ -57,6 +57,8 @@ MIDDLEWARE_CLASSES = [
 
 ROOT_URLCONF = 'tev_server.urls'
 
+CSRF_COOKIE_SECURE = False
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

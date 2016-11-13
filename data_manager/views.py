@@ -335,6 +335,7 @@ def save_fishplot(request):
 
     for index in used_indices:
         current_clone = nested_data[index]
+        print(current_clone)
         clone = CloneMetadata()
         clone.name = saved_as
         clone.key = current_clone["key"]
@@ -363,7 +364,12 @@ def save_fishplot(request):
             data.alt_count = int(timepoint["alt_count"])
             data.conserved_alt_count = int(timepoint["conserved_alt_count"])
             data.allele = timepoint["allele"]
-            data.cluster = int(timepoint["cluster"])
+            try:
+                cluster = int(timepoint["cluster"])
+            except:
+                cluster = None
+
+            data.cluster = cluster
             data.save()
 
     # leave HttpResponse empty so we stay on page after saving fishplot

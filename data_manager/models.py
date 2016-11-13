@@ -91,7 +91,7 @@ class CloneTimepointData(models.Model):
     alt_count = models.IntegerField()
     conserved_alt_count = models.IntegerField()
     allele = models.CharField(max_length=250)
-    cluster = models.IntegerField()
+    cluster = models.IntegerField(null=True)
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     def __str__(self):
