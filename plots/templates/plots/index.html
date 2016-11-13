@@ -4876,7 +4876,7 @@
                             .style('float', 'right');
 
                     var plot_options_div_group = convert_to_ccf_div.append('div')
-                            .attr('class', 'btn-group')
+                            .attr('class', 'btn-group dropup')
                             .style('width', '100px');
 
                     var plot_options_button = plot_options_div_group.append('button')
@@ -5309,6 +5309,51 @@
                                                 });
                                     }
 
+                            });
+
+                    var reset_plot_button = button_group.append('li')
+                            .append('a')
+                            .style('cursor', 'pointer')
+                            .html('Clear plot')
+                            .on('click', function () {
+                                var clones = [];
+                                for(var i = 0; i < plot_background.children.length; i++){
+                                    clones.push(canvas_nested_data[plot_background.children[i]]);
+                                }
+                                for(var i = 0; i < clones.length; i++) {
+                                    var current_fish = clones[i];
+                                    var index = current_fish.index;
+                                    if (current_fish.parent_index_of_this == 'plot') {
+                                        var group_index = parseInt(current_fish.group);
+                                        group_index = groups.indexOf(group_index);
+                                        if (group_index > -1) {
+                                            groups.splice(group_index, 1);
+                                        }
+
+                                        var plot_background_group = current_fish.group.toString();
+                                        delete plot_background.groups[plot_background_group];
+
+                                        var child_index = plot_background.children.indexOf(index);
+                                        if (child_index > -1) {
+                                            plot_background.children.splice(child_index, 1);
+                                        }
+                                    }
+
+                                    d3.select('#mini_fishplot_div' + index).style('opacity', 1);
+                                    var index_in_fishplot_svgs = fishplot_svgs.indexOf(index);
+                                    if (index_in_fishplot_svgs > -1) {
+                                        fishplot_svgs.splice(index_in_fishplot_svgs, 1);
+                                    }
+                                    remove_fishplot_relationships(current_fish, fishplot_svgs, canvas_nested_data);
+
+                                    plot_background.children.shift();
+
+                                    scope.$apply(function () {
+                                        scope.$parent.plotted = fishplot_svgs;
+                                    });
+                                }
+                                d3.selectAll('.big_fish').remove();
+                                d3.selectAll('.mini_fishplot_divs').style('opacity', 1);
                             });
 
                     d3.select('#convert_to_ccf_div').style('left', function () {
