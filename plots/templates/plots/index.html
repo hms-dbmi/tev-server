@@ -426,13 +426,13 @@
 
     //Find if there are any conflicts with the adjusted borders for the independent evolutions
     //And adjust the borders if there are any conflicts
-    function adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints, measure) {
+    function adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints, measure, max_vaf) {
         for (var i = 0; i < num_of_timepoints + 1; i++) {
             for (var j = 1; j < plot_background.children.length; j++) {
                 var last_top = nestedData[plot_background.children[j - 1]].values[i].top;
                 var current_bottom = nestedData[plot_background.children[j]].values[i].bottom;
                 if (current_bottom < last_top) {
-                    nestedData = collision_detection(nestedData, plot_background.children, i, 0, 100, measure);
+                    nestedData = collision_detection(nestedData, plot_background.children, i, 0, max_vaf, measure);
                     break;
                 }
             }
@@ -1156,7 +1156,7 @@
 
     function fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor, contextMenuShowing,
-    contextMenuForPrevious, type, allele_color_reference) {
+    contextMenuForPrevious, type, allele_color_reference, max_vaf) {
 
         canvas_svg.html('');
         var purity = get_purity_dict(tick_labels);
@@ -1174,10 +1174,10 @@
         for (var i = 0; i < plot_background.children.length; i++) {
             var parent = nested_data[plot_background.children[i]];
             var start_point = parent.start_point;
-            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, type);
+            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, max_vaf, type);
         }
 
-        adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, type);
+        adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, type, max_vaf);
 
         nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
@@ -1283,7 +1283,7 @@
     function reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                       complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, index,
                       canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                      contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints) {
+                      contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_vaf) {
         d3.select('#save-CCF-button-reprompt').attr('index', index);
         var from_button = d3.select('#save-CCF-button-reprompt').attr('from-button');
 
@@ -1325,7 +1325,7 @@
              d3.select('#save-CCF-button-reprompt').attr('last-prompt', false);
             fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                    contextMenuShowing, contextMenuForPrevious, type, allele_color_reference);
+                    contextMenuShowing, contextMenuForPrevious, type, allele_color_reference, max_vaf);
             return;
         }
 
@@ -1349,7 +1349,7 @@
                     reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                       complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, index,
                       canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                      contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints);
+                      contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_vaf);
                 }
             }
     }
@@ -2827,7 +2827,7 @@
                         nestedData[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
                     }
 
-                    adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints, 'alt_count');
+                    adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints, 'alt_count', 100);
 
                     nestedData = adjust_children_positioning(nestedData, num_of_timepoints, 'alt_count');
 
@@ -3026,6 +3026,9 @@
                 var estimated_accordian_padding = 3*20;
                 var estimated_offsetTop = panel_heading_one_height+panel_heading_two_height+purity_div_height+estimated_accordian_padding;
                 height = d3.select(window).node().outerHeight - estimated_offsetTop;
+
+                //initial max VAF
+                var max_VAF_value = 100;
 
                 scope.$watch('colors', function(new_colors){
                     color_ref = new_colors;
@@ -3263,7 +3266,7 @@
                     var canvas_x_axis = d3.svg.axis().scale(canvas_x_scale).tickValues(tick_labels);
 
                     var canvas_range_max_y = d3.select('#canvas_svg').node().clientHeight * 0.95;
-                    var canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([101, -1]);
+                    var canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([max_VAF_value+1, -1]);
 
                     function y_scale_domain_max(nested_data) {
                         var max_array = [];
@@ -3415,7 +3418,7 @@
                     plot_background.values = [];
                     plot_background.values.length = canvas_nested_data[0].values.length;
                     //Depends on what the domain is for the canvas... right now the max is 100 total for the fishplot(s)
-                    plot_background.values.fill({alt_count: 100});
+                    plot_background.values.fill({alt_count: max_VAF_value});
                     plot_background.children = [];
                     plot_background.groups = {0: 0};
                     var groups = [];
@@ -3451,6 +3454,41 @@
                     //give leeway of 2px for minimum left position of mini fishplot
                     var minimum_left_pos = parseInt(d3.select('#canvas_div').style('left')) - 2;
                     minimum_left_pos = Math.floor(minimum_left_pos);
+
+                    function should_update_vaf_scale(plot_background, nested_data, current_data, current_max) {
+                        var vaf_dict = {};
+                        for (var i = 0; i < sample_timepoints.length; i++) {
+                            vaf_dict[sample_timepoints[i]] = [];
+                        }
+                        //Get total VAF plotted at each timepoint
+                        for (var i = 0; i < plot_background.children.length; i++) {
+                            var vaf_data = nested_data[plot_background.children[i]].values;
+                            for (var j = 0; j < vaf_data.length; j++) {
+                                vaf_dict[vaf_data[j].Sample_Barcode].push(vaf_data[j].alt_count);
+                            }
+                        }
+                        //now add VAF from newly added fishplot
+                        var max = 0;
+                        for (var i = 0; i < current_data.values.length; i++) {
+                            vaf_dict[current_data.values[i].Sample_Barcode].push(current_data.values[i].alt_count);
+                            var sum = vaf_dict[current_data.values[i].Sample_Barcode].reduce(function (a, b) {
+                                return a + b;
+                            }, 0);
+                            if (sum > max) {
+                                max = sum;
+                            }
+                        }
+                        if(max < 100){
+                            max = 100;
+                        }
+                        return max;
+                    }
+
+                    function update_plot_background_values(plot_background, new_max) {
+                        for (var i = 0; i < plot_background.values.length; i++) {
+                            plot_background.values[i].alt_count = new_max;
+                        }
+                    }
 
                     //Make all mini fishplots opacity 1 on mouse-up of primary div
                     //Precaution for if user drags mouse too fast
@@ -3515,6 +3553,12 @@
 
                                             var data = nested_data[data_index];
 
+                                            max_VAF_value = should_update_vaf_scale(plot_background, nested_data, data, max_VAF_value);
+                                            canvas_y_scale.domain([max_VAF_value+1, -1]);
+                                            if(max_VAF_value > plot_background.values[0].alt_count){
+                                                update_plot_background_values(plot_background, max_VAF_value);
+                                            }
+
                                             var fit = can_fit(nested_data, plot_background, data, num_of_timepoints);
 
                                             //If it can fit, plot it and re-adjust all other independent clonal evolutions
@@ -3555,16 +3599,16 @@
                                                 canvas_nested_data[data_index] = JSON.parse(JSON.stringify(data));
 
                                                 //Create shallow copy for values of each fishplot used
-                                                //Prevents find_origin function from permanently trimming allele values
+                                                //Prevents find_origin() function from permanently trimming allele values
                                                 update_canvas_nested_data(canvas_nested_data, fishplot_svgs);
 
                                                 for (var i = 0; i < plot_background.children.length; i++) {
                                                     var parent = nested_data[plot_background.children[i]];
                                                     var start_point = parent.start_point;
-                                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
+                                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, max_VAF_value, 'alt_count');
                                                 }
 
-                                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
+                                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count', max_VAF_value);
 
                                                 //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
                                                 //determining CCF solutions
@@ -3745,10 +3789,10 @@
                                                 for (var i = 0; i < plot_background.children.length; i++) {
                                                     parent = nested_data[plot_background.children[i]];
                                                     start_point = parent.start_point;
-                                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
+                                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, max_VAF_value, 'alt_count');
                                                 }
 
-                                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
+                                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count', max_VAF_value);
 
                                                 //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
                                                 //determining CCF solutions
@@ -4413,6 +4457,12 @@
                             if(child_index > -1) {
                                 plot_background.children.splice(child_index, 1);
                             }
+                            var nested_data = canvas_nested_data.slice(0);
+                            max_VAF_value = should_update_vaf_scale(plot_background, nested_data, current_fish, max_VAF_value);
+                            canvas_y_scale.domain([max_VAF_value+1, -1]);
+                            if(max_VAF_value > plot_background.values[0].alt_count){
+                                update_plot_background_values(plot_background, max_VAF_value);
+                            }
                         }
 
                         d3.select('#mini_fishplot_div' + index).style('opacity', 1);
@@ -4426,7 +4476,7 @@
                             scope.$parent.plotted = fishplot_svgs;
                         });
 
-                        var nested_data = canvas_nested_data.slice(0);
+                        nested_data = canvas_nested_data.slice(0);
 
                         //Create shallow copy for values of each fishplot used
                         //Prevents find_origin function from permanently trimming allele values
@@ -4435,10 +4485,10 @@
                         for (var i = 0; i < plot_background.children.length; i++) {
                             var parent = nested_data[plot_background.children[i]];
                             var start_point = parent.start_point;
-                            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
+                            nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, max_VAF_value, 'alt_count');
                         }
 
-                        adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
+                        adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count', max_VAF_value);
 
                         //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
                         //determining CCF solutions
@@ -4595,7 +4645,7 @@
                                     reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                                             complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, index,
                                             canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                                            contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints);
+                                            contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_VAF_value);
                                 }
                             });
 
@@ -4738,7 +4788,7 @@
                                 for (var i = 0; i < plot_background.children.length; i++) {
                                     var parent = nested_data[plot_background.children[i]];
                                     var start_point = parent.start_point;
-                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
+                                    nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, max_VAF_value, 'alt_count');
                                 }
 
                                 adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
@@ -4902,11 +4952,12 @@
                                     reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                                             complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
                                             canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                                            contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints);
+                                            contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100);
                                 }
 
                                 if (can_plot) {
                                     canvas_svg.html('');
+                                    canvas_y_scale.domain([101, -1]);
                                     var purity = get_purity_dict(tick_labels);
                                     set_up_ccf_boundries(canvas_nested_data, fishplot_svgs, 'ccf');
 
@@ -4922,7 +4973,7 @@
                                         nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'ccf');
                                     }
 
-                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'ccf');
+                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'ccf', 100);
 
                                     nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
@@ -5046,10 +5097,11 @@
                                     reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                                             complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
                                             canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                                            contextMenuShowing, contextMenuForPrevious, 'only_cancer_ccf', canvas_svg, num_of_timepoints);
+                                            contextMenuShowing, contextMenuForPrevious, 'only_cancer_ccf', canvas_svg, num_of_timepoints, 100);
                                 }
                                 if (can_plot) {
                                     canvas_svg.html('');
+                                    canvas_y_scale.domain([101, -1]);
                                     var purity = get_purity_dict(tick_labels);
                                     set_up_ccf_boundries(canvas_nested_data, fishplot_svgs, 'only_cancer_ccf');
 
@@ -5065,7 +5117,7 @@
                                         nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'only_cancer_ccf');
                                     }
 
-                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'only_cancer_ccf');
+                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'only_cancer_ccf', 100);
 
                                     nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
@@ -5185,7 +5237,7 @@
 
                                 fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
                                         canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor, contextMenuShowing,
-                                        contextMenuForPrevious, 'alt_count', allele_color_reference)
+                                        contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value)
                             });
 
                     var back_to_VAF = button_group.append('li')
@@ -5203,10 +5255,10 @@
                                     for (var i = 0; i < plot_background.children.length; i++) {
                                         var parent = nested_data[plot_background.children[i]];
                                         var start_point = parent.start_point;
-                                        nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
+                                        nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, max_VAF_value, 'alt_count');
                                     }
 
-                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
+                                    adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count', max_VAF_value);
 
                                     nested_data = reconstruct_data(nested_data, fishplot_svgs);
 
@@ -5440,10 +5492,12 @@
                                     d3.select('#modal_table').remove();
                                     d3.select('#save-CCF-button-reprompt').attr('type', 'ccf');
 
+                                    canvas_y_scale.domain([101, -1]);
+
                                     reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                                             complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
                                             canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                                            contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints);
+                                            contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100);
                                 }
 
                             });
@@ -6117,7 +6171,7 @@
                         //Right now type is alt_count... will need to account for resize when CCF plotted
                         fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
                                 canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor, contextMenuShowing,
-                                contextMenuForPrevious, 'alt_count', allele_color_reference);
+                                contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value);
 
                         resize_mini_fishplots(new_width);
 
