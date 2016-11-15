@@ -6559,7 +6559,10 @@
 
                     var timepoints = Object.keys(data);
                     timepoints = timepoints.map(Number);
-                    if(timepoints.length < 2){
+                    if(timepoints.length == 0){
+                        return;
+                    }
+                    if(timepoints.length == 1){
                         d3.select(el).remove();
                         return;
                     }
