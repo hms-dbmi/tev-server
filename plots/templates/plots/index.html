@@ -3455,7 +3455,7 @@
                     var minimum_left_pos = parseInt(d3.select('#canvas_div').style('left')) - 2;
                     minimum_left_pos = Math.floor(minimum_left_pos);
 
-                    function should_update_vaf_scale(plot_background, nested_data, current_data, current_max) {
+                    function should_update_vaf_scale(plot_background, nested_data, current_data, not_plotted) {
                         var vaf_dict = {};
                         for (var i = 0; i < sample_timepoints.length; i++) {
                             vaf_dict[sample_timepoints[i]] = [];
@@ -3469,13 +3469,25 @@
                         }
                         //now add VAF from newly added fishplot
                         var max = 0;
-                        for (var i = 0; i < current_data.values.length; i++) {
-                            vaf_dict[current_data.values[i].Sample_Barcode].push(current_data.values[i].alt_count);
-                            var sum = vaf_dict[current_data.values[i].Sample_Barcode].reduce(function (a, b) {
-                                return a + b;
-                            }, 0);
-                            if (sum > max) {
-                                max = sum;
+                        if(not_plotted == true) {
+                            for (var i = 0; i < current_data.values.length; i++) {
+                                vaf_dict[current_data.values[i].Sample_Barcode].push(current_data.values[i].alt_count);
+                                var sum = vaf_dict[current_data.values[i].Sample_Barcode].reduce(function (a, b) {
+                                    return a + b;
+                                }, 0);
+                                if (sum > max) {
+                                    max = sum;
+                                }
+                            }
+                        }
+                        if (not_plotted == false) {
+                            for (var i = 0; i < sample_timepoints.length; i++) {
+                                var sum = vaf_dict[sample_timepoints[i]].reduce(function (a, b) {
+                                    return a + b;
+                                }, 0);
+                                if (sum > max) {
+                                    max = sum;
+                                }
                             }
                         }
                         if(max < 100){
@@ -3553,7 +3565,7 @@
 
                                             var data = nested_data[data_index];
 
-                                            max_VAF_value = should_update_vaf_scale(plot_background, nested_data, data, max_VAF_value);
+                                            max_VAF_value = should_update_vaf_scale(plot_background, nested_data, data, true);
                                             canvas_y_scale.domain([max_VAF_value+1, -1]);
                                             if(max_VAF_value > plot_background.values[0].alt_count){
                                                 update_plot_background_values(plot_background, max_VAF_value);
@@ -4458,7 +4470,7 @@
                                 plot_background.children.splice(child_index, 1);
                             }
                             var nested_data = canvas_nested_data.slice(0);
-                            max_VAF_value = should_update_vaf_scale(plot_background, nested_data, current_fish, max_VAF_value);
+                            max_VAF_value = should_update_vaf_scale(plot_background, nested_data, current_fish, true);
                             canvas_y_scale.domain([max_VAF_value+1, -1]);
                             if(max_VAF_value > plot_background.values[0].alt_count){
                                 update_plot_background_values(plot_background, max_VAF_value);
@@ -4751,8 +4763,8 @@
                                     for (var j = 0; j < current_fish.values.length; j++) {
                                         current_fish.values[j].alt_count = fishplot_data.data[i].timepoint_data[j].alt_count;
                                         mini_current_fish.values[j].alt_count = fishplot_data.data[i].timepoint_data[j].alt_count;
-                                        current_fish.values[j].top = current_fish.start_point + (current_fish.values[j].alt_count / 2);
-                                        current_fish.values[j].bottom = current_fish.start_point - (current_fish.values[j].alt_count / 2);
+                                        current_fish.values[j].top = fishplot_data.data[i].timepoint_data[j].top;
+                                        current_fish.values[j].bottom = fishplot_data.data[i].timepoint_data[j].bottom;
                                     }
                                     if(fishplot_data.data[i].parent_index_of_this != 'plot'){
                                         current_fish.parent_index_of_this = parseInt(fishplot_data.data[i].parent_index_of_this);
@@ -4767,6 +4779,7 @@
                                     canvas_nested_data[fishplot_data.data[i].index] = JSON.parse(JSON.stringify(current_fish));
 
                                 }
+
                                 fishplot_svgs.reverse();
                                 scope.$apply(function() {
                                                 scope.$parent.plotted = fishplot_svgs;
@@ -4774,8 +4787,14 @@
                                                 scope.$parent.loaded_fishplot_data = canvas_nested_data;
                                             });
 
+                                var temp_nested_data = JSON.parse(JSON.stringify(canvas_nested_data));
+                                var nested_data = nested_data = JSON.parse(JSON.stringify(canvas_nested_data));
 
-                                var nested_data = canvas_nested_data.slice(0);
+                                max_VAF_value = should_update_vaf_scale(plot_background, temp_nested_data, data, false);
+                                canvas_y_scale.domain([max_VAF_value+1, -1]);
+                                if (max_VAF_value > plot_background.values[0].alt_count) {
+                                    update_plot_background_values(plot_background, max_VAF_value);
+                                }
 
                                 plot_background.children.sort(function (a, b) {
                                     return nested_data[a].start_point - nested_data[b].start_point;
@@ -4791,8 +4810,8 @@
                                     nested_data[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, max_VAF_value, 'alt_count');
                                 }
 
-                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count');
-
+                                adjust_independent_evolution_positions(nested_data, plot_background, num_of_timepoints, 'alt_count', max_VAF_value);
+{##}
                                 set_new_start_point(canvas_nested_data, nested_data, fishplot_svgs, parent.children);
 
                                 //Retain a complete nested data, that doesnt affect canvas_nested_data, to be used when
