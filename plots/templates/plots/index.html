@@ -6557,6 +6557,13 @@
                     d3.select(el).selectAll('div').remove();
                     data = updated_data;
 
+                    var timepoints = Object.keys(data);
+                    timepoints = timepoints.map(Number);
+                    if(timepoints.length < 2){
+                        d3.select(el).remove();
+                        return;
+                    }
+
                     //Div to hold purity line plot svg... placed over editor div
                     var canvas = d3.select(el).append('div')
                             .style('top', 0 + 'px')
@@ -6576,8 +6583,6 @@
                             .attr('height', '100%')
                             .attr('id', 'line-plot-canvas');
 
-                    var timepoints = Object.keys(data);
-                    timepoints = timepoints.map(Number);
                     var x_axis_labels = JSON.parse(JSON.stringify(timepoints));
                     var x_max = Math.max.apply(null, x_axis_labels);
 
