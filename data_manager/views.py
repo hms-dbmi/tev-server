@@ -20,16 +20,18 @@ def index(request):
         name = source.subject_id
         uuid = source.uuid
         timepoints = source.Samples.get_queryset()
-        alleles = []
+        variants = []
         for i in range(0, len(timepoints)):
             num_of_alleles = int(len(timepoints[i].VariantAlleles.get_queryset()))
-            alleles.append(num_of_alleles)
-            max_allele = max(alleles)
+            for j in range(0, len(timepoints[i].VariantAlleles.get_queryset())):
+                variant = str(timepoints[i].VariantAlleles.get_queryset()[j])
+                if variant not in variants:
+                    variants.append(str(timepoints[i].VariantAlleles.get_queryset()[j]))
         source_table_data.append({
             'name': name,
             'uuid': uuid,
             'timepoints': len(timepoints),
-            'alleles': max_allele
+            'alleles': len(variants)
         })
     context = {'source_table_data': source_table_data}
     return render(request, 'data_manager/index.html', context)
