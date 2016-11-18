@@ -3435,9 +3435,10 @@
                                 .style('left', '0px')
                                 .style('width', '100%')
                                 .style('height', mini_fishplot_container_height + 'px')
-                                .style('border', '0.5px solid black')
+                                .style('border-top', '0.5px solid black')
+                                .style('border-bottom', '0.5px solid black')
                                 .style('position', 'absolute')
-                                .style('cursor', 'pointer')
+                                .style('cursor', 'default')
                                 .style('background', '#FFF')
                                 .style('opacity', 1)
                                 .attr('index', function (d, i) {
@@ -3467,6 +3468,16 @@
                     var new_y_pos = 0;
                     var top_in_container, left_in_container;
 
+                    for(var i = 0; i < mini_fishplot_data.length; i++){
+                        d3.select('#mini_fishplot_div'+i).style('background-color', function(){
+                            if((i+1)%2 != 0){
+                                return '#e2e2e2';
+                            }
+                            else{
+                                return '#ffffff';
+                            }
+                        })
+                    }
 
                     //Lay down an svg in the divs
                     var svgs = mini_fishplots.append('svg')
