@@ -348,6 +348,35 @@
         return nested_data;
     }
 
+    //functions for adjusting beginning and end of fishplots
+    function pinch_data(data) {
+        for (var i = 0; i < data.length; i++) {
+            var current_allele = data[i];
+            for (var j = 0; j < current_allele.values.length; j++) {
+                //Initialize all pinches to false
+                //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
+                current_allele.values[j].pinch = false;
+            }
+            current_allele.values = find_origin(current_allele);
+        }
+    }
+
+    function remove_unnecessary_values(data) {
+        for (var i = 0; i < data.length; i++) {
+            var current_allele = data[i];
+            current_allele.values.reverse();
+            for (var j = 0; j < current_allele.values.length; j++) {
+                if (current_allele.values[j].alt_count != 0) {
+                    if (j != 0) {
+                        current_allele.values.splice(0, j - 1);
+                    }
+                    current_allele.values.reverse();
+                    break;
+                }
+            }
+        }
+    }
+
 
     //Order fish plot data by first timepoint, and then by alternative allele freq
     //Directives used in: figure5Plot
@@ -1197,6 +1226,8 @@
             }
             current_allele.values = find_origin(current_allele);
         }
+
+        remove_unnecessary_values(nested_data);
 
         d3.selectAll('.big_fish').remove();
 
@@ -2842,7 +2873,7 @@
                     }
 
                     var topLineGen = d3.svg.line()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(function(d){
                                 if(d.pinch == true){
                                     var x_pos = (xScale(d.Sample_Barcode) + xScale(d.next_timepoint))/2;
@@ -2855,7 +2886,7 @@
                             });
 
                     var bottomLineGen = d3.svg.line()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(function(d, i){
                                 if(d.pinch == true){
                                     var x_pos = (xScale(d.Sample_Barcode) + xScale(d.next_timepoint))/2;
@@ -2870,7 +2901,7 @@
                     //Get all of the x-values that make up the top line (will be same as bottom, symmetrical)
                     //Then take area along y-axis between the top and bottom lines
                     var areaBetweenLines = d3.svg.area()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(topLineGen.x())
                             .y0(topLineGen.y())
                             .y1(bottomLineGen.y());
@@ -3307,7 +3338,7 @@
                     var mini_y_scale = d3.scale.linear().range([20, 140]).domain([y_max + 1, -1]);
 
                     var top_line_gen = d3.svg.line()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(function (d) {
                                 if (d.pinch == true) {
                                     var x_pos = (mini_x_scale(d.Sample_Barcode) + mini_x_scale(d.next_timepoint))/2;
@@ -3320,7 +3351,7 @@
                             });
 
                     var canvas_top_line_gen = d3.svg.line()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(function (d) {
                                 if (d.pinch == true) {
                                     var x_pos = (canvas_x_scale(d.Sample_Barcode) + canvas_x_scale(d.next_timepoint))/2;
@@ -3333,7 +3364,7 @@
                             });
 
                     var bottom_line_gen = d3.svg.line()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(function (d) {
                                 if (d.pinch == true) {
                                     var x_pos = (mini_x_scale(d.Sample_Barcode) + mini_x_scale(d.next_timepoint))/2;
@@ -3346,7 +3377,7 @@
                             });
 
                     var canvas_bottom_line_gen = d3.svg.line()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(function (d) {
                                 if (d.pinch == true) {
                                     var x_pos = (canvas_x_scale(d.Sample_Barcode) + canvas_x_scale(d.next_timepoint))/2;
@@ -3359,13 +3390,13 @@
                             });
 
                     var area_between_lines = d3.svg.area()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(top_line_gen.x())
                             .y0(top_line_gen.y())
                             .y1(bottom_line_gen.y());
 
                     var canvas_area_between_lines = d3.svg.area()
-                            .interpolate('linear')
+                            .interpolate('cardinal').tension(0.85)
                             .x(canvas_top_line_gen.x())
                             .y0(canvas_top_line_gen.y())
                             .y1(canvas_bottom_line_gen.y());
@@ -3374,11 +3405,17 @@
                     //In case new plot added to canvas background and need to move/shift everything
                     var fishplot_svgs = [];
 
+                    var mini_fishplot_data = JSON.parse(JSON.stringify(mini_nested_data));
+
+                    pinch_data(mini_fishplot_data);
+                    remove_unnecessary_values(mini_fishplot_data);
+
+
                     var container_div_height = 600;
                     var top;
                     var mini_fishplot_container_height = 160;
                     var mini_fishplots = container.selectAll('alleles')
-                                .data(mini_nested_data)
+                                .data(mini_fishplot_data)
                                 .enter()
                                 .append('div')
                                 .style('top', function (d, i) {
@@ -3645,6 +3682,8 @@
                                                     current_allele.values = find_origin(current_allele);
                                                 }
 
+                                                remove_unnecessary_values(nested_data);
+
                                                 d3.selectAll('.big_fish').remove();
 
 
@@ -3826,6 +3865,8 @@
                                                     }
                                                     current_allele.values = find_origin(current_allele);
                                                 }
+
+                                                remove_unnecessary_values(nested_data);
 
 
                                                 d3.selectAll('.big_fish').remove();
@@ -4525,6 +4566,8 @@
                             current_allele.values = find_origin(current_allele);
                         }
 
+                        remove_unnecessary_values(nested_data);
+
                         d3.selectAll('.big_fish').remove();
 
 
@@ -4837,6 +4880,8 @@
                                     current_allele.values = find_origin(current_allele);
                                 }
 
+                                remove_unnecessary_values(nested_data);
+
                                 d3.selectAll('.big_fish').remove();
 
                                 for (var i = 0; i < nested_data.length; i++) {
@@ -5013,6 +5058,8 @@
                                         current_allele.values = find_origin(current_allele);
                                     }
 
+                                    remove_unnecessary_values(nested_data);
+
                                     d3.selectAll('.big_fish').remove();
 
 
@@ -5157,6 +5204,8 @@
                                         current_allele.values = find_origin(current_allele);
                                     }
 
+                                    remove_unnecessary_values(nested_data);
+
                                     d3.selectAll('.big_fish').remove();
 
 
@@ -5297,6 +5346,8 @@
                                         }
                                         current_allele.values = find_origin(current_allele);
                                     }
+
+                                    remove_unnecessary_values(nested_data);
 
                                     d3.selectAll('.big_fish').remove();
 
@@ -5565,6 +5616,11 @@
                             mini_y_scale.domain([y_max + 1, -1]);
                             generate_mini_fishplot_top_and_bottom(mini_nested_data, y_max);
 
+                            mini_fishplot_data = JSON.parse(JSON.stringify(mini_nested_data));
+                            pinch_data(mini_fishplot_data);
+                            remove_unnecessary_values(mini_fishplot_data);
+                            console.log(mini_fishplot_data);
+
                             d3.selectAll('.fishplot_areas').remove();
 
                             //Mini fishplot divs in scroll container
@@ -5577,8 +5633,8 @@
                                     .attr('stroke-width', 5)
                                     .attr("stroke", "transparent")
                                     .style("stroke-linejoin", "round")
-                                    .attr('d', function (d) {
-                                        return top_line_gen(d.values);
+                                    .attr('d', function (d, i) {
+                                        return top_line_gen(mini_fishplot_data[i].values);
                                     });
 
                             svgs.append('path')
@@ -5590,8 +5646,8 @@
                                     .attr("stroke", "transparent")
                                     .style("stroke-linejoin", "round")
                                     .attr('stroke-width', 8)
-                                    .attr('d', function (d) {
-                                        return bottom_line_gen(d.values);
+                                    .attr('d', function (d, i) {
+                                        return bottom_line_gen(mini_fishplot_data[i].values);
                                     });
 
                             //difference between edge of mini fishplot div, and where fishplot fill starts
@@ -5606,8 +5662,8 @@
                                     .attr('fill', function (d) {
                                         return d.color;
                                     })
-                                    .datum(function (d) {
-                                        return d.values;
+                                    .datum(function (d, i) {
+                                        return mini_fishplot_data[i].values;
                                     })
                                     .attr('d', area_between_lines)
                                     .attr('class', 'fishplot_areas')
@@ -5687,7 +5743,11 @@
                         else {
                             var temp_svg = d3.select('#mini_fishplot_svg'+index);
                             d3.selectAll('#fishplot_area' + index).remove();
-                            var temp_nested_data = mini_nested_data[index];
+
+                            mini_fishplot_data = JSON.parse(JSON.stringify(mini_nested_data));
+                            pinch_data(mini_fishplot_data);
+                            remove_unnecessary_values(mini_fishplot_data);
+                            var temp_nested_data = mini_fishplot_data[index];
                             generate_mini_fishplot_top_and_bottom([temp_nested_data], y_max);
 
                             temp_svg.append('path')
@@ -5836,6 +5896,10 @@
                         y_max = y_scale_domain_max(mini_nested_data);
                         generate_mini_fishplot_top_and_bottom(mini_nested_data, y_max);
 
+                        mini_fishplot_data = JSON.parse(JSON.stringify(mini_nested_data));
+                        pinch_data(mini_fishplot_data);
+                        remove_unnecessary_values(mini_fishplot_data);
+
                         mini_x_scale = d3.scale.linear().rangeRound([0, mini_x_range_max], 0.5)
                         mini_x_scale = d3.scale.linear().rangeRound([0, mini_x_range_max], 0.5)
                                 .domain(d3.extent(x_axis_labels, function (d) {
@@ -5947,7 +6011,7 @@
                                     .attr("stroke", "transparent")
                                     .style("stroke-linejoin", "round")
                                     .attr('d', function () {
-                                        return top_line_gen(mini_nested_data[i].values);
+                                        return top_line_gen(mini_fishplot_data[i].values);
                                     });
 
                             d3.select('#mini_fishplot_svg' + i).append('path')
@@ -5959,7 +6023,7 @@
                                     .style("stroke-linejoin", "round")
                                     .attr('stroke-width', 8)
                                     .attr('d', function () {
-                                        return bottom_line_gen(mini_nested_data[i].values);
+                                        return bottom_line_gen(mini_fishplot_data[i].values);
                                     });
 
                             d3.select('#mini_fishplot_svg' + i).append('path')
@@ -5968,10 +6032,10 @@
                                     })
                                     .attr('opacity', 1)
                                     .attr('fill', function () {
-                                        return mini_nested_data[i].color;
+                                        return mini_fishplot_data[i].color;
                                     })
                                     .datum(function () {
-                                        return mini_nested_data[i].values;
+                                        return mini_fishplot_data[i].values;
                                     })
                                     .attr('d', area_between_lines)
                                     .attr('class', 'fishplot_areas')
