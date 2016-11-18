@@ -6223,31 +6223,33 @@
 
                     $window.addEventListener('resize', resize_canvas);
 
-                    function resize_canvas(){
+                    function resize_canvas() {
                         d3.select('#canvas_div').selectAll('svg').remove();
                         var new_width = d3.select(el).node().clientWidth;
 
-                    canvas_svg = canvas.append('svg')
-                            .attr('width', parseInt(new_width*0.73))
-                            .attr('height', '100%')
-                            .attr('id', 'canvas_svg')
-                            .attr('index', 'canvas_svg')
-                            .on('mouseover', function () {
-                                if (dragging) {
-                                    moused_over = d3.select(this).attr('index');
-                                }
-                            });
+                        canvas_svg = canvas.append('svg')
+                                .attr('width', parseInt(new_width * 0.73))
+                                .attr('height', '100%')
+                                .attr('id', 'canvas_svg')
+                                .attr('index', 'canvas_svg')
+                                .on('mouseover', function () {
+                                    if (dragging) {
+                                        moused_over = d3.select(this).attr('index');
+                                    }
+                                });
 
-                    canvas_range_max_x = d3.select('#canvas_svg').node().clientWidth;
-                    canvas_x_scale = d3.scale.linear()
-                            .rangeRound([canvas_range_max_x*0.01, canvas_range_max_x*0.99], 0.25)
-                            .domain(d3.extent(x_axis_labels, function(d){ return d;}));
-                    canvas_x_axis = d3.svg.axis().scale(canvas_x_scale).tickValues(tick_labels);
+                        canvas_range_max_x = d3.select('#canvas_svg').node().clientWidth;
+                        canvas_x_scale = d3.scale.linear()
+                                .rangeRound([canvas_range_max_x * 0.01, canvas_range_max_x * 0.99], 0.25)
+                                .domain(d3.extent(x_axis_labels, function (d) {
+                                    return d;
+                                }));
+                        canvas_x_axis = d3.svg.axis().scale(canvas_x_scale).tickValues(tick_labels);
 
-                    canvas_range_max_y = d3.select('#canvas_svg').node().clientHeight * 0.95;
-                    canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([101, -1]);
+                        canvas_range_max_y = d3.select('#canvas_svg').node().clientHeight * 0.95;
+                        canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([max_VAF_value, -1]);
 
-                        minimum_left_pos = parseInt(new_width*0.27) - 2;
+                        minimum_left_pos = parseInt(new_width * 0.27) - 2;
                         minimum_left_pos = Math.floor(minimum_left_pos);
 
 
