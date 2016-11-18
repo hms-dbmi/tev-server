@@ -4167,6 +4167,7 @@
                             .attr('width',  mini_fishplot_container_height*0.15)
                             .attr('height', mini_fishplot_container_height*0.15)
                             .attr('id', 'cog_wheel')
+                            .attr('cursor', 'pointer')
                             .attr('xlink:href', 'https://cdn1.iconfinder.com/data/icons/trycons/32/settings-512.png')
                             .on('click', function(d, i){
                                 //return if the fishplot of this allele has already been plotted
@@ -4188,6 +4189,7 @@
                             .attr('width', mini_fishplot_container_height*0.15)
                             .attr('height', mini_fishplot_container_height*0.14)
                             .attr('id', 'infolight')
+                            .attr('cursor', 'pointer')
                             .attr('index', function(d, i){
                                 return i;
                             })
@@ -4280,6 +4282,7 @@
                             })
                             .attr('d', area_between_lines)
                             .attr('class', 'fishplot_areas')
+                            .attr('cursor', 'pointer')
                             .on('mousedown', function (d, i) {
                                 d3.selectAll('.fishplot_areas').attr('opacity', 1);
                                 var div_id = '#mini_fishplot_div' + i;
@@ -5676,6 +5679,7 @@
                                         return mini_fishplot_data[i].values;
                                     })
                                     .attr('d', area_between_lines)
+                                    .attr('cursor', 'pointer')
                                     .attr('class', 'fishplot_areas')
                                     .on('mousedown', function (d, i) {
                                         d3.selectAll('.fishplot_areas').attr('opacity', 1);
@@ -5790,6 +5794,7 @@
                                         return temp_nested_data.values;
                                     })
                                     .attr('d', area_between_lines)
+                                    .attr('cursor', 'pointer')
                                     .attr('class', 'fishplot_areas')
                                     .on('mousedown', function () {
                                         var i = index;
@@ -5936,6 +5941,7 @@
                                     .attr('width', mini_fishplot_container_height * 0.15)
                                     .attr('height', mini_fishplot_container_height * 0.15)
                                     .attr('id', 'cog_wheel')
+                                    .attr('cursor', 'pointer')
                                     .attr('index', function () {
                                         return i;
                                     })
@@ -5961,6 +5967,7 @@
                                     .attr('width', mini_fishplot_container_height * 0.15)
                                     .attr('height', mini_fishplot_container_height * 0.14)
                                     .attr('id', 'infolight')
+                                    .attr('cursor', 'pointer')
                                     .attr('index', function () {
                                         return i;
                                     })
@@ -6048,6 +6055,7 @@
                                         return mini_fishplot_data[i].values;
                                     })
                                     .attr('d', area_between_lines)
+                                    .attr('cursor', 'pointer')
                                     .attr('class', 'fishplot_areas')
                                     .attr('index', function () {
                                         return i;
