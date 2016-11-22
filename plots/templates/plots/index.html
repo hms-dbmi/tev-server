@@ -1862,8 +1862,8 @@
                         var new_height = d3.select(el).node().clientHeight;
                         var new_width = d3.select(el).node().clientWidth;
                         overtimeLinePlot(updated_data, el, new_height, new_width);
-                    };
-                });
+                    }
+                }, true);
             }
         }]);
 
@@ -2231,7 +2231,7 @@
                         var new_width = d3.select(el).node().clientWidth;
                         makeBoxPlots(updatedData, el, height, new_width);
                     }
-                });
+                }, true);
             }
         }]);
 
