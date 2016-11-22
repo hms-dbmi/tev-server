@@ -3257,7 +3257,6 @@
                             .style('overflow-y', 'scroll')
                             .style('overflow-x', 'hidden')
                             .style('padding', '2px')
-                            .style('border', '1px solid black')
                             .style('position', 'relative')
                             .attr('id', 'container_div')
                             .on('scroll', function () {
@@ -3270,7 +3269,6 @@
                             .style('left', width * 0.27 + 'px')
                             .style('width', '73%')
                             .style('height', height + 'px')
-                            .style('border', '1px solid black')
                             .style('padding', '2px')
                             .style('float', 'right')
                             .attr('id', 'canvas_div');
@@ -3471,13 +3469,15 @@
                     for(var i = 0; i < mini_fishplot_data.length; i++){
                         d3.select('#mini_fishplot_div'+i).style('background-color', function(){
                             if((i+1)%2 != 0){
-                                return '#e2e2e2';
+                                return '#d6d6d6';
                             }
                             else{
-                                return '#ffffff';
+                                return '#eff0f2';
                             }
                         })
                     }
+                    d3.select('#canvas_div').style('background-color', '#f2f3f4');
+                    d3.select('#container_div').style('background-color', '#f2f3f4');
 
                     //Lay down an svg in the divs
                     var svgs = mini_fishplots.append('svg')
@@ -4314,7 +4314,7 @@
                                     if(!fit){
                                         cant_fit.push(fishplot_svgs[j]);
                                         d3.select('#big_fish'+ plotted_data.index)
-                                                .attr('fill', '#d3d3d3');
+                                                .attr('fill', '#262626');
                                     }
                                 }
 
@@ -5712,7 +5712,7 @@
                                             if (!fit) {
                                                 cant_fit.push(fishplot_svgs[j]);
                                                 d3.select('#big_fish' + plotted_data.index)
-                                                        .attr('fill', '#d3d3d3');
+                                                        .attr('fill', '#262626');
                                             }
                                         }
 
@@ -5828,7 +5828,7 @@
                                             if (!fit) {
                                                 cant_fit.push(fishplot_svgs[j]);
                                                 d3.select('#big_fish' + plotted_data.index)
-                                                        .attr('fill', '#d3d3d3');
+                                                        .attr('fill', '#262626');
                                             }
                                         }
 
@@ -6092,7 +6092,7 @@
                                             if (!fit) {
                                                 cant_fit.push(fishplot_svgs[j]);
                                                 d3.select('#big_fish' + plotted_data.index)
-                                                        .attr('fill', '#d3d3d3');
+                                                        .attr('fill', '#262626');
                                             }
                                         }
 
