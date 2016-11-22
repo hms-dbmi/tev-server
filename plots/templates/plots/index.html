@@ -3433,8 +3433,6 @@
                                 .style('left', '0px')
                                 .style('width', '100%')
                                 .style('height', mini_fishplot_container_height + 'px')
-                                .style('border-top', '0.5px solid black')
-                                .style('border-bottom', '0.5px solid black')
                                 .style('position', 'absolute')
                                 .style('cursor', 'default')
                                 .style('background', '#FFF')
@@ -4432,7 +4430,9 @@
                                 canvas_nested_data[index].ploidy = value;
                             });
 
-                    svgs.append('line')
+                    //The code commented out below is for boxing in the chromosome/CN/ploidy text
+
+                    {% comment %}svgs.append('line')
                             .attr('x1', '0px')
                             .attr('x2', function(d, i){
                                 return d3.select('#mini_fishplot_svg'+i).node().clientWidth;
@@ -4465,7 +4465,7 @@
                             .attr('y1', '0px')
                             .attr('y2', '20px')
                             .attr('stroke', '#000000')
-                            .attr('class', 'info_lines');
+                            .attr('class', 'info_lines');{% endcomment %}
 
 
                     //Function for removing fishplot svgs from plot
@@ -6201,7 +6201,7 @@
                                         return 'Ploidy: ' + 2; //Will put variable for Ploidy eventually
                                     });
 
-                            d3.select('#mini_fishplot_svg' + i).append('line')
+                            {% comment %}d3.select('#mini_fishplot_svg' + i).append('line')
                                     .attr('x1', '0px')
                                     .attr('x2', function () {
                                         return d3.select('#mini_fishplot_svg' + i).node().clientWidth;
@@ -6234,7 +6234,7 @@
                                     .attr('y1', '0px')
                                     .attr('y2', '20px')
                                     .attr('stroke', '#000000')
-                                    .attr('class', 'info_lines');
+                                    .attr('class', 'info_lines');{% endcomment %}
 
                         }
                     }
