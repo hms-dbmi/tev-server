@@ -87,15 +87,6 @@
         user-select: none;
     }
 
-    @-moz-document url-prefix() {
-        .remove-me {
-            border: 1px solid red;
-            position: absolute;
-            right: 0;
-            top: 0;
-        }
-    }
-
     .modal-header-inverse {
         background: #222222;
         color: #ffffff;
@@ -3563,10 +3554,10 @@
                                     if (dragging == true) {
                                         var dragable_div = d3.select('#dragable_div');
 
-                                        new_x_pos = d3.event.x;
+                                        new_x_pos = d3.event.pageX;
                                         var x_difference = new_x_pos - old_x_pos;
 
-                                        new_y_pos = d3.event.y;
+                                        new_y_pos = d3.event.pageY;
                                         var y_difference = new_y_pos - old_y_pos;
 
                                         old_x_pos = new_x_pos;
