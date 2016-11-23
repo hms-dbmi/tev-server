@@ -87,6 +87,15 @@
         user-select: none;
     }
 
+    @-moz-document url-prefix() {
+        .remove-me {
+            border: 1px solid red;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+    }
+
     .modal-header-inverse {
         background: #222222;
         color: #ffffff;
@@ -4056,7 +4065,11 @@
                                 var button_width = d3.select('#save_fishplot_button').node().offsetWidth;
                                 button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-left'));
                                 button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('padding-right'));
-                                button_width = button_width + parseInt(d3.select('#save_fishplot_button').style('margin'));
+                                var margin = parseInt(d3.select('#save_fishplot_button').style('margin'));
+                                if(Number.isInteger(margin) == true) {
+                                    button_width = button_width + margin;
+                                }
+
                                 return button_width + 'px';
                             });
 
@@ -4987,13 +5000,17 @@
                                 var save_fishplot_div_left = parseInt(d3.select('#save_fishplot_div').style('left'));
                                 var new_div_left = save_fishplot_div_left - 85; //pad 85px
                                 new_div_left = new_div_left - button_width;
+
                                 return new_div_left + 'px';
                             })
                             .style('width', function () {
                                 var button_width = d3.select('#load_fishplot_button').node().offsetWidth;
                                 button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('padding-left'));
                                 button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('padding-right'));
-                                button_width = button_width + parseInt(d3.select('#load_fishplot_button').style('margin'));
+                                var margin = parseInt(d3.select('#load_fishplot_button').style('margin'));
+                                if(Number.isInteger(margin) == true) {
+                                    button_width = button_width + margin;
+                                }
                                 return button_width + 'px';
                             });
 
@@ -5507,7 +5524,10 @@
                                 var button_width = d3.select('#plot_options_button').node().offsetWidth;
                                 button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-left'));
                                 button_width = button_width + parseInt(d3.select('#plot_options_button').style('padding-right'));
-                                button_width = button_width + parseInt(d3.select('#plot_options_button').style('margin'));
+                                var margin = parseInt(d3.select('#plot_options_button').style('margin'));
+                                if(Number.isInteger(margin) == true) {
+                                    button_width = button_width + margin;
+                                }
                                 return button_width + 'px';
                             });
 
@@ -5601,7 +5621,10 @@
                                 var button_width = d3.select('#edit_purity_button').node().offsetWidth;
                                 button_width = button_width + parseInt(d3.select('#edit_purity_button').style('padding-left'));
                                 button_width = button_width + parseInt(d3.select('#edit_purity_button').style('padding-right'));
-                                button_width = button_width + parseInt(d3.select('#edit_purity_button').style('margin'));
+                                var margin = parseInt(d3.select('#edit_purity_button').style('margin'));
+                                if(Number.isInteger(margin) == true) {
+                                    button_width = button_width + margin;
+                                }
                                 return button_width + 'px';
                             });
 
