@@ -3554,10 +3554,16 @@
                                     if (dragging == true) {
                                         var dragable_div = d3.select('#dragable_div');
 
-                                        new_x_pos = d3.event.pageX;
-                                        var x_difference = new_x_pos - old_x_pos;
+                                        if(navigator.userAgent.indexOf("Firefox") != -1 ){
+                                            new_x_pos = d3.event.pageX;
+                                            new_y_pos = d3.event.pageY;
+                                        }
+                                        else{
+                                            new_x_pos = d3.event.x;
+                                            new_y_pos = d3.event.y;
+                                        }
 
-                                        new_y_pos = d3.event.pageY;
+                                        var x_difference = new_x_pos - old_x_pos;
                                         var y_difference = new_y_pos - old_y_pos;
 
                                         old_x_pos = new_x_pos;
