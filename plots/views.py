@@ -81,7 +81,6 @@ def cluster(request, source):
     matrix.append(row)
     alleles.append(current_allele)
 
-
     data_dist = pdist(matrix) # computing the distance
     data_link = linkage(data_dist, method='complete')
     cluster_tree = to_tree(data_link, rd=False)

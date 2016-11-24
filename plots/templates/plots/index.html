@@ -2865,8 +2865,6 @@
 
                     scope.$parent.fishbone_data = nestedData;
 
-                    remove_unnecessary_values(nestedData);
-
                     //Find where the lines of the border should be, adjusting so that no line goes below 0
                     //and no line goes above 100
                     for(var i = 0; i < plot_background.children.length; i++) {
@@ -2889,6 +2887,8 @@
                         }
                         current_allele.values = find_origin(current_allele);
                     }
+
+                    remove_unnecessary_values(nestedData);
 
                     var topLineGen = d3.svg.line()
                             .interpolate('cardinal').tension(0.85)
