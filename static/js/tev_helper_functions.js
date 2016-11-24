@@ -1070,7 +1070,7 @@
 
     function fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor, contextMenuShowing,
-    contextMenuForPrevious, type, allele_color_reference, max_vaf) {
+    contextMenuForPrevious, type, allele_color_reference, max_vaf, canvas_range_max_y, canvas_x_axis) {
 
         canvas_svg.html('');
         var purity = get_purity_dict(tick_labels);
@@ -1195,12 +1195,20 @@
                         }
                     });
         }
+
+        canvas_svg.append("svg:g")
+            .attr("class", "axis noselect")
+            .attr('id', 'editor_x_axis')
+            .attr("transform", "translate(0," + canvas_range_max_y + ")")
+            .call(canvas_x_axis);
     }
 
     function reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                       complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, index,
                       canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                      contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_vaf) {
+                      contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_vaf, canvas_range_max_y,
+                      canvas_x_axis) {
+
         d3.select('#save-CCF-button-reprompt').attr('index', index);
         var from_button = d3.select('#save-CCF-button-reprompt').attr('from-button');
 
@@ -1242,7 +1250,8 @@
              d3.select('#save-CCF-button-reprompt').attr('last-prompt', false);
             fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                    contextMenuShowing, contextMenuForPrevious, type, allele_color_reference, max_vaf);
+                    contextMenuShowing, contextMenuForPrevious, type, allele_color_reference, max_vaf, canvas_range_max_y,
+                      canvas_x_axis);
             return;
         }
 
@@ -1266,7 +1275,8 @@
                     reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                       complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, index,
                       canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                      contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_vaf);
+                      contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_vaf, canvas_range_max_y,
+                      canvas_x_axis);
                 }
             }
     }
