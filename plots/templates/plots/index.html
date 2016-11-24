@@ -1273,6 +1273,7 @@
                         d3.select(this).attr('opacity', 1);
                     })
                     .on('contextmenu', function () {
+                        d3.event.preventDefault();
                         contextMenuFor = parseInt(d3.select(this).attr('index'));
 
                         //give the button an attribute to reference the fishplots they're dealing with
@@ -2668,7 +2669,10 @@
                             .domain(d3.extent(xAxisLabels, function(d){return d;}));
                     var xAxis = d3.svg.axis().scale(xScale).tickValues(sample_timepoints);
 
-                    var yScale = d3.scale.linear().range([40, height-40], 0.5).domain([101, -1]);
+                    var max_VAF_value = 100;
+
+                    //+3 padding to domain
+                    var yScale = d3.scale.linear().range([40, height-40], 0.5).domain([max_VAF_value+3, -1]);
                     var yAxis = d3.svg.axis().scale(yScale).orient('left').ticks(0);
 
                     var nestedData = d3.nest().key(function(d){return d.allele}).entries(data);
@@ -2812,12 +2816,21 @@
                                 }
                                 //Now add the current_allele values to the children total and see if they fit inside of parent
                                 var check_if_fits = 1;
-                                for(var j = 0; j < total_children_freq.length; j++){
-                                    if((total_children_freq[j] + current_allele_data.values[j].alt_count) > parent_allele.values[j].alt_count){
-                                        //If this is true at least one, check_if_fits will be 0 and we assign the parent
-                                        //as the former allele
-                                        former_allele_data = parent_allele;
-                                        check_if_fits = 0;
+                                if(parent_allele.key == "plot"){
+                                    var temp_freq_arr = [];
+                                    for(var j = 0; j < total_children_freq.length; j++){
+                                        temp_freq_arr[j] = total_children_freq[j] + current_allele_data.values[j].alt_count;
+                                    }
+                                    max_VAF_value = Math.max.apply(null, temp_freq_arr);
+                                }
+                                else {
+                                    for (var j = 0; j < total_children_freq.length; j++) {
+                                        if ((total_children_freq[j] + current_allele_data.values[j].alt_count) > parent_allele.values[j].alt_count) {
+                                            //If this is true at least one, check_if_fits will be 0 and we assign the parent
+                                            //as the former allele
+                                            former_allele_data = parent_allele;
+                                            check_if_fits = 0;
+                                        }
                                     }
                                 }
                                 if(check_if_fits == 1){
@@ -2825,7 +2838,7 @@
                                     if(parent_allele.key == "plot"){
                                         current_allele_data.group = (parent_allele.children.length - 1);
                                         plot_background.groups[current_allele_data.group.toString()] = i;
-                                        var start_point_space = 100/parent_allele.children.length;
+                                        var start_point_space = max_VAF_value/parent_allele.children.length;
                                         var base_start_point = start_point_space/2;
                                         for(var g = 0; g < i+1; g++){
                                             var start = base_start_point + (nestedData[g].group * start_point_space);
@@ -2848,17 +2861,21 @@
                         }
                     }
 
+                    yScale = d3.scale.linear().range([40, height-40], 0.5).domain([max_VAF_value+3, -1]);
+
                     scope.$parent.fishbone_data = nestedData;
+
+                    remove_unnecessary_values(nestedData);
 
                     //Find where the lines of the border should be, adjusting so that no line goes below 0
                     //and no line goes above 100
                     for(var i = 0; i < plot_background.children.length; i++) {
                         var parent = nestedData[plot_background.children[i]];
                         var start_point = parent.start_point;
-                        nestedData[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, 100, 'alt_count');
+                        nestedData[plot_background.children[i]] = parent_border_collision_detection(parent, start_point, 0, max_VAF_value, 'alt_count');
                     }
 
-                    adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints, 'alt_count', 100);
+                    adjust_independent_evolution_positions(nestedData, plot_background, num_of_timepoints, 'alt_count', max_VAF_value);
 
                     nestedData = adjust_children_positioning(nestedData, num_of_timepoints, 'alt_count');
 
@@ -2870,6 +2887,7 @@
                             //Pinch will only be true if the "origin" timepoint is not the subclones actual origin
                             current_allele.values[j].pinch = false;
                         }
+                        current_allele.values = find_origin(current_allele);
                     }
 
                     var topLineGen = d3.svg.line()
@@ -2949,12 +2967,14 @@
                                             .style("top", (d3.mouse(this)[1] - 40) + "px")
                                             .style("left", (d3.mouse(this)[0] + 40) + "px");
 
-                                    old_x = d3.event.x;
-                                    old_y = d3.event.y;
+                                    old_x = d3.event.pageX;
+                                    old_y = d3.event.pageY;
+
                                 })
-                                .on('mousemove', function(){
-                                    var new_x = d3.event.x;
-                                    var new_y = d3.event.y;
+                                .on('mousemove', function () {
+                                    var new_x = d3.event.pageX;
+                                    var new_y = d3.event.pageY;
+
                                     var x_difference = new_x - old_x;
                                     var y_difference = new_y - old_y;
 
@@ -2962,12 +2982,14 @@
                                     old_y = new_y;
 
                                     div_tooltip.style('top', function () {
-                                                var top = parseInt(div_tooltip.style('top'));
+                                                //jQuery for Firefox
+                                                var top = parseInt($(this).position().top);
                                                 top = top + y_difference;
                                                 return top + 'px';
                                             })
                                             .style('left', function () {
-                                                var left = parseInt(div_tooltip.style('left'));
+                                                //jQuery for Firefox
+                                                var left = parseInt($(this).position().left);
                                                 left = left + x_difference;
                                                 return left + 'px';
                                             });
@@ -2984,6 +3006,31 @@
                     });
 
 
+                    if (navigator.userAgent.indexOf("Firefox") != -1) {
+                        $window.addEventListener('mousemove', function(){
+                            var new_x = d3.event.pageX;
+                            var new_y = d3.event.pageY;
+
+                                    var x_difference = new_x - old_x;
+                                    var y_difference = new_y - old_y;
+
+                                    old_x = new_x;
+                                    old_y = new_y;
+
+                                    div_tooltip.style('top', function () {
+                                                //jQuery for Firefox
+                                                var top = parseInt($(this).position().top);
+                                                top = top + y_difference;
+                                                return top + 'px';
+                                            })
+                                            .style('left', function () {
+                                                //jQuery for Firefox
+                                                var left = parseInt($(this).position().left);
+                                                left = left + x_difference;
+                                                return left + 'px';
+                                            });
+                        })
+                    }
 
                     canvas.append("svg:g")
                         .attr("class", "axis")
