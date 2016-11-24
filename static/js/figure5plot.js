@@ -4,7 +4,7 @@
 function plotSuggestedFishplot(updatedData, el, height, width, color_ref, scope) {
     d3.select(el).selectAll('svg').remove();
 
-    data = updatedData[0];
+    var data = updatedData[0];
     color_ref = updatedData[1];
 
     if (data.length == 0 || data[0].cluster == undefined) {

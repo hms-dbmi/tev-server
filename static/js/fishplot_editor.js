@@ -6,7 +6,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                     scope, $window, $filter, $http) {
     d3.select(el).selectAll('svg').remove();
     d3.select(el).selectAll('div').remove();
-    data = updated_data;
+    var data = updated_data;
 
     var mini_nested_data = d3.nest().key(function (d) {
         return d.allele;

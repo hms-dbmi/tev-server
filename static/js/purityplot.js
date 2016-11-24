@@ -3,7 +3,7 @@
  */
 function makePurityLinePlot(updated_data, el, height, width) {
     d3.select(el).selectAll('div').remove();
-    data = updated_data;
+    var data = updated_data;
 
     var timepoints = Object.keys(data);
     timepoints = timepoints.map(Number);
