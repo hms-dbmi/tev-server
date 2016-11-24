@@ -3500,9 +3500,9 @@
                     var contextMenuForPrevious = '';
 
                     //give leeway of 2px for minimum left position of mini fishplot
-                    var minimum_left_pos = parseInt(d3.select('#canvas_div').style('left')) - 2;
+                    //Use jQuery because safari doesnt understand d3.select().node().left
+                    var minimum_left_pos = parseInt($('#canvas_div').position().left) - 2;
                     minimum_left_pos = Math.floor(minimum_left_pos);
-                    console.log(minimum_left_pos);
 
                     function should_update_vaf_scale(plot_background, nested_data, current_data, not_plotted) {
                         var vaf_dict = {};
