@@ -269,19 +269,21 @@ def parse_tev_file(file):
         variant_allele.AA_position = int(AA_change[1])
         variant_allele.AA_variant = AA_change[2]
 
+        print(total_read_index)
+
         try:
             variant_allele.total_reads = int(file[i][total_read_index])
-        except ValueError:
+        except:
             variant_allele.total_reads = None
 
         try:
             variant_allele.ref_reads = int(file[i][ref_read_index])
-        except ValueError:
+        except:
             variant_allele.ref_reads = None
 
         try:
             variant_allele.alt_reads = int(file[i][alt_read_index])
-        except ValueError:
+        except:
             variant_allele.alt_reads = None
 
         try:

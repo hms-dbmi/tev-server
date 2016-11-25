@@ -6,7 +6,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                     scope, $window, $filter, $http) {
     d3.select(el).selectAll('svg').remove();
     d3.select(el).selectAll('div').remove();
-    var data = updated_data;
+    data = updated_data;
 
     var mini_nested_data = d3.nest().key(function (d) {
         return d.allele;
@@ -1651,8 +1651,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, index,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                    contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_VAF_value,
-                    canvas_range_max_y, canvas_x_axis);
+                    contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_VAF_value);
             }
         });
 
@@ -1971,8 +1970,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
-                    contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100, canvas_range_max_y,
-                    canvas_x_axis);
+                    contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100);
             }
 
             if (can_plot) {
@@ -2537,7 +2535,8 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
                     contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100,
-                    canvas_range_max_y, canvas_x_axis);
+                    canvas_range_max_y,
+                      canvas_x_axis);
             }
 
         });
@@ -3263,6 +3262,12 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
             contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value, canvas_range_max_y, canvas_x_axis);
 
         resize_mini_fishplots(new_width);
+
+        canvas_svg.append("svg:g")
+            .attr("class", "axis noselect")
+            .attr('id', 'editor_x_axis')
+            .attr("transform", "translate(0," + canvas_range_max_y + ")")
+            .call(canvas_x_axis);
     }
 
 }

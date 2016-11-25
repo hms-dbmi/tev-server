@@ -45,7 +45,7 @@ class VariantAllele(models.Model):
     ref_reads = models.IntegerField(null=True)
     alternative = models.CharField(max_length=250, null=True)
     alternative_freq = models.IntegerField()
-    reference = models.CharField(max_length=250)
+    reference = models.CharField(max_length=250, null=True)
     reference_freq = models.IntegerField()
     type = models.CharField(max_length=250, null=True)
     cDNA_change = models.CharField(max_length=250, null=True)
