@@ -42,6 +42,11 @@ def input(request):
     context = {'tev_file': tev_file}
     return render(request, 'data_manager/input.html', context)
 
+def field_info(request):
+    context = {}
+    print('here')
+    return render(request, 'data_manager/field_information.html', context)
+
 
 # View for REST API containing everything nested within a source
 class SourceRESTAPI(viewsets.ModelViewSet):

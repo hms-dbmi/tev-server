@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+<html lang="en">
 <head>
+    <title>TEV</title>
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -34,9 +35,9 @@
             /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
         }
     </style>
-
 </head>
 <body>
+
 <!-- Navigation -->
 <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
     <div class="container">
@@ -55,7 +56,7 @@
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a href="../">Return to Data</a>
+                    <a href="../input/">Upload Data</a>
                 </li>
             </ul>
         </div>
@@ -63,61 +64,36 @@
     </div>
     <!-- /.container -->
 </nav>
-
-<div class="container-fluid">
-    <section class="container">
-        <div class="container-page">
-            <div id="file-upload-div" class="col-md-5 well" style="float: left">
-                <h3 class="dark-grey">File Upload</h3>
-                <div class="col-lg-12">
-                    <form method="post" action="../data_to_database/" enctype="multipart/form-data">{% csrf_token %}
-                        {{ tev_file.as_p }}
-                        <input class="btn btn-default" type="submit" value="Upload"/>
-                    </form>
-                </div>
-
-            </div>
-
-            <div id="file-format-div" class="col-md-5 well" style="float: right;">
-                <h3 class="dark-grey">File Format</h3>
-                <p>
-                    The file format requires a minimum of 5 fields.
-                </p>
-                <p><b>Required Fields:</b></p>
-                <ul>
-                    <li>Subject ID</li>
-                    <li>Day</li>
-                    <li>Gene</li>
-                    <li>AA_change</li>
-                    <li>VAF</li>
-                </ul>
-                <p>
-                    The file format also supports several options fields.
-                </p>
-                <p><b>Optional Fields</b></p>
-                <ul>
-                    <li>Chr</li>
-                    <li>Position</li>
-                    <li>Total Read</li>
-                    <li>Ref_read</li>
-                    <li>Var_read</li>
-                    <li>Alt</li>
-                    <li>Ref</li>
-                    <li>cDNA_change</li>
-                    <li>VariantType</li>
-                    <li>Assay</li>
-                    <li>RefSeq</li>
-                </ul>
-                </br>
-                <p>For additional information on these parameters, a page explaining each field can be found
-                    <a href="../format_information">here</a>.
-                </p>
-            </div>
-        </div>
-    </section>
+<div id="well-wrapper" class="col-sm-12 well">
+    <div class="col-sm-11" style="float: left;">
+        <h2>Required</h2>
+        <ul>
+            <li><b>Subject ID</b> - A unique ID associated with the patient or source the data was derived from.</li>
+            <li><b>Day</b> - The number of days since the first sample was acquired from the source. The day the first
+            sample was acquired should be 0.</li>
+            <li><b>Gene</b> - The name of the gene.</li>
+            <li><b>AA_change</b> - The amino acid change in the form of original amino acid letter, position in peptide
+            chain, and new amino acid letter (or deletion/insertion). An example of this is "R140Q".</li>
+            <li><b>VAF</b> - The variant allele frequency.</li>
+        </ul>
+        <h2>Optional</h2>
+        <ul>
+            <li><b>Chr</b> - The chromosome the gene is on.</li>
+            <li><b>Position</b> - The position of the variant on the chromosome.</li>
+            <li><b>Total Read</b> - The total number of reads sequenced for the particular locus.</li>
+            <li><b>Ref_read</b> - The number of total reads that map to the reference sequence for the particular
+                locus.</li>
+            <li><b>Var_read</b> - The number of total reads that don't map to the reference sequence for the particular
+            locus.</li>
+            <li><b>Alt</b> - The alternative sequence observed at the particular locus.</li>
+            <li><b>Ref</b> - The reference sequence for the particular locus.</li>
+            <li><b>cDNA_change</b> - The cDNA change observed as a result of the variant.</li>
+            <li><b>VariantType</b> - The type of mutation of the variant (i.e. Frameshift, Missense, Nonsense)</li>
+            <li><b>Assay</b> - The type of assay used to determine the variants.</li>
+            <li><b>RefSeq</b> - An associated RefSeq accession number.</li>
+        </ul>
+    </div>
 </div>
-<script>
-    $("#file-upload-div").height($("#file-format-div").height());
-</script>
+
 </body>
 </html>
