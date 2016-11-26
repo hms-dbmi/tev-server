@@ -16,7 +16,8 @@ To aid users in developing fishplots that accurately represent their views on th
 Another feature that seeks to aid users in developing accurate fishplots is a series of 5 plots that aims to elucidate the characteristics and relationships of the variants in question. These plots are interactive, and are located in a separate tab called "Variant Allele Summary".
 
 #### Ability to Load and Save Fishplots
-Lastly, the TEV tool provides a way for users to save the fishplots they've created so that they may share them with collaborators, or return to them at a later date.
+The TEV tool also provides a way for users to save the fishplots they've created so that they may share them with collaborators, or return to them at a later date.
+![ezgif com-video-to-gif 2](https://cloud.githubusercontent.com/assets/12614369/20642617/58015286-b3e1-11e6-941d-26588c5cc475.gif)
 
 ## Other Fishplot Software
 The only other software known to generate fishplots is the [fishplot](https://github.com/chrisamiller/fishplot) R package by Chris Miller
