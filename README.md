@@ -5,7 +5,7 @@ The primary visualizations used to discuss and reconstruct tumor evolution are [
 
 ## Features and Usage
 The main feature of the TEV tool is the fishplot editor. The fishplot editor utilizes drag and drop functionality to generate custom made fishplots. It can be used to generate fishplots via the VAFs, CCFs given the entire sample, and CCFs given only the tumor cells. If the purity of the samples are known or the user wants to provide an estimate, there is a simple combinatoric algorithm to help convert the plotted VAFs to CCFs.
-
+![ezgif com-video-to-gif](https://cloud.githubusercontent.com/assets/12614369/20637126/b4ddf410-b34a-11e6-8efa-0381ed59b889.gif)
 
 ## Examples
 
