@@ -23,4 +23,5 @@ The TEV tool also provides a way for users to save the fishplots they've created
 The only other software known to generate fishplots is the [fishplot](https://github.com/chrisamiller/fishplot) R package by Chris Miller
 
 ## Future Work
-In the future we hope to extend on this project to develop new visualizations for reconstructing and communicating clonal architecture, as well as provide tools for looking at the effects of variants across multiple sources. 
+In the future we hope to extend on this project to develop new visualizations for reconstructing and communicating clonal architecture, as well as provide tools for looking at the effects of variants across multiple sources. A simple feature already implemented is a table containing information on a particular variant, as well as how many sources have a mutation in that gene. This information can be accessed by clicking the infolight icon in the fishplot editor. An example of this table can be seen below.
+![screen shot 2016-11-26 at 2 24 07 pm](https://cloud.githubusercontent.com/assets/12614369/20642712/5ed4a024-b3e4-11e6-8655-fef637e66aaf.png)
