@@ -1722,10 +1722,17 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                     fishplot_data = subject_fishplots[i];
                     if (fishplot_data.data[0].parent_index_of_this != "plot") {
                         fishplot_data.data = fishplot_data.data.reverse();
-                        if (fishplot_data.data[0].timepoint_data[0].Sample_Barcode > 0 || fishplot_data.data[0].timepoint_data[0].Sample_Barcode != 'origin') {
-                            for (var j = 0; j < fishplot_data.data.length; j++) {
-                                fishplot_data.data[j].timepoint_data.reverse();
-                            }
+                    }
+                    if (parseInt(fishplot_data.data[0].timepoint_data[0].Sample_Barcode) >= 0 || fishplot_data.data[0].timepoint_data[0].Sample_Barcode != 'origin') {
+                        for (var j = 0; j < fishplot_data.data.length; j++) {
+                            fishplot_data.data[j].timepoint_data.sort(function(a, b){
+                               if(parseInt(a.Sample_Barcode) > parseInt(b.Sample_Barcode)){
+                                   return 1;
+                               }
+                               if(parseInt(a.Sample_Barcode) < parseInt(b.Sample_Barcode)){
+                                   return -1;
+                               }
+                            });
                         }
 
                     }

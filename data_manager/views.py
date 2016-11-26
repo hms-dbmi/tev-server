@@ -44,7 +44,6 @@ def input(request):
 
 def field_info(request):
     context = {}
-    print('here')
     return render(request, 'data_manager/field_information.html', context)
 
 
@@ -269,8 +268,6 @@ def parse_tev_file(file):
         variant_allele.AA_position = int(AA_change[1])
         variant_allele.AA_variant = AA_change[2]
 
-        print(total_read_index)
-
         try:
             variant_allele.total_reads = int(file[i][total_read_index])
         except:
@@ -344,7 +341,6 @@ def save_fishplot(request):
 
     for index in used_indices:
         current_clone = nested_data[index]
-        print(current_clone)
         clone = CloneMetadata()
         clone.name = saved_as
         clone.key = current_clone["key"]
