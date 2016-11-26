@@ -67,14 +67,14 @@ function makeTable(updated_data, el, width, height, color_ref, plotted, timepoin
 
     d3.select(el).append('h2').style('text-align', 'center').html('VAF of Alleles at Each Timepoint');
 
-    var table = d3.select(el).append('table').attr('class', 'table table-bordered')
+    var table = d3.select(el).append('table').attr('class', 'table table-bordered editor-table')
         .attr('id', 'editor-table')
         .attr('data-toggle', 'table')
         .style('table-layout', 'fixed');
 
-    var header1 = table.append('thead').append('tr');
+    var header1 = table.append('thead').attr('id', 'editor-thead').append('tr');
     header1.append('th').html(' ');
-    header1.append('th').style('align', 'center').attr('colspan', timepoints.length).html('Timepoints');
+    header1.append('th').attr('colspan', timepoints.length).html('Timepoints');
 
     var tbody = table.append('tbody').attr('id', 'tbody-editor-table').append('tr');
     tbody.append('td').attr('align', 'center').html('<b> Alleles </b>');
