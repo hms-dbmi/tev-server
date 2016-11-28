@@ -14,6 +14,7 @@ To aid users in developing fishplots that accurately represent their views on th
 
 #### Variant Allele Summary
 Another feature that seeks to aid users in developing accurate fishplots is a series of 5 plots that aims to elucidate the characteristics and relationships of the variants in question. These plots are interactive, and are located in a separate tab called "Variant Allele Summary".
+![ezgif com-video-to-gif 3](https://cloud.githubusercontent.com/assets/12614369/20678693/ab169a46-b565-11e6-9f8e-7f9b498b195d.gif)
 
 #### Ability to Load and Save Fishplots
 The TEV tool also provides a way for users to save the fishplots they've created so that they may share them with collaborators, or return to them at a later date.
