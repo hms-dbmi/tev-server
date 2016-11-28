@@ -206,6 +206,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
     //Also use jQuery here because
     var canvas_range_max_y = $('#canvas_svg').height() * 0.95;
     var canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([max_VAF_value + 1, -1]);
+    var canvas_y_scale = d3.scale.linear().range([0, canvas_range_max_y]).domain([max_VAF_value + 1, -1]);
 
     function y_scale_domain_max(nested_data) {
         var max_array = [];
@@ -1981,7 +1982,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
             }
 
             if (can_plot) {
-                canvas_svg.html('');
+                canvas_svg.selectAll('.big_fish')
                 canvas_y_scale.domain([101, -1]);
                 var purity = get_purity_dict(tick_labels);
                 set_up_ccf_boundries(canvas_nested_data, fishplot_svgs, 'ccf');
@@ -2102,12 +2103,6 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                             }
                         });
                 }
-                canvas_svg.append("svg:g")
-                    .attr("class", "axis noselect")
-                    .attr('id', 'editor_x_axis')
-                    .attr("transform", "translate(0," + canvas_range_max_y + ")")
-                    .call(canvas_x_axis);
-
             }
 
         });
@@ -2133,7 +2128,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                     canvas_range_max_y, canvas_x_axis);
             }
             if (can_plot) {
-                canvas_svg.html('');
+                canvas_svg.selectAll('.big_fish');
                 canvas_y_scale.domain([101, -1]);
                 var purity = get_purity_dict(tick_labels);
                 set_up_ccf_boundries(canvas_nested_data, fishplot_svgs, 'only_cancer_ccf');
@@ -2254,11 +2249,6 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                             }
                         });
                 }
-                canvas_svg.append("svg:g")
-                    .attr("class", "axis noselect")
-                    .attr('id', 'editor_x_axis')
-                    .attr("transform", "translate(0," + canvas_range_max_y + ")")
-                    .call(canvas_x_axis);
             }
         });
 

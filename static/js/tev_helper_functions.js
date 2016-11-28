@@ -1195,12 +1195,6 @@
                         }
                     });
         }
-
-        canvas_svg.append("svg:g")
-            .attr("class", "axis noselect")
-            .attr('id', 'editor_x_axis')
-            .attr("transform", "translate(0," + canvas_range_max_y + ")")
-            .call(canvas_x_axis);
     }
 
     function reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
