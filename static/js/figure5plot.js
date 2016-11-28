@@ -352,32 +352,60 @@ function plotSuggestedFishplot(updatedData, el, height, width, color_ref, scope)
                     .style("top", (d3.mouse(this)[1] - 40) + "px")
                     .style("left", (d3.mouse(this)[0] + 40) + "px");
 
-                old_x = d3.event.pageX;
-                old_y = d3.event.pageY;
+                if(navigator.userAgent.indexOf("Firefox") != -1) {
+                    old_x = d3.event.pageX;
+                    old_y = d3.event.pageY;
+                }
+                else{
+                    old_x = d3.event.x;
+                    old_y = d3.event.y;
+                }
 
             })
             .on('mousemove', function () {
-                var new_x = d3.event.pageX;
-                var new_y = d3.event.pageY;
+                if(navigator.userAgent.indexOf("Firefox") != -1) {
+                    var new_x = d3.event.pageX;
+                    var new_y = d3.event.pageY;
 
-                var x_difference = new_x - old_x;
-                var y_difference = new_y - old_y;
+                    var x_difference = new_x - old_x;
+                    var y_difference = new_y - old_y;
 
-                old_x = new_x;
-                old_y = new_y;
+                    old_x = new_x;
+                    old_y = new_y;
 
-                div_tooltip.style('top', function () {
-                    //jQuery for Firefox
-                    var top = parseInt($(this).position().top);
-                    top = top + y_difference;
-                    return top + 'px';
-                })
-                    .style('left', function () {
+                    div_tooltip.style('top', function () {
                         //jQuery for Firefox
-                        var left = parseInt($(this).position().left);
-                        left = left + x_difference;
-                        return left + 'px';
-                    });
+                        var top = parseInt($(this).position().top);
+                        top = top + y_difference;
+                        return top + 'px';
+                    })
+                        .style('left', function () {
+                            //jQuery for Firefox
+                            var left = parseInt($(this).position().left);
+                            left = left + x_difference;
+                            return left + 'px';
+                        });
+                }
+                else {
+                    new_x = d3.event.x;
+                    new_y = d3.event.y;
+
+                    x_difference = new_x - old_x;
+                    y_difference = new_y - old_y;
+
+                    old_x = new_x;
+                    old_y = new_y;
+
+                    div_tooltip.style('top', function () {
+                        var top = parseInt(d3.select(this).style('top'));
+                        return (top + y_difference) + 'px';
+                    })
+                        .style('left', function () {
+                            var left = parseInt(d3.select(this).style('left'));
+                            return (left + x_difference) + 'px';
+                        })
+
+                }
             })
             .on('mouseleave', function () {
                 div_tooltip.remove();
