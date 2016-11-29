@@ -58,11 +58,14 @@ docs/_build/
 # PyBuilder
 target/
 
-#Ipython Notebook
+# Ipython Notebook
 .ipynb_checkpoints
 
-#Heroku
+# Heroku
 venv
 *.pyc
 staticfiles
 .env
+
+# DB
+db.sqlite3
