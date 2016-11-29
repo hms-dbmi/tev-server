@@ -523,6 +523,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
 
             if ((mini_fishplot_left + left_adjustment) > minimum_left_pos) {
                 d3.select(el).style('cursor', 'default');
+                alert('TODO: CLUE add fishplot');
 
                 if (moused_over == 'canvas_svg') {
 

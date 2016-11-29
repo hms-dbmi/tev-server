@@ -69,3 +69,6 @@ staticfiles
 
 # DB
 db.sqlite3
+
+# IDE
+.idea
