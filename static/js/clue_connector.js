@@ -39,7 +39,6 @@ $(() => {
 function draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
                    plot_background, canvas_y_scale, num_of_timepoints, start, groups, fishplot_svgs,
                    scope, canvas_svg, canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines) {
-  alert('scope.moused_over? '+scope.moused_over);
   if (scope.moused_over == 'canvas_svg') {
 
     var nested_data = canvas_nested_data.slice(0);
@@ -167,11 +166,9 @@ function draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
                 .style('cursor', 'pointer')
                 .on('mouseenter', function (d) {
                     scope.moused_over = parseInt(d3.select(this).attr('index'));
-                    console.log('enter '+scope.moused_over);
                 })
                 .on('mouseover', function () {
                     scope.moused_over = parseInt(d3.select(this).attr('index'));
-                  console.log('over '+scope.moused_over);
                 })
                 .on('mouseleave', function () {
                     d3.select(this).attr('opacity', 1);
@@ -226,7 +223,6 @@ function draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
             .style('left', left_in_container)
             .remove();
     }
-    alert('on canvas?');
   }
   else {
       nested_data = canvas_nested_data.slice(0);
@@ -354,11 +350,9 @@ function draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
                   .style('cursor', 'pointer')
                   .on('mouseenter', function (d) {
                       scope.moused_over = parseInt(d3.select(this).attr('index'));
-                    console.log('else enter '+scope.moused_over)
                   })
                   .on('mouseover', function () {
                       scope.moused_over = parseInt(d3.select(this).attr('index'));
-                    console.log('else over '+scope.moused_over)
                   })
                   .on('mouseleave', function () {
                       d3.select(this).attr('opacity', 1);
@@ -413,14 +407,12 @@ function draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
               .style('left', left_in_container)
               .remove();
       }
-      alert('on fish?');
   }
 
   // These are set inside the if-then above
   // console.log(fishplot_svgs); // Array of indices currently displayed
   // console.log(fishplot_data); // {allele: 'allele-name', freqs: [24, 42]}
   // TODO
-  alert('TODO: CLUE add fishplot');
   const outputRef = global_history.findOrAddObject(document.querySelector('#canvas_div'), 'output', prov.cat.data);
   // This push itself takes care of updating the display: it needs to be inside the if-else.
   //global_history.push(createAddCLUEFish(outputRef, 'state-goes-here'));

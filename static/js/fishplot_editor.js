@@ -188,7 +188,6 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
         .on('mouseover', function () {
             if (dragging) {
                 scope.moused_over = d3.select(this).attr('index');
-                console.log('scope.moused_over: '+scope.moused_over);
             }
         });
 
