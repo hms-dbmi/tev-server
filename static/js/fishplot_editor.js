@@ -521,9 +521,25 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
             if ((mini_fishplot_left + left_adjustment) > minimum_left_pos) {
                 d3.select(el).style('cursor', 'default');
 
-                draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
-                        plot_background, canvas_y_scale, num_of_timepoints, start, groups, fishplot_svgs,
-                        scope, canvas_svg, canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines);
+                global_history.push(createAddCLUEFish({todo: 'outputRef'}, {
+                    canvas_nested_data: canvas_nested_data,
+                    mini_fishplot: mini_fishplot,
+                    should_update_vaf_scale: should_update_vaf_scale,
+                    plot_background: plot_background,
+                    canvas_y_scale: canvas_y_scale,
+                    num_of_timepoints: num_of_timepoints,
+                    start: start,
+                    groups: groups,
+                    fishplot_svgs: fishplot_svgs,
+                    scope: scope,
+                    canvas_svg: canvas_svg,
+                    canvas_top_line_gen: canvas_top_line_gen,
+                    canvas_bottom_line_gen: canvas_bottom_line_gen,
+                    canvas_area_between_lines: canvas_area_between_lines
+                }));
+                // draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
+                //         plot_background, canvas_y_scale, num_of_timepoints, start, groups, fishplot_svgs,
+                //         scope, canvas_svg, canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines);
 
             }
             else {

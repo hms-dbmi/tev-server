@@ -1,19 +1,32 @@
 const prov = phovea.core.provenance;
 
-function addCLUEFish(inputs, parameter) {
+function addCLUEFish(inputs, parameters) {
   return inputs[0].v.then((elem) => {
-    const old = elem.innerText;
-    elem.innerText = parameter.text;
+    const old = 'TODO: previous state object';
+    draw_fish(
+        parameters.canvas_nested_data,
+        parameters.mini_fishplot,
+        parameters.should_update_vaf_scale,
+        parameters.plot_background,
+        parameters.canvas_y_scale,
+        parameters.num_of_timepoints,
+        parameters.start,
+        parameters.groups,
+        parameters.fishplot_svgs,
+        parameters.scope,
+        parameters.canvas_svg,
+        parameters.canvas_top_line_gen,
+        parameters.canvas_bottom_line_gen,
+        parameters.canvas_area_between_lines);
     return {
       inverse: createAddCLUEFish(inputs[0], old)
     };
   });
 }
 
-function createAddCLUEFish(outputRef, text) {
-  return prov.action(prov.meta('change text', prov.cat.visual, prov.op.update), 'addCLUEFish', addCLUEFish, [outputRef], {
-    text: text
-  });
+function createAddCLUEFish(outputRef, parameters) {
+  return prov.action(prov.meta('add fish', prov.cat.visual, prov.op.update),
+      'addCLUEFish', addCLUEFish, [outputRef], parameters);
 }
 
 const global_history = prov.createDummy();
