@@ -405,7 +405,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
     //Variables for dealing with context menu to remove fishplots/edit ploidy
     var contextMenuShowing = false;
     var contextMenuFor = '';
-    var contextMenuForPrevious = '';
+    scope.contextMenuForPrevious = '';
 
     //give leeway of 2px for minimum left position of mini fishplot
     //Use jQuery because safari doesnt understand d3.select().node().left
@@ -1204,11 +1204,11 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                     d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
                     d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
 
-                    if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                    if (contextMenuFor != scope.contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
                         contextMenuShowing = false;
                     }
                     if (contextMenuShowing == false) {
-                        contextMenuForPrevious = contextMenuFor;
+                        scope.scope.contextMenuForPrevious = contextMenuFor;
                         d3.event.preventDefault();
                         d3.select('#context-div').attr('cm-showing', 'true');
                         contextMenuShowing = true;
@@ -1284,7 +1284,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, index,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor,
-                    contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_VAF_value);
+                    contextMenuShowing, scope.contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_VAF_value);
             }
         });
 
@@ -1523,11 +1523,11 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                         d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
                         d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
 
-                        if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                        if (contextMenuFor != scope.contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
                             contextMenuShowing = false;
                         }
                         if (contextMenuShowing == false) {
-                            contextMenuForPrevious = contextMenuFor;
+                            scope.contextMenuForPrevious = contextMenuFor;
                             d3.event.preventDefault();
                             d3.select('#context-div').attr('cm-showing', 'true');
                             contextMenuShowing = true;
@@ -1610,7 +1610,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor,
-                    contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100);
+                    contextMenuShowing, scope.contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100);
             }
 
             if (can_plot) {
@@ -1706,11 +1706,11 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                             d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
                             d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
 
-                            if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                            if (contextMenuFor != scope.contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
                                 contextMenuShowing = false;
                             }
                             if (contextMenuShowing == false) {
-                                contextMenuForPrevious = contextMenuFor;
+                                scope.contextMenuForPrevious = contextMenuFor;
                                 d3.event.preventDefault();
                                 d3.select('#context-div').attr('cm-showing', 'true');
                                 contextMenuShowing = true;
@@ -1756,7 +1756,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor,
-                    contextMenuShowing, contextMenuForPrevious, 'only_cancer_ccf', canvas_svg, num_of_timepoints, 100,
+                    contextMenuShowing, scope.contextMenuForPrevious, 'only_cancer_ccf', canvas_svg, num_of_timepoints, 100,
                     canvas_range_max_y, canvas_x_axis);
             }
             if (can_plot) {
@@ -1852,11 +1852,11 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                             d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
                             d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
 
-                            if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                            if (contextMenuFor != scope.contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
                                 contextMenuShowing = false;
                             }
                             if (contextMenuShowing == false) {
-                                contextMenuForPrevious = contextMenuFor;
+                                scope.contextMenuForPrevious = contextMenuFor;
                                 d3.event.preventDefault();
                                 d3.select('#context-div').attr('cm-showing', 'true');
                                 contextMenuShowing = true;
@@ -1898,7 +1898,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
 
             fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
                 canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor, contextMenuShowing,
-                contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value, canvas_range_max_y, canvas_x_axis);
+                scope.contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value, canvas_range_max_y, canvas_x_axis);
         });
 
     var back_to_VAF = button_group.append('li')
@@ -1994,11 +1994,11 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                         d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
                         d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
 
-                        if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                        if (contextMenuFor != scope.contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
                             contextMenuShowing = false;
                         }
                         if (contextMenuShowing == false) {
-                            contextMenuForPrevious = contextMenuFor;
+                            scope.contextMenuForPrevious = contextMenuFor;
                             d3.event.preventDefault();
                             d3.select('#context-div').attr('cm-showing', 'true');
                             contextMenuShowing = true;
@@ -2163,7 +2163,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
                     canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor,
-                    contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100,
+                    contextMenuShowing, scope.contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100,
                     canvas_range_max_y,
                       canvas_x_axis);
             }
@@ -2888,7 +2888,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
         //Right now type is alt_count... will need to account for resize when CCF plotted
         fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
             canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor, contextMenuShowing,
-            contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value, canvas_range_max_y, canvas_x_axis);
+            scope.contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value, canvas_range_max_y, canvas_x_axis);
 
         resize_mini_fishplots(new_width);
 

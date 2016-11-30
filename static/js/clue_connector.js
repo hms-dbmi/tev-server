@@ -181,11 +181,11 @@ function draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
                     d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
                     d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
 
-                    if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                    if (contextMenuFor != scope.contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
                         contextMenuShowing = false;
                     }
                     if (contextMenuShowing == false) {
-                        contextMenuForPrevious = contextMenuFor;
+                        scope.contextMenuForPrevious = contextMenuFor;
                         d3.event.preventDefault();
                         d3.select('#context-div').attr('cm-showing', 'true');
                         contextMenuShowing = true;
@@ -365,11 +365,11 @@ function draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
                       d3.select('#edit-ploidy-btn').attr('fish-index', contextMenuFor);
                       d3.select('#rmv-fishplot-btn').attr('fish-index', contextMenuFor);
 
-                      if (contextMenuFor != contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
+                      if (contextMenuFor != scope.contextMenuForPrevious || d3.select('#context-div').attr('cm-showing') == 'false') {
                           contextMenuShowing = false;
                       }
                       if (contextMenuShowing == false) {
-                          contextMenuForPrevious = contextMenuFor;
+                          scope.contextMenuForPrevious = contextMenuFor;
                           d3.event.preventDefault();
                           contextMenuShowing = true;
                           d3.select('#context-div').attr('cm-showing', 'true');
