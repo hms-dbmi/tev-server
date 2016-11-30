@@ -179,9 +179,6 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
         .style('float', 'right')
         .attr('id', 'canvas_div');
 
-    //Will contain the index in the nested data of what fish the user is currently moused over
-    var moused_over;
-
     //Canvas svg where fishplot will be plotted
     var canvas_svg = canvas.append('svg')
         .attr('width', '100%')
@@ -190,8 +187,8 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
         .attr('index', 'canvas_svg')
         .on('mouseover', function () {
             if (dragging) {
-                moused_over = d3.select(this).attr('index');
-                console.log('moused_over: '+moused_over);
+                scope.moused_over = d3.select(this).attr('index');
+                console.log('scope.moused_over: '+scope.moused_over);
             }
         });
 
@@ -525,7 +522,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
             if ((mini_fishplot_left + left_adjustment) > minimum_left_pos) {
                 d3.select(el).style('cursor', 'default');
 
-                draw_fish(moused_over, canvas_nested_data, mini_fishplot, should_update_vaf_scale,
+                draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
                         plot_background, canvas_y_scale, num_of_timepoints, start, groups, fishplot_svgs,
                         scope, canvas_svg, canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines);
 
@@ -1192,11 +1189,10 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                 .attr('id', 'big_fish' + current_data.index)
                 .style('cursor', 'pointer')
                 .on('mouseenter', function (d) {
-                    moused_over = parseInt(d3.select(this).attr('index'));
+                    scope.moused_over = parseInt(d3.select(this).attr('index'));
                 })
                 .on('mouseover', function () {
-                    moused_over = parseInt(d3.select(this).attr('index'));
-                    console.log('mo?'+moused_over);
+                    scope.moused_over = parseInt(d3.select(this).attr('index'));
                 })
                 .on('mouseleave', function () {
                     d3.select(this).attr('opacity', 1);
@@ -1288,7 +1284,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
 
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, index,
-                    canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
+                    canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor,
                     contextMenuShowing, contextMenuForPrevious, type, canvas_svg, num_of_timepoints, max_VAF_value);
             }
         });
@@ -1512,10 +1508,10 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                     .attr('id', 'big_fish' + current_data.index)
                     .style('cursor', 'pointer')
                     .on('mouseenter', function (d) {
-                        moused_over = parseInt(d3.select(this).attr('index'));
+                        scope.moused_over = parseInt(d3.select(this).attr('index'));
                     })
                     .on('mouseover', function () {
-                        moused_over = parseInt(d3.select(this).attr('index'));
+                        scope.moused_over = parseInt(d3.select(this).attr('index'));
                     })
                     .on('mouseleave', function () {
                         d3.select(this).attr('opacity', 1);
@@ -1614,7 +1610,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
 
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
-                    canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
+                    canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor,
                     contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100);
             }
 
@@ -1695,10 +1691,10 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                         .attr('id', 'big_fish' + current_data.index)
                         .style('cursor', 'pointer')
                         .on('mouseenter', function (d) {
-                            moused_over = parseInt(d3.select(this).attr('index'));
+                            scope.moused_over = parseInt(d3.select(this).attr('index'));
                         })
                         .on('mouseover', function () {
-                            moused_over = parseInt(d3.select(this).attr('index'));
+                            scope.moused_over = parseInt(d3.select(this).attr('index'));
                         })
                         .on('mouseleave', function () {
                             d3.select(this).attr('opacity', 1);
@@ -1760,7 +1756,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                 d3.select('#save-CCF-button-reprompt').attr('type', 'only_cancer_ccf');
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
-                    canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
+                    canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor,
                     contextMenuShowing, contextMenuForPrevious, 'only_cancer_ccf', canvas_svg, num_of_timepoints, 100,
                     canvas_range_max_y, canvas_x_axis);
             }
@@ -1841,10 +1837,10 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                         .attr('id', 'big_fish' + current_data.index)
                         .style('cursor', 'pointer')
                         .on('mouseenter', function (d) {
-                            moused_over = parseInt(d3.select(this).attr('index'));
+                            scope.moused_over = parseInt(d3.select(this).attr('index'));
                         })
                         .on('mouseover', function () {
-                            moused_over = parseInt(d3.select(this).attr('index'));
+                            scope.moused_over = parseInt(d3.select(this).attr('index'));
                         })
                         .on('mouseleave', function () {
                             d3.select(this).attr('opacity', 1);
@@ -1902,7 +1898,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
             }
 
             fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
-                canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor, contextMenuShowing,
+                canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor, contextMenuShowing,
                 contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value, canvas_range_max_y, canvas_x_axis);
         });
 
@@ -1983,10 +1979,10 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
                     .attr('id', 'big_fish' + current_data.index)
                     .style('cursor', 'pointer')
                     .on('mouseenter', function (d) {
-                        moused_over = parseInt(d3.select(this).attr('index'));
+                        scope.moused_over = parseInt(d3.select(this).attr('index'));
                     })
                     .on('mouseover', function () {
-                        moused_over = parseInt(d3.select(this).attr('index'));
+                        scope.moused_over = parseInt(d3.select(this).attr('index'));
                     })
                     .on('mouseleave', function () {
                         d3.select(this).attr('opacity', 1);
@@ -2167,7 +2163,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
 
                 reprompt(sample_timepoints, tick_labels, canvas_nested_data, ten_percent_below_zero,
                     complete_nested_data, plot_background, allele_color_reference, fishplot_svgs, 0,
-                    canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor,
+                    canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor,
                     contextMenuShowing, contextMenuForPrevious, 'ccf', canvas_svg, num_of_timepoints, 100,
                     canvas_range_max_y,
                       canvas_x_axis);
@@ -2871,7 +2867,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
             .attr('index', 'canvas_svg')
             .on('mouseover', function () {
                 if (dragging) {
-                    moused_over = d3.select(this).attr('index');
+                    scope.moused_over = d3.select(this).attr('index');
                 }
             });
 
@@ -2892,7 +2888,7 @@ function create_fishplot_editor(updated_data, el, height, width, color_ref, chro
 
         //Right now type is alt_count... will need to account for resize when CCF plotted
         fishplot_plot(canvas_svg, tick_labels, canvas_nested_data, fishplot_svgs, plot_background, num_of_timepoints,
-            canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, moused_over, contextMenuFor, contextMenuShowing,
+            canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines, scope.moused_over, contextMenuFor, contextMenuShowing,
             contextMenuForPrevious, 'alt_count', allele_color_reference, max_VAF_value, canvas_range_max_y, canvas_x_axis);
 
         resize_mini_fishplots(new_width);

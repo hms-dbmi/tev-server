@@ -36,11 +36,11 @@ $(() => {
   // });
 });
 
-function draw_fish(moused_over, canvas_nested_data, mini_fishplot, should_update_vaf_scale,
+function draw_fish(canvas_nested_data, mini_fishplot, should_update_vaf_scale,
                    plot_background, canvas_y_scale, num_of_timepoints, start, groups, fishplot_svgs,
                    scope, canvas_svg, canvas_top_line_gen, canvas_bottom_line_gen, canvas_area_between_lines) {
-  alert('moused_over? '+moused_over);
-  if (moused_over == 'canvas_svg') {
+  alert('scope.moused_over? '+scope.moused_over);
+  if (scope.moused_over == 'canvas_svg') {
 
     var nested_data = canvas_nested_data.slice(0);
 
@@ -166,12 +166,12 @@ function draw_fish(moused_over, canvas_nested_data, mini_fishplot, should_update
                 .attr('id', 'big_fish' + current_data.index)
                 .style('cursor', 'pointer')
                 .on('mouseenter', function (d) {
-                    moused_over = parseInt(d3.select(this).attr('index'));
-                    console.log('enter '+moused_over);
+                    scope.moused_over = parseInt(d3.select(this).attr('index'));
+                    console.log('enter '+scope.moused_over);
                 })
                 .on('mouseover', function () {
-                    moused_over = parseInt(d3.select(this).attr('index'));
-                  console.log('over '+moused_over);
+                    scope.moused_over = parseInt(d3.select(this).attr('index'));
+                  console.log('over '+scope.moused_over);
                 })
                 .on('mouseleave', function () {
                     d3.select(this).attr('opacity', 1);
@@ -231,7 +231,7 @@ function draw_fish(moused_over, canvas_nested_data, mini_fishplot, should_update
   else {
       nested_data = canvas_nested_data.slice(0);
 
-      var parent_of_this = moused_over;
+      var parent_of_this = scope.moused_over;
 
       parent = nested_data[parent_of_this];
 
@@ -353,12 +353,12 @@ function draw_fish(moused_over, canvas_nested_data, mini_fishplot, should_update
                   .attr('id', 'big_fish' + current_data.index)
                   .style('cursor', 'pointer')
                   .on('mouseenter', function (d) {
-                      moused_over = parseInt(d3.select(this).attr('index'));
-                    console.log('else enter '+moused_over)
+                      scope.moused_over = parseInt(d3.select(this).attr('index'));
+                    console.log('else enter '+scope.moused_over)
                   })
                   .on('mouseover', function () {
-                      moused_over = parseInt(d3.select(this).attr('index'));
-                    console.log('else over '+moused_over)
+                      scope.moused_over = parseInt(d3.select(this).attr('index'));
+                    console.log('else over '+scope.moused_over)
                   })
                   .on('mouseleave', function () {
                       d3.select(this).attr('opacity', 1);
