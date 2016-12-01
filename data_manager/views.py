@@ -96,6 +96,8 @@ class CloneTimepointDataViewset(viewsets.ModelViewSet):
 def data_to_database(request):
     file = request.FILES.get('file')
     # Parse the Tev file
+    if(file is None):
+        return redirect('data_manager:input')
     parse_tev_file(file)
 
     return redirect('data_manager:index')
