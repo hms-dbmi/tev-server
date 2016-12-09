@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>TEV</title>
+</head>
+<style>
+    html,
+    body {
+        height: 100%;
+    }
+
+    body {
+        padding-top: 50px; /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+    }
+
+    .img-portfolio {
+        margin-bottom: 30px;
+    }
+
+    .img-hover:hover {
+        opacity: 0.8;
+    }
+
+    /* 404 Page Styles */
+
+    .error-404 {
+        font-size: 100px;
+    }
+
+    /* Footer Styles */
+
+    footer {
+        margin: 50px 0;
+    }
+
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+      integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+      crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css"
+      integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r"
+      crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
+        integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
+        crossorigin="anonymous"></script>
+
+
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tumor Evolution Visualization</a>
+        </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="../">Home</a>
+                </li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+
+<div id="video_container" class="container well" style="padding-bottom: 30px; height: 100%">
+
+    <h2 style="text-align: center">TEV Usage Video</h2>
+    <div id="wrapper" style="width: 100%; text-align: center;">
+<iframe width="960" height="750" src="https://www.youtube.com/embed/XC8--D24OoI"
+        frameborder="0" style="margin: 0 auto; display: block;" allowfullscreen align="middle">
+</iframe>
+    </div>
+
+    <p style="padding-top: 20px; font-size: large">
+        The TEV usage video shows all of the features available in the TEV tool. These features include selecting a patient,
+        creating a fishplot, editing sample purity at a timepoint, generating cancer cell fractions (CCFs), saving fishplots,
+        loading fishplots, editing variant allele frequencies, editing variant ploidy, using the variant summary statistics,
+        and pulling up additional information on a variant.
+        </p>
+
+    <p style="font-size: large">
+        One feature not shown in this video is selectively removing fishplots. To use this feature, right click on the fishplot
+        you wish to remove and select "Remove fishplot(s)". By choosing this option you will remove the selected fishplot and all
+        of its children. Additionally, one feature that may not be apparent from the video is that when you change the ploidy
+        of a variant, all of its children or soon to be children (from plotting) will inherit the parents ploidy.
+    </p>
+
+</div>
+</body>
+</html>
