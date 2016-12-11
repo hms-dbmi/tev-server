@@ -14,8 +14,9 @@
         height: 100%;
     }
 
+    /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
     body {
-        padding-top: 50px; /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+        padding-top: 40px;
     }
 
     .img-portfolio {
@@ -118,9 +119,11 @@
                 <li>
                     <a href="/data">TEV Tool</a>
                 </li>
+                {% comment %}
                 <li>
-                    <a href="/variant_exploration">Variant Exploration</a>
+                    <a href="/variant_exploration">Variant Exploration</a>   // remove for now
                 </li>
+                {% endcomment %}
                 <li>
                     <a href="">About</a>
                 </li>
@@ -133,7 +136,7 @@
     </div>
     <!-- /.container -->
 </nav>
-
+{% comment %}
 <!-- Header Carousel -->
 <header id="myCarousel" class="carousel slide">
     <!-- Indicators -->
@@ -225,6 +228,7 @@
         </div>
     </div>
     <!-- /.row -->
+    -->
 
     <hr>
 
@@ -239,6 +243,33 @@
 
 </div>
 <!-- /.container -->
+{% endcomment %}
+
+<div id="video_container" class="container well" style="padding-bottom: 30px; height: 100%">
+
+    <h2 style="text-align: center">TEV Usage Video</h2>
+    <div id="wrapper" style="width: 100%; text-align: center;">
+<iframe width="853" height="480" src="https://www.youtube.com/embed/XC8--D24OoI"
+        frameborder="0" style="margin: 0 auto; display: block;" allowfullscreen align="middle">
+</iframe>
+    </div>
+
+    <p style="padding-top: 20px; font-size: large">
+        The TEV usage video shows all of the features available in the TEV tool. These features include selecting a patient,
+        creating a fishplot, editing sample purity at a timepoint, generating cancer cell fractions (CCFs), saving fishplots,
+        loading fishplots, editing variant allele frequencies, editing variant ploidy, using the variant summary statistics,
+        and pulling up additional information on a variant.
+        </p>
+
+    <p style="font-size: large">
+        One feature not shown in this video is selectively removing fishplots. To use this feature, right click on the fishplot
+        you wish to remove and select "Remove fishplot(s)". By choosing this option you will remove the selected fishplot and all
+        of its children. Additionally, one feature that may not be apparent from the video is that when you change the ploidy
+        of a variant, all of its children or soon to be children (from plotting) will inherit the parents ploidy.
+    </p>
+
+</div>
+
 
 <!-- jQuery -->
 <script src="js/jquery.js"></script>
@@ -251,6 +282,8 @@
     $('.carousel').carousel({
         interval: 5000 //changes the speed
     })
+
+    $('#video_container').height($(document).height());
 </script>
 </body>
 </html>
