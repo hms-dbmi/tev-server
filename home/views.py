@@ -9,3 +9,7 @@ def index(request):
 def usage(request):
     context = {'usage_video_url': 'https://youtu.be/XC8--D24OoI'}
     return render(request, 'home/usage.html', context)
+
+def contact(request):
+    context = {}
+    return render(request, 'home/contact.html', context)

@@ -125,10 +125,10 @@
                 </li>
                 {% endcomment %}
                 <li>
-                    <a href="">About</a>
+                    <a href="https://github.com/hms-dbmi/tev-server">About</a>
                 </li>
                 <li>
-                    <a href="">Contact</a>
+                    <a href="/contact">Contact</a>
                 </li>
             </ul>
         </div>
@@ -245,7 +245,7 @@
 <!-- /.container -->
 {% endcomment %}
 
-<div id="video_container" class="container well" style="padding-bottom: 30px; height: 100%">
+<div id="video_container" class="container well" style="padding-top: 30px; height: 100%">
 
     <h2 style="text-align: center">TEV Usage Video</h2>
     <div id="wrapper" style="width: 100%; text-align: center;">
@@ -268,8 +268,17 @@
         of a variant, all of its children or soon to be children (from plotting) will inherit the parents ploidy.
     </p>
 
-</div>
+    <!-- Footer -->
+    <footer>
+        <div class="row">
+            <div class="col-lg-12">
+                <p id="cpright">Copyright &copy; Gehlenborg Lab 2016</p>
+            </div>
+        </div>
+    </footer>
 
+
+</div>
 
 <!-- jQuery -->
 <script src="js/jquery.js"></script>
@@ -281,9 +290,14 @@
 <script>
     $('.carousel').carousel({
         interval: 5000 //changes the speed
-    })
+    });
+    var window_height = $(window).height();
+    var copyright_pos = $('#cpright').offset().top;
+    var new_height = Math.max.apply(null, [window_height, copyright_pos]);
 
-    $('#video_container').height($(document).height());
+    console.log(new_height);
+
+    $('#video_container').height(new_height);
 </script>
 </body>
 </html>
